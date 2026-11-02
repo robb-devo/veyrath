@@ -1,0 +1,19 @@
+# Single source of truth for every pinned version in the build.
+# Minecraft stack versions are documented (with reasoning) in docs/TECHNICAL_DECISIONS.md.
+[versions]
+java = "25"
+minecraft = "26.3"
+fabric-loader = "0.19.5"
+fabric-loom = "1.17-SNAPSHOT"
+# UNVERIFIED: the Fabric maven is unreachable from the cloud build machine. Confirm the
+# newest 26.3 build on the first device build and record it in docs/DEPENDENCIES.md.
+fabric-api = "0.140.0+26.3"
+junit = "5.13.4"
+
+[libraries]
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+
+[plugins]
+fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom" }
