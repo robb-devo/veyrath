@@ -74,8 +74,12 @@ dependencies {
     implementation(project(":engine"))
     include(project(":engine"))
 
-    // Distant Horizons: compile against the API only; DH itself is optional at runtime.
-    if (withDh) compileOnly("maven.modrinth:DistantHorizonsApi:${libs.versions.distanthorizons.api.get()}")
+    // Distant Horizons: compile-time only; DH stays optional at runtime. The DH mod jar contains
+    // its API classes ("automatically included in the DH mod jar"), and DH 3.3.4-26.3 is a
+    // verified Modrinth version, whereas a separate DistantHorizonsApi 7.2.0 artifact is not
+    // confirmed to exist. Fallback if this does not resolve:
+    //   compileOnly("maven.modrinth:DistantHorizonsApi:${libs.versions.distanthorizons.api.get()}")
+    if (withDh) compileOnly("maven.modrinth:distanthorizons:${libs.versions.distanthorizons.get()}")
 
     if (devMods) {
         // UNVERIFIED: configuration name (Loom's non-remapping counterpart of modLocalRuntime) and

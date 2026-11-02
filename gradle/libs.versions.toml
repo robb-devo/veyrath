@@ -10,8 +10,10 @@ fabric-loom = "1.17-SNAPSHOT"
 # "*+26.3" entry of https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml
 # and record it in docs/DEPENDENCIES.md.
 fabric-api = "0.153.0+26.3"
-# Distant Horizons 3.3.4 implements DH API 7.2.0 (verified in DH's source, tag 3.3.4).
-# Availability of this exact artifact on the Modrinth maven is UNVERIFIED.
+# Distant Horizons 3.3.4-26.3 (Modrinth version, published 2026-09-29) implements DH API 7.2.0
+# (verified in DH's source, tag 3.3.4). Whether a separate API 7.2.0 artifact is on the Modrinth
+# maven is UNVERIFIED; the build compiles against the DH mod jar instead.
+distanthorizons = "3.3.4-26.3"
 distanthorizons-api = "7.2.0"
 junit = "5.13.4"
 
