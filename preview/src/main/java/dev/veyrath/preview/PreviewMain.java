@@ -18,12 +18,15 @@ import java.util.Map;
  *
  * <pre>
  *   atlas  [--seed S] [--res N] [--out DIR]   realm atlas maps + timings
+ *   view   [--seed S] [--out DIR] [--width W]   perspective renders of landmark viewpoints
+ *   bench  [--seed S]                           engine benchmark (realm build, chunk composition)
+ *   audit  [--seed S] [--per N]                 world-quality audit (unstable water/lava, ranges)
  * </pre>
  */
 public final class PreviewMain {
     public static void main(String[] args) throws IOException {
         if (args.length == 0) {
-            System.out.println("usage: atlas|view|bench [--seed S] [--res N] [--out DIR]");
+            System.out.println("usage: atlas|view|bench|audit [--seed S] [--res N] [--out DIR] [--per N]");
             return;
         }
         String cmd = args[0];
@@ -35,6 +38,10 @@ public final class PreviewMain {
         switch (cmd) {
             case "atlas" -> atlas(spec, out);
             case "view" -> Views.render(spec, out, Integer.parseInt(opt(args, "--width", "1600")));
+            case "bench" -> {
+                try { Bench.run(spec); } catch (Exception e) { throw new RuntimeException(e); }
+            }
+            case "audit" -> Audit.run(spec, Integer.parseInt(opt(args, "--per", "6")));
             default -> System.out.println("unknown command " + cmd);
         }
     }
