@@ -5,9 +5,14 @@ java = "25"
 minecraft = "26.3"
 fabric-loader = "0.19.5"
 fabric-loom = "1.17-SNAPSHOT"
-# UNVERIFIED: the Fabric maven is unreachable from the cloud build machine. Confirm the
-# newest 26.3 build on the first device build and record it in docs/DEPENDENCIES.md.
-fabric-api = "0.140.0+26.3"
+# UNVERIFIED placeholder: the Fabric maven is unreachable from the cloud build machine and the
+# 26.3 release post does not name a Fabric API version. On the first device build, pin the newest
+# "*+26.3" entry of https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml
+# and record it in docs/DEPENDENCIES.md.
+fabric-api = "0.153.0+26.3"
+# Distant Horizons 3.3.4 implements DH API 7.2.0 (verified in DH's source, tag 3.3.4).
+# Availability of this exact artifact on the Modrinth maven is UNVERIFIED.
+distanthorizons-api = "7.2.0"
 junit = "5.13.4"
 
 [libraries]
@@ -16,4 +21,6 @@ junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 
 [plugins]
-fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom" }
+# Minecraft 26.1+ is unobfuscated: Fabric's 26.1 post says to use the new plugin id
+# "net.fabricmc.fabric-loom" (the old "fabric-loom" / "fabric-loom-remap" ids are for remapping).
+fabric-loom = { id = "net.fabricmc.fabric-loom", version.ref = "fabric-loom" }
