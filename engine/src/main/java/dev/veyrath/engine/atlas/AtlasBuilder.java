@@ -47,6 +47,18 @@ public final class AtlasBuilder {
     private static final double BELT_LIFT = 460.0;
     private static final double RIVER_MIN_AREA = 400.0;
     private static final double RIVER_INFLUENCE = 192.0;
+    /**
+     * Summit massifs multiply the relief by {@code 1 + strength} at their centre. Calibrated on
+     * seeds 1-3 so the highest ground before the summit ceiling lands at about y1020-1100: higher
+     * values pushed raw peaks to y1190-1390, which any ceiling can only flatten.
+     */
+    private static final double MASSIF_STRENGTH_MIN = 0.48, MASSIF_STRENGTH_RANGE = 0.27;
+    /** The Crownspire, the realm's dominant massif. */
+    private static final double CROWNSPIRE_STRENGTH = 1.15;
+    /** Summit ceiling: untouched below {@code maxY - SUMMIT_KNEE_DEPTH} (y760 by default). */
+    private static final double SUMMIT_KNEE_DEPTH = 263, SUMMIT_CURVE = 70;
+    /** Final guard: tanh from {@code maxY - GUARD_DEPTH} (y940), asymptote 40 blocks higher. */
+    private static final double GUARD_DEPTH = 83, GUARD_SPAN = 40;
     /** Height of the Great Rift floor above sea level at its inland end. */
     public static final double RIFT_FLOOR_RISE = 127.0;
 
@@ -74,6 +86,8 @@ public final class AtlasBuilder {
     private float[] riftFloor;
     private double[] focusX = new double[ARCH], focusZ = new double[ARCH];
     private List<Volcano> volcanoes = List.of();
+    private float rawPeak;
+    private int cellsAboveKnee;
 
     private AtlasBuilder(WorldSpec spec, int realmX, int realmZ, Progress progress) {
         this.spec = spec;
@@ -130,6 +144,7 @@ public final class AtlasBuilder {
         mark("erosion");
         raiseVolcanoes(h);
         relaxTalus(h);
+        applySummitCeiling(h);
         stampLakes(h);
         mark("talus+lakes");
 
@@ -164,6 +179,8 @@ public final class AtlasBuilder {
         b.rift = rift;
         b.volcanoes = volcanoes;
         b.riftDepth = computeRiftDepth(h);
+        b.rawPeak = rawPeak;
+        b.cellsAboveKnee = cellsAboveKnee;
         chooseSpawn(b);
         mark("finish");
         return new RealmAtlas(b);
@@ -845,13 +862,6 @@ public final class AtlasBuilder {
             prevM = m;
         }
 
-        // Soft ceiling: keep the highest peaks below the build limit with room for fine detail.
-        double knee = spec.maxY() - 200;
-        double span = 120;
-        for (int c = 0; c < cells; c++) {
-            double v = h[c];
-            if (v > knee) h[c] = (float) (knee + span * Math.tanh((v - knee) / span));
-        }
         return h;
     }
 
@@ -867,10 +877,10 @@ public final class AtlasBuilder {
             if (Hash.unit(h) > 0.55 && provinceStats[p][3] < bestBelt) continue;
             double[] s = seeds.get(p);
             double ox = Hash.signed(Hash.mix(h + 1)) * 700, oz = Hash.signed(Hash.mix(h + 2)) * 700;
-            out.add(new double[]{s[0] + ox, s[1] + oz, 1600 + Hash.unit(Hash.mix(h + 3)) * 900, 0.8 + Hash.unit(Hash.mix(h + 4)) * 0.45});
+            out.add(new double[]{s[0] + ox, s[1] + oz, 1600 + Hash.unit(Hash.mix(h + 3)) * 900, MASSIF_STRENGTH_MIN + Hash.unit(Hash.mix(h + 4)) * MASSIF_STRENGTH_RANGE});
         }
         // The Crownspire: the strongest massif sits in the province with the highest belt load.
-        if (bestIdx >= 0) out.get(bestIdx)[3] = 1.9;
+        if (bestIdx >= 0) out.get(bestIdx)[3] = CROWNSPIRE_STRENGTH;
         return out.toArray(new double[0][]);
     }
 
@@ -958,6 +968,38 @@ public final class AtlasBuilder {
             }
             volcanoes.add(new Volcano(vx, vz, r, peak, crater * r, v == sites.getFirst()));
         }
+    }
+
+    /**
+     * Keeps the highest summits below the build limit without flattening them.
+     *
+     * <p>Ground below the knee (y760 by default) is untouched. Above it a square-root curve
+     * compresses height while keeping at least 30 % of the slope even at the highest summits of
+     * test seeds 1-3 (100 % at the knee, about 64 % 100 blocks above it), so
+     * peaks stay peaks; a saturating curve (the previous tanh at y823) turned every summit above
+     * y900 into a flat cap at y943. A final tanh guard bounds outliers below about y980, leaving
+     * room for fine terrain detail (clamped at maxY - 16) and snow.
+     *
+     * <p>Applied after talus relaxation, which removes single-cell spikes that would otherwise
+     * dominate the curve, and before lakes and hydrology so water sees the final surface.
+     */
+    private void applySummitCeiling(float[] h) {
+        double knee = spec.maxY() - SUMMIT_KNEE_DEPTH;
+        double guard = spec.maxY() - GUARD_DEPTH;
+        float peak = Float.NEGATIVE_INFINITY;
+        int above = 0;
+        for (int c = 0; c < h.length; c++) {
+            double v = h[c];
+            if (continent[c] > 0 && v > peak) peak = (float) v;
+            if (v <= knee) continue;
+            above++;
+            double d = v - knee;
+            v = knee + 2 * SUMMIT_CURVE * (Math.sqrt(1 + d / SUMMIT_CURVE) - 1);
+            if (v > guard) v = guard + GUARD_SPAN * Math.tanh((v - guard) / GUARD_SPAN);
+            h[c] = (float) v;
+        }
+        rawPeak = peak;
+        cellsAboveKnee = above;
     }
 
     /** Gauss-Seidel talus relaxation: limits slopes to the archetype's angle of repose. */

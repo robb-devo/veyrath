@@ -76,6 +76,7 @@ public final class PreviewMain {
         double cellKm2 = a.cell * a.cell / 1e6;
         System.out.printf("land %.0f km2, lakes %.1f km2, highest ground y=%.0f, provinces %d, rivers %d reaches, spawn (%d, %d)%n",
                 land * cellKm2, lake * cellKm2, maxH, a.provinces.size(), a.rivers.reaches().size(), a.spawnX, a.spawnZ);
+        System.out.printf("highest ground before summit ceiling y=%.0f, cells above knee %d%n", a.rawPeak, a.cellsAboveKnee);
         counts.forEach((k, v) -> System.out.printf("  %-24s %6.0f km2%n", k.displayName, v * cellKm2));
     }
 

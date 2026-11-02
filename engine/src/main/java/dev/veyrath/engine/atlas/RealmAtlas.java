@@ -62,6 +62,10 @@ public final class RealmAtlas {
     public final List<Volcano> volcanoes;
     public final RiverNetwork rivers;
     public final int spawnX, spawnZ;
+    /** Highest land elevation before the summit ceiling was applied (diagnostics). */
+    public final float rawPeak;
+    /** Cells whose elevation exceeded the summit-ceiling knee before compression (diagnostics). */
+    public final int cellsAboveKnee;
 
     RealmAtlas(Builder b) {
         this.spec = b.spec;
@@ -93,6 +97,8 @@ public final class RealmAtlas {
         this.rivers = b.rivers;
         this.spawnX = b.spawnX;
         this.spawnZ = b.spawnZ;
+        this.rawPeak = b.rawPeak;
+        this.cellsAboveKnee = b.cellsAboveKnee;
     }
 
     /** Mutable staging area used by the builder; not part of the public API. */
@@ -111,6 +117,8 @@ public final class RealmAtlas {
         List<Volcano> volcanoes = List.of();
         RiverNetwork rivers;
         int spawnX, spawnZ;
+        float rawPeak;
+        int cellsAboveKnee;
     }
 
     // ------------------------------------------------------------------ queries
