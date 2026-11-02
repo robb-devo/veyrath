@@ -1,0 +1,22 @@
+{
+  "comment": "VEYRATH modpack definition, read by tools/install/Install-Veyrath.ps1. 'pin' is the preferred Modrinth version_number; if it is not found, the installer takes the newest compatible release and says so. Pins marked unverified in docs/DEPENDENCIES.md must be confirmed on the first install.",
+  "minecraft": "26.3",
+  "fabricLoader": "0.19.5",
+  "profileId": "veyrath",
+  "profileName": "VEYRATH",
+  "mods": [
+    { "slug": "fabric-api", "pin": null, "role": "Fabric API (required by VEYRATH)" },
+    { "slug": "sodium", "pin": "mc26.3-0.9.2-fabric", "role": "rendering engine" },
+    { "slug": "iris", "pin": "1.11.7+26.3-fabric", "role": "shader loader" },
+    { "slug": "distanthorizons", "pin": "3.3.4-26.3", "role": "far terrain (LOD); VEYRATH supplies the LOD data" },
+    { "slug": "lithium", "pin": null, "role": "game logic and chunk performance" },
+    { "slug": "ferrite-core", "pin": null, "role": "memory use" },
+    { "slug": "c2me-fabric", "pin": null, "role": "parallel chunk generation and I/O", "optionalFlag": "SkipC2ME" },
+    { "slug": "modmenu", "pin": null, "role": "in-game mod list and config access" }
+  ],
+  "shaders": [
+    { "slug": "complementary-unbound", "pin": null, "active": true, "role": "default shader for Chapter 01 screenshots" },
+    { "slug": "photon-shader", "pin": null, "active": false, "role": "comparison" },
+    { "slug": "bliss-shader", "pin": null, "active": false, "role": "comparison" }
+  ]
+}
