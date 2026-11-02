@@ -34,6 +34,7 @@ public final class PreviewMain {
         WorldSpec spec = WorldSpec.defaults(seed).withAtlasResolution(res);
         switch (cmd) {
             case "atlas" -> atlas(spec, out);
+            case "view" -> Views.render(spec, out, Integer.parseInt(opt(args, "--width", "1600")));
             default -> System.out.println("unknown command " + cmd);
         }
     }

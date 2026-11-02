@@ -47,6 +47,8 @@ public final class AtlasBuilder {
     private static final double BELT_LIFT = 460.0;
     private static final double RIVER_MIN_AREA = 400.0;
     private static final double RIVER_INFLUENCE = 192.0;
+    /** Height of the Great Rift floor above sea level at its inland end. */
+    public static final double RIFT_FLOOR_RISE = 127.0;
 
     private final WorldSpec spec;
     private final int realmX, realmZ;
@@ -669,7 +671,6 @@ public final class AtlasBuilder {
             ws[k] = (170 + 230 * (0.5 + 0.5 * widthN.fbm(xs[k], zs[k]))) * (0.35 + 0.65 * taper);
         }
         rift = new Polyline(xs, zs, ws);
-        double floorStart = spec.seaLevel() + 130;
         GridOps.parallelRows(n, j -> {
             double zz = cz(j);
             double[] o = new double[2];
@@ -680,12 +681,17 @@ public final class AtlasBuilder {
                 double hw = o[0] * 0.5;
                 if (d > hw) continue;
                 double arc = o[1];
-                double floorY = spec.seaLevel() + 3 + (floorStart - spec.seaLevel()) * Math.pow(1 - arc, 1.25);
+                double floorY = riftFloorY(spec, arc);
                 // Slight V towards the walls at atlas scale; crisp walls come from the fine sampler.
                 floorY += 40 * MathUtil.smoothstep(0.55, 1.0, d / hw);
                 riftFloor[j * n + i] = (float) floorY;
             }
         });
+    }
+
+    /** Rift floor elevation at normalised arc position (0 = inland end, 1 = sea mouth). */
+    public static double riftFloorY(WorldSpec spec, double arc) {
+        return spec.seaLevel() + 3 + RIFT_FLOOR_RISE * Math.pow(1 - MathUtil.clamp01(arc), 1.25);
     }
 
     private int cellIdx(double x, double z) {
@@ -739,6 +745,7 @@ public final class AtlasBuilder {
         DomainWarp plateauWarp = new DomainWarp(Hash.derive(seed, "plateau-warp"), 2600, 2, 800);
         int vfIndex = Archetype.VESPERFALL_RIFTLANDS.ordinal();
         double sea = spec.seaLevel();
+        double[][] massifs = massifSites();
         GridOps.parallelRows(n, j -> {
             double[] w = new double[ARCH];
             double z = cz(j);
@@ -757,6 +764,11 @@ public final class AtlasBuilder {
                 }
                 double bl = belt[c] * beltResp;
                 r += bl * BELT_RELIEF;
+                // Massifs: a few dominant summit groups so ranges have a hierarchy of peaks.
+                for (double[] ms : massifs) {
+                    double d = Math.hypot(x - ms[0], z - ms[1]) / ms[2];
+                    if (d < 1) r *= 1 + ms[3] * MathUtil.sq(1 - d * d);
+                }
                 r *= 0.72 + 0.56 * (0.5 + 0.5 * reliefNoise.fbm(x, z));
                 relief[c] = (float) (r * scale);
                 kmap[c] = (float) k;
@@ -841,6 +853,25 @@ public final class AtlasBuilder {
             if (v > knee) h[c] = (float) (knee + span * Math.tanh((v - knee) / span));
         }
         return h;
+    }
+
+    /** {x, z, radius, strength} for summit massifs inside Aethercrown provinces. */
+    private double[][] massifSites() {
+        List<double[]> out = new ArrayList<>();
+        double bestBelt = -1;
+        int bestIdx = -1;
+        for (int p = 0; p < seeds.size(); p++) {
+            if (provinceArchetype[p] != Archetype.AETHERCROWN_HIGHLANDS) continue;
+            long h = Hash.hash(Hash.derive(seed, "massif"), p);
+            if (provinceStats[p][3] > bestBelt) { bestBelt = provinceStats[p][3]; bestIdx = out.size(); }
+            if (Hash.unit(h) > 0.55 && provinceStats[p][3] < bestBelt) continue;
+            double[] s = seeds.get(p);
+            double ox = Hash.signed(Hash.mix(h + 1)) * 700, oz = Hash.signed(Hash.mix(h + 2)) * 700;
+            out.add(new double[]{s[0] + ox, s[1] + oz, 1600 + Hash.unit(Hash.mix(h + 3)) * 900, 0.8 + Hash.unit(Hash.mix(h + 4)) * 0.45});
+        }
+        // The Crownspire: the strongest massif sits in the province with the highest belt load.
+        if (bestIdx >= 0) out.get(bestIdx)[3] = 1.9;
+        return out.toArray(new double[0][]);
     }
 
     private void erodeStep(DrainageSolver ds, float[] h, float[] relief, float[] k, float[] ac, boolean[] outlet, float[] floor) {

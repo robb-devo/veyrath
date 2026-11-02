@@ -21,7 +21,7 @@ package dev.veyrath.engine.region;
  */
 public enum Archetype {
     SUNMANTLE_VALES("Sunmantle Vales", 9.0, 30, 0.55, 0x8DBF5A),
-    AETHERCROWN_HIGHLANDS("Aethercrown Highlands", 46.0, 160, 1.00, 0xE8EEF2),
+    AETHERCROWN_HIGHLANDS("Aethercrown Highlands", 52.0, 160, 1.00, 0xE8EEF2),
     VESPERFALL_RIFTLANDS("Vesperfall Riftlands", 20.0, 400, 0.35, 0xC0583A),
     ELDERBOUGH_EXPANSE("Elderbough Expanse", 11.0, 40, 0.50, 0x2F6B2A),
     AETHERREACH("Aetherreach", 12.0, 70, 0.55, 0x9FD8F0),
