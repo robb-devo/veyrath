@@ -1,0 +1,165 @@
+package dev.veyrath.preview;
+
+import dev.veyrath.engine.VeyrathWorld;
+import dev.veyrath.engine.WorldSpec;
+import dev.veyrath.engine.atlas.AtlasBuilder;
+import dev.veyrath.engine.atlas.Province;
+import dev.veyrath.engine.chunk.ChunkBuffer;
+import dev.veyrath.engine.chunk.ChunkComposer;
+import dev.veyrath.engine.debug.Locator;
+import dev.veyrath.engine.region.Archetype;
+import dev.veyrath.engine.surface.Material;
+
+import java.util.EnumMap;
+import java.util.Locale;
+import java.util.Map;
+
+/**
+ * World-quality audit over generated chunks (engine only, no Minecraft):
+ * <ul>
+ *   <li><b>Unstable water</b>: water blocks with air beside or below them. In Minecraft such
+ *       water starts flowing on the first block update, so the count should be near zero.</li>
+ *   <li><b>Unstable lava</b>: the same for lava.</li>
+ *   <li>Height range and the share of columns that are wet, per archetype.</li>
+ * </ul>
+ * Chunks are sampled in 3 x 3 blocks of chunks around every province centre, so each archetype
+ * is covered; neighbours across chunk borders are checked using the composed neighbour chunks.
+ */
+final class Audit {
+    private Audit() {}
+
+    private static final class Stats {
+        long chunks, columns, wetColumns, water, waterSideAir, waterBelowAir, lava, lavaLeaks;
+        int minGround = Integer.MAX_VALUE, maxGround = Integer.MIN_VALUE;
+    }
+
+    static void run(WorldSpec spec, int perArchetype) {
+        VeyrathWorld world = new VeyrathWorld(spec, AtlasBuilder.Progress.NONE);
+        long t0 = System.nanoTime();
+        VeyrathWorld.Realm realm = world.realm(0, 0);
+        System.out.printf(Locale.ROOT, "realm built in %d ms%n", (System.nanoTime() - t0) / 1_000_000);
+        Locator.Place spawn = Locator.find(world, "spawn", realm.atlas().spawnX, realm.atlas().spawnZ);
+        System.out.printf(Locale.ROOT, "spawn: engine %.0f %.0f, stand y%.0f, %s; atlas cell spawn %d %d; world origin = engine %d %d%n",
+                spawn.x(), spawn.z(), spawn.y(), spawn.description(), realm.atlas().spawnX, realm.atlas().spawnZ, world.originX(), world.originZ());
+
+        Map<Archetype, Stats> stats = new EnumMap<>(Archetype.class);
+        Map<Archetype, Integer> sampled = new EnumMap<>(Archetype.class);
+        ChunkComposer.Context ctx = new ChunkComposer.Context();
+        ChunkBuffer[] grid = new ChunkBuffer[9];
+        for (int i = 0; i < 9; i++) grid[i] = new ChunkBuffer(spec);
+        for (Province p : realm.atlas().provinces) {
+            Archetype a = p.archetype();
+            int done = sampled.getOrDefault(a, 0);
+            if (done >= perArchetype) continue;
+            sampled.put(a, done + 1);
+            Stats s = stats.computeIfAbsent(a, k -> new Stats());
+            int cx = (int) Math.floor(p.x() / 16), cz = (int) Math.floor(p.z() / 16);
+            for (int dz = -1; dz <= 1; dz++) for (int dx = -1; dx <= 1; dx++)
+                realm.composer().compose(cx + dx, cz + dz, grid[(dz + 1) * 3 + dx + 1], ctx);
+            audit(spec, grid, s);
+        }
+        // Water features: chunks along rivers (every ~1.5 km of each wide reach) and on lakes.
+        Stats rivers = new Stats(), lakes = new Stats(), sea = new Stats();
+        int riverChunks = 0;
+        for (var reach : realm.atlas().rivers.reaches()) {
+            for (int i = 0; i < reach.size() && riverChunks < perArchetype * 12; i += 48) {
+                if (reach.width()[i] < 6) continue;
+                composeAround(realm, reach.xs()[i], reach.zs()[i], grid, ctx);
+                audit(spec, grid, rivers);
+                riverChunks++;
+            }
+        }
+        var atlas = realm.atlas();
+        int lakeChunks = 0, seaChunks = 0;
+        for (int j = 8; j < atlas.n - 8 && (lakeChunks < perArchetype * 4 || seaChunks < perArchetype * 4); j += 7) {
+            for (int i = 8; i < atlas.n - 8; i += 7) {
+                int cidx = j * atlas.n + i;
+                if (Float.isNaN(atlas.water[cidx])) continue;
+                double x = atlas.cellCenterX(i), z = atlas.cellCenterZ(j);
+                boolean isSea = atlas.water[cidx] <= spec.seaLevel() + 0.5f;
+                if (!isSea && lakeChunks < perArchetype * 4) {
+                    composeAround(realm, x, z, grid, ctx);
+                    audit(spec, grid, lakes);
+                    lakeChunks++;
+                } else if (isSea && seaChunks < perArchetype * 4 && (i + j) % 5 == 0) {
+                    composeAround(realm, x, z, grid, ctx);
+                    audit(spec, grid, sea);
+                    seaChunks++;
+                }
+            }
+        }
+        System.out.printf(Locale.ROOT, "%-24s %6s %8s %9s %10s %10s %8s %9s %s%n", "archetype", "chunks", "wet%",
+                "water", "side-air", "below-air", "lava", "lavaLeak", "ground range");
+        Stats total = new Stats();
+        for (var e : stats.entrySet()) {
+            Stats s = e.getValue();
+            print(e.getKey().displayName, s);
+            total.chunks += s.chunks;
+            total.columns += s.columns;
+            total.wetColumns += s.wetColumns;
+            total.water += s.water;
+            total.waterSideAir += s.waterSideAir;
+            total.waterBelowAir += s.waterBelowAir;
+            total.lava += s.lava;
+            total.lavaLeaks += s.lavaLeaks;
+            total.minGround = Math.min(total.minGround, s.minGround);
+            total.maxGround = Math.max(total.maxGround, s.maxGround);
+        }
+        print("TOTAL (provinces)", total);
+        print("rivers", rivers);
+        print("lakes", lakes);
+        print("sea", sea);
+    }
+
+    private static void composeAround(VeyrathWorld.Realm realm, double x, double z, ChunkBuffer[] grid, ChunkComposer.Context ctx) {
+        int cx = (int) Math.floor(x / 16), cz = (int) Math.floor(z / 16);
+        for (int dz = -1; dz <= 1; dz++) for (int dx = -1; dx <= 1; dx++)
+            realm.composer().compose(cx + dx, cz + dz, grid[(dz + 1) * 3 + dx + 1], ctx);
+    }
+
+    private static void print(String name, Stats s) {
+        System.out.printf(Locale.ROOT, "%-24s %6d %7.1f%% %9d %10d %10d %8d %9d y%d..y%d%n", name, s.chunks,
+                100.0 * s.wetColumns / Math.max(1, s.columns), s.water, s.waterSideAir, s.waterBelowAir, s.lava, s.lavaLeaks,
+                s.minGround, s.maxGround);
+    }
+
+    /** Audits the centre chunk of a 3 x 3 grid of composed chunks. */
+    private static void audit(WorldSpec spec, ChunkBuffer[] g, Stats s) {
+        ChunkBuffer c = g[4];
+        short air = (short) Material.AIR.ordinal(), water = (short) Material.WATER.ordinal(), lava = (short) Material.LAVA.ordinal();
+        s.chunks++;
+        for (int z = 0; z < 16; z++) {
+            for (int x = 0; x < 16; x++) {
+                int col = (z << 4) | x;
+                s.columns++;
+                s.minGround = Math.min(s.minGround, c.ground[col]);
+                s.maxGround = Math.max(s.maxGround, c.ground[col]);
+                if (c.fluidTop[col] > c.ground[col]) s.wetColumns++;
+                int top = Math.max(c.topSolid[col], c.fluidTop[col]);
+                for (int y = spec.minY() + 1; y <= top; y++) {
+                    short m = c.get(x, y, z);
+                    if (m != water && m != lava) continue;
+                    boolean sideAir = at(g, x + 1, y, z) == air || at(g, x - 1, y, z) == air
+                            || at(g, x, y, z + 1) == air || at(g, x, y, z - 1) == air;
+                    boolean belowAir = c.get(x, y - 1, z) == air;
+                    if (m == water) {
+                        s.water++;
+                        if (sideAir) s.waterSideAir++;
+                        if (belowAir) s.waterBelowAir++;
+                    } else {
+                        s.lava++;
+                        if (sideAir || belowAir) s.lavaLeaks++;
+                    }
+                }
+            }
+        }
+    }
+
+    /** Material at chunk-local (x, y, z) of the centre chunk, reading neighbours when x/z leave it. */
+    private static short at(ChunkBuffer[] g, int x, int y, int z) {
+        int gx = 1, gz = 1;
+        if (x < 0) { gx = 0; x += 16; } else if (x > 15) { gx = 2; x -= 16; }
+        if (z < 0) { gz = 0; z += 16; } else if (z > 15) { gz = 2; z -= 16; }
+        return g[gz * 3 + gx].get(x, y, z);
+    }
+}

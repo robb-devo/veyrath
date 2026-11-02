@@ -1,0 +1,16 @@
+# Build
+.gradle/
+build/
+out/
+run/
+*.class
+# IDE
+.idea/
+*.iml
+.vscode/
+# OS
+.DS_Store
+Thumbs.db
+# Local outputs (preview renders, benchmark dumps) — curated results go to docs/media
+/output/
+/preview-out/

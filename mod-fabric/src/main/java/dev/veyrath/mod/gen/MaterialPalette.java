@@ -1,0 +1,73 @@
+package dev.veyrath.mod.gen;
+
+import dev.veyrath.engine.surface.Material;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+
+/**
+ * Maps engine materials to block states.
+ *
+ * <p>Chapter 01 phase A palette: vanilla blocks chosen for colour and shader response. Phase B
+ * swaps entries to VEYRATH blocks (custom textures/PBR) here only; the engine is unaffected.
+ */
+public final class MaterialPalette {
+    private static final BlockState[] STATES = new BlockState[Material.values().length];
+
+    static {
+        put(Material.AIR, Blocks.AIR);
+        put(Material.WATER, Blocks.WATER);
+        put(Material.LAVA, Blocks.LAVA);
+        put(Material.BEDROCK, Blocks.BEDROCK);
+        put(Material.STONE, Blocks.STONE);
+        put(Material.DEEPSLATE, Blocks.DEEPSLATE);
+        put(Material.ANDESITE, Blocks.ANDESITE);
+        put(Material.DIORITE, Blocks.DIORITE);
+        put(Material.GRANITE, Blocks.GRANITE);
+        put(Material.TUFF, Blocks.TUFF);
+        put(Material.CALCITE, Blocks.CALCITE);
+        put(Material.BASALT, Blocks.BASALT);
+        put(Material.BLACKSTONE, Blocks.BLACKSTONE);
+        put(Material.OBSIDIAN, Blocks.OBSIDIAN);
+        put(Material.MAGMA, Blocks.MAGMA_BLOCK);
+        put(Material.STRATA_RED, Blocks.RED_TERRACOTTA);
+        put(Material.STRATA_ORANGE, Blocks.ORANGE_TERRACOTTA);
+        put(Material.STRATA_OCHRE, Blocks.YELLOW_TERRACOTTA);
+        put(Material.STRATA_PALE, Blocks.WHITE_TERRACOTTA);
+        put(Material.STRATA_BROWN, Blocks.BROWN_TERRACOTTA);
+        put(Material.STRATA_UMBER, Blocks.TERRACOTTA);
+        put(Material.SANDSTONE_RED, Blocks.RED_SANDSTONE);
+        put(Material.DIRT, Blocks.DIRT);
+        put(Material.COARSE_DIRT, Blocks.COARSE_DIRT);
+        put(Material.ROOTED_DIRT, Blocks.ROOTED_DIRT);
+        put(Material.GRASS, Blocks.GRASS_BLOCK);
+        put(Material.PODZOL, Blocks.PODZOL);
+        put(Material.MOSS, Blocks.MOSS_BLOCK);
+        put(Material.MUD, Blocks.MUD);
+        put(Material.CLAY, Blocks.CLAY);
+        put(Material.SAND, Blocks.SAND);
+        put(Material.RED_SAND, Blocks.RED_SAND);
+        put(Material.GRAVEL, Blocks.GRAVEL);
+        put(Material.ASH, Blocks.SMOOTH_BASALT);
+        put(Material.PACKED_MUD, Blocks.PACKED_MUD);
+        put(Material.SNOW, Blocks.SNOW_BLOCK);
+        put(Material.PACKED_ICE, Blocks.PACKED_ICE);
+        put(Material.BLUE_ICE, Blocks.BLUE_ICE);
+        put(Material.ICE, Blocks.ICE);
+        put(Material.AMETHYST, Blocks.AMETHYST_BLOCK);
+        put(Material.CRYSTAL_STONE, Blocks.SMOOTH_QUARTZ);
+        for (Material m : Material.values()) {
+            if (STATES[m.ordinal()] == null) throw new IllegalStateException("No block for material " + m);
+        }
+    }
+
+    private static void put(Material m, Block b) {
+        STATES[m.ordinal()] = b.defaultBlockState();
+    }
+
+    private MaterialPalette() {}
+
+    public static BlockState state(int materialOrdinal) {
+        return STATES[materialOrdinal];
+    }
+}
