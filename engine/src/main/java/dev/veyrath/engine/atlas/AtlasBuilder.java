@@ -1206,7 +1206,43 @@ public final class AtlasBuilder {
             }
             reaches.add(new RiverNetwork.Reach(id, xs, zs, width, level, area, downstream));
         }
+        enforceConfluenceLevels(reaches);
         return new RiverNetwork(reaches, originX, originZ, size, RIVER_INFLUENCE);
+    }
+
+    /**
+     * Water surfaces must meet at confluences: a tributary may arrive above the main river (a
+     * cascade into it) but never below it. A tributary can end lower than the main stem's level
+     * where it drains a lake whose surface sits below the confluence terrain; the main stem is
+     * then lowered from the confluence downstream. Repeats until stable, because lowering a reach
+     * can lower its own mouth below the next reach downstream.
+     */
+    private static void enforceConfluenceLevels(List<RiverNetwork.Reach> reaches) {
+        boolean changed = true;
+        for (int pass = 0; changed && pass < reaches.size() + 1; pass++) {
+            changed = false;
+            for (RiverNetwork.Reach t : reaches) {
+                if (t.downstreamReach() < 0) continue;
+                RiverNetwork.Reach d = reaches.get(t.downstreamReach());
+                double mx = t.xs()[t.size() - 1], mz = t.zs()[t.size() - 1];
+                int j = 0;
+                double bd = Double.MAX_VALUE;
+                for (int k = 0; k < d.size(); k++) {
+                    double dd = (d.xs()[k] - mx) * (d.xs()[k] - mx) + (d.zs()[k] - mz) * (d.zs()[k] - mz);
+                    if (dd < bd) {
+                        bd = dd;
+                        j = k;
+                    }
+                }
+                float mouth = t.level()[t.size() - 1];
+                for (int k = j; k < d.size(); k++) {
+                    if (d.level()[k] > mouth) {
+                        d.level()[k] = mouth;
+                        changed = true;
+                    }
+                }
+            }
+        }
     }
 
     private static List<double[]> chaikin4(List<double[]> pts, int iterations) {

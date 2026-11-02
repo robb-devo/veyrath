@@ -248,7 +248,21 @@ public final class TerrainSampler {
             }
         }
 
+        // --- volcanoes: proximity and crater lava lakes
+        out.volcano = 0;
+        out.lava = Double.NaN;
+        for (dev.veyrath.engine.atlas.Volcano v : atlas.volcanoes) {
+            double dv = Math.hypot(x - v.x(), z - v.z());
+            if (dv > v.radius()) continue;
+            out.volcano = Math.max(out.volcano, 1 - dv / v.radius());
+            if (v.supervolcano() && dv < v.craterRadius() * 0.55) {
+                double lavaY = v.peakY() - (v.peakY() - atlas.spec.seaLevel()) * 0.14;
+                if (h < lavaY) out.lava = lavaY;
+            }
+        }
+
         // --- water
+        out.nearLake = !Double.isNaN(lakeLevel);
         if (!Double.isNaN(lakeLevel) && h < lakeLevel) {
             if (kind == ColumnInfo.WaterKind.NONE || lakeLevel >= water) {
                 water = lakeLevel;

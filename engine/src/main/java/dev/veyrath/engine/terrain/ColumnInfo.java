@@ -32,6 +32,12 @@ public final class ColumnInfo {
     public double strata;
     /** 0..1: how much this column is part of a steep rock face. */
     public double cliff;
+    /** True when an atlas lake is within about one atlas cell. */
+    public boolean nearLake;
+    /** 0..1 proximity to a volcanic cone (1 at the crater). */
+    public double volcano;
+    /** Lava surface in a volcanic crater, or NaN. */
+    public double lava = Double.NaN;
 
     public enum WaterKind { NONE, SEA, LAKE, RIVER }
 
