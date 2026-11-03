@@ -200,8 +200,8 @@ public final class ArenaGameTest implements FabricClientGameTest {
             if (i == 10) shot(context, "a06_ten_husks", true);
         }
         double combatUs = server.<Double, RuntimeException>computeOnServer(s -> CombatServer.takeCombatMicrosPerTick());
-        LOG.info("performance: Duelist + 10 husks, {} FPS avg {} min {} max {} over 10 s; server tick average (vanilla 100-tick mean) peak {} ms, before {} ms; combat code {} us per tick",
-                n, sum / n, min, max, String.format(java.util.Locale.ROOT, "%.2f", serverMs),
+        LOG.info("performance: Duelist + 10 husks, FPS avg {} min {} max {} ({} samples over 10 s); server tick average (vanilla 100-tick mean) peak {} ms, before {} ms; combat code {} us per tick",
+                sum / n, min, max, n, String.format(java.util.Locale.ROOT, "%.2f", serverMs),
                 String.format(java.util.Locale.ROOT, "%.2f", nanos0 / 1e6), String.format(java.util.Locale.ROOT, "%.1f", combatUs));
         LOG.info("{}", server.<String, RuntimeException>computeOnServer(s -> CombatServer.duelistStats()));
         server.runCommand("kill @e[type=minecraft:husk]");
