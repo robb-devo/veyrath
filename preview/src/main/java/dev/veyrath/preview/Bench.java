@@ -31,12 +31,15 @@ final class Bench {
         System.out.printf("realm build: %d ms%n", (System.nanoTime() - t0) / 1_000_000);
         int sx = world.spawnEngineX() >> 4, sz = world.spawnEngineZ() >> 4;
 
-        // Warm-up (JIT)
+        // Warm-up (JIT): a full 24 x 24 set of other chunks, so the timed set below runs on
+        // compiled code without reusing anything cached for those exact chunks. 64 chunks were
+        // not enough: timings then swung 25-75% between runs.
+        int side = 24;
         ChunkBuffer buf = new ChunkBuffer(spec);
         ChunkComposer.Context ctx = new ChunkComposer.Context();
-        for (int i = 0; i < 64; i++) realm.composer().compose(sx + i, sz, buf, ctx);
+        for (int pass = 0; pass < 2; pass++)
+            for (int i = 0; i < side * side; i++) realm.composer().compose(sx - 40 + i % side, sz - 40 + i / side, buf, ctx);
 
-        int side = 24;
         long[] times = new long[side * side];
         int k = 0;
         long st = System.nanoTime();

@@ -13,6 +13,8 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
 - Vesperfall hoodoo groves (stepped, fluted columns, many with overhanging cap rocks) and
   Cinderwake columnar basalt stacks replace the single tall spires; `/veyrath tp basalt`.
 - Cinderwake ambient particles are dark ash flecks instead of white ash, which read as snow.
+- Neighbouring realms start building in the background once a player comes within 8 km of a
+  realm edge, and every realm build is logged (`Realm x,z built in N ms`).
 - **World engine** (`engine/`), pure Java 25 with no Minecraft dependency:
   - Realm atlas: continent, climate, mountain belts, provinces, eight archetype regions, the
     Great Rift, multi-resolution stream-power erosion, volcanoes and the Cinder Throne, talus
@@ -29,7 +31,7 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   LOD-to-chunk equality.
 - **Preview tool** (`preview/`): atlas maps, perspective renders, benchmark, world-quality
   audit.
-- **Fabric 26.3 adapter** (`mod-fabric/`), **not compiled yet**:
+- **Fabric 26.3 adapter** (`mod-fabric/`):
   - Chunk generator, biome source, biomes and data generation.
   - World preset and dimension type (y −256..1023).
   - `/veyrath info|locate|tp` commands.
@@ -51,6 +53,10 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   Minecraft makes them flow down to the lower water instead of leaving a vertical water face.
 
 ### Fixed
+- Realm builds run at below-normal thread priority in their own pool instead of Minecraft's
+  shared one, so a realm building during play competes less with rendering.
+- `preview bench` warms up on two passes over 576 chunks; the old 64-chunk warm-up made
+  single-thread times swing by up to 2x between runs.
 - Far LOD terrain painted with a 2-block slope at the sample point (from 8 blocks per column), so
   distant mountains show the same mix of rock, grass and snow as the chunks; before, they turned
   green or white (seed 1 Aethercrown: rock tops 69 % in chunks but 7 % at 64 blocks per column;

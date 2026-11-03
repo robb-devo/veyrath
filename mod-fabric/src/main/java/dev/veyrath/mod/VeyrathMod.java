@@ -6,6 +6,7 @@ import dev.veyrath.mod.gen.VeyrathChunkGenerator;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -32,6 +33,9 @@ public final class VeyrathMod implements ModInitializer {
             VeyrathRuntime.start(seed);
         });
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> VeyrathRuntime.stop());
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            if (server.getTickCount() % 100 == 0) VeyrathRuntime.prewarmAroundPlayers(server);
+        });
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> VeyrathCommands.register(dispatcher));
 

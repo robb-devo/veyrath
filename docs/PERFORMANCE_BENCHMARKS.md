@@ -1,6 +1,6 @@
 # Performance benchmarks
 
-Last updated: 2026-11-02. Only measured numbers appear here. "Not measured" means not measured.
+Last updated: 2026-11-03. Only measured numbers appear here. "Not measured" means not measured.
 
 ## Engine benchmarks (outside Minecraft)
 
@@ -10,27 +10,40 @@ They show the generator's own cost and set a floor for in-game generation time.
 **Machine:** cloud build container. 4 cores, 15 GB RAM, Ubuntu 24.04, OpenJDK 25.0.4.1,
 `-Xmx10G`, G1 GC. The CPU model is not exposed. This is not the target gaming PC.
 
-**Command:** `preview bench --seed S`, run once per seed on 2026-11-02. Each run builds the realm
-cold, then:
-- Composes 576 chunks around spawn on one thread.
-- Composes 2304 chunks on 4 threads.
-- Samples LOD sections at five detail levels.
+**Command:** `preview bench --seed S`, run once per seed on 2026-11-03 at commit `de595f5` (every
+Chapter 01 feature in), one seed after another with nothing else running. Each run builds the
+realm cold, then:
+- Warms the JIT on two passes over 576 other chunks, then composes 576 chunks around spawn on
+  one thread.
+- Composes 2304 chunks on 4 threads, in an area not composed before.
+- Samples LOD sections at five detail levels, six sections each.
 
 | Seed | 1 | 2 | 3 |
 |---|---|---|---|
-| Realm build (spawn continent, cold) | 10.3 s | 9.7 s | 10.0 s |
-| Chunk composition, 1 thread: mean | 2.11 ms | 1.50 ms | 1.38 ms |
-| p50 | 1.98 ms | 1.44 ms | 1.31 ms |
-| p95 | 2.75 ms | 1.71 ms | 1.68 ms |
-| max | 9.49 ms | 8.23 ms | 10.33 ms |
-| Chunk composition, 4 threads | 2119 chunks/s | 2179 chunks/s | 1532 chunks/s |
-| LOD section, detail 0 (64 blocks wide): median / max | 27.5 / 31.6 ms | 21.3 / 22.4 ms | 21.5 / 29.8 ms |
-| LOD detail 2 (256 blocks) | 26.8 / 155.5 ms | 24.5 / 29.3 ms | 25.2 / 29.5 ms |
-| LOD detail 4 (1 km) | 27.3 / 78.3 ms | 27.9 / 58.4 ms | 26.3 / 35.1 ms |
-| LOD detail 6 (4 km) | 65.5 / 159.7 ms | 50.0 / 139.4 ms | 31.8 / 167.5 ms |
-| LOD detail 8 (16 km) | 86.6 / 18,487 ms | **8,587** / 16,761 ms | 65.3 / 18,027 ms |
-| Runs per LOD column (detail 0 / 8) | 3.7 / 6.5 | 3.5 / 6.6 | 3.7 / 6.7 |
-| Heap after GC, engine referenced | 357 MB (4 realms) | 444 MB (5 realms) | 356 MB (4 realms) |
+| Realm build (spawn continent, cold) | 8.5 s | 8.4 s | 8.8 s |
+| Chunk composition, 1 thread: mean | 2.32 ms | 1.74 ms | 2.06 ms |
+| p50 | 2.12 ms | 1.69 ms | 1.95 ms |
+| p95 | 3.20 ms | 2.17 ms | 2.64 ms |
+| max | 6.99 ms | 5.82 ms | 6.46 ms |
+| Chunk composition, 4 threads | 1483 chunks/s | 1279 chunks/s | 1100 chunks/s |
+| LOD section, detail 0 (64 blocks wide): median / max | 28.9 / 29.8 ms | 19.0 / 21.4 ms | 22.0 / 22.5 ms |
+| LOD detail 2 (256 blocks) | 23.7 / 28.5 ms | 20.6 / 23.1 ms | 22.6 / 25.0 ms |
+| LOD detail 4 (1 km) | 59.3 / 111.0 ms | 103.5 / 141.6 ms | 78.4 / 103.2 ms |
+| LOD detail 6 (4 km) | 92.5 / 134.9 ms | 117.6 / 165.2 ms | 76.8 / 132.6 ms |
+| LOD detail 8 (16 km) | 135.6 / 15,466 ms | 75.3 / 14,675 ms | 87.9 / 14,859 ms |
+| Runs per LOD column (detail 0 / 8) | 4.5 / 8.2 | 3.9 / 8.1 | 3.9 / 8.6 |
+| Heap after GC, engine referenced | 404 MB (4 realms) | 404 MB (4 realms) | 404 MB (4 realms) |
+
+Compared with 2026-11-02 (before waterfalls, plunge pools, island undersides, hoodoos and basalt
+stacks), single-thread chunk time is about the same or up to 0.6 ms higher, and 4-thread
+throughput is 15–40 % lower. LOD detail 4 and 6 cost 2–3 times more since `de595f5`: from
+detail 3 up, each column takes two extra samples so far slopes get the same rock, grass and
+snow as the chunks.
+
+**Run-to-run variance.** Before the warm-up was lengthened, three runs of the same build gave
+seed-1 means of 4.64, 3.61 and (warmed) 2.32 ms. A 64-chunk warm-up left part of the timed set
+on unoptimised code. Differences of about 25 % between runs are still noise on this shared
+machine.
 
 Realm-build breakdown for seed 1 (an earlier run, 10.1 s in total):
 
@@ -47,24 +60,16 @@ Realm-build breakdown for seed 1 (an earlier run, 10.1 s in total):
 | Hydrology | 820 ms |
 | Finish | 41 ms |
 
-**Run-to-run variance.** An earlier seed-1 run on the same machine measured a chunk mean of
-1.69 ms (p95 2.36 ms) and 2093 chunks/s, against 2.11 ms and 2119 chunks/s here. The container
-shares hardware, so differences of about 25 % between runs are noise. Seed 3's lower 4-thread
-figure is probably the same effect, since its single-thread time is the fastest of the three.
-
 ### Interpretation
 
-- **Chunk generation is cheap.** About 1.4–2.1 ms per chunk on one core gives about 1,500–2,200
-  chunks per second on 4 cores. Minecraft's own chunk pipeline, lighting and saving will
-  dominate in game. This still has to be measured in game.
-- **Realm build is the world-creation cost.** It is about 10 s for the spawn continent, started
-  in the background when the server starts. Erosion is 70 % of it.
+- **Chunk generation is cheap.** About 1.7–2.3 ms per chunk on one core, 1,100–1,500 chunks per
+  second on 4 cores. Minecraft's own chunk pipeline, lighting and saving dominate in game.
+- **Realm build is the world-creation cost.** About 8.5 s for the spawn continent on 4 cores,
+  started in the background when the server starts. Erosion is 70 % of it.
 - **The LOD detail-8 maximum is the neighbour-realm stall.** A 16 km section near the spawn
-  continent's edge touches neighbouring realms, which are built on first touch (about 10 s each).
-  Seed 2's median of 8.6 s means most of its detail-8 sections hit unbuilt realms. Once realms
-  are built, detail-8 sections take 65–90 ms. Fix planned in WP8: prewarm neighbours and never
-  block DH.
-- **Memory** is about 90 MB per built realm.
+  continent's edge touches neighbouring realms, which are built on first touch. Once realms are
+  built, detail-8 sections take 75–136 ms. See Known limitations in CHAPTER_STATUS.md.
+- **Memory** is about 100 MB per built realm.
 
 ## World-quality audit (engine)
 
@@ -94,17 +99,23 @@ Ground ranges sampled per archetype are in [BIOME_CATALOG.md](BIOME_CATALOG.md).
 
 ## In-game benchmarks
 
-**Not measured.** The mod has not run yet. The procedure is in
-[TESTING_GUIDE.md](TESTING_GUIDE.md#performance-measurement), and the metrics and targets are in
-[PERFORMANCE_STRATEGY.md](PERFORMANCE_STRATEGY.md).
+**Machine:** the owner's laptop `robbs-strix`: AMD Ryzen 9 9955HX (16 cores, 32 threads), NVIDIA
+GeForce RTX 5070 Laptop GPU, 32 GB RAM, Windows 11 Pro build 26300, Temurin JDK 25.0.4.
+Measured by the client game test `SeedTourGameTest` (TESTING_GUIDE.md), 24-chunk render
+distance, 1920x1080 window, `maxFps` 260. FPS values are 10-second averages per tour stop.
 
 | Metric | Value |
 |---|---|
-| Target PC hardware (CPU, GPU, RAM) | Not recorded yet |
-| World creation to first frame | Not measured |
+| World creation to spawn ready | 6.2–10.3 s vanilla client (seeds 1–3); 6.4–11.7 s with Sodium, Iris and DH |
+| Reopen a saved world to ready | 1.5–2.2 s |
+| FPS, full pack, no shaders (build `5b92c58`) | 225–238 at every stop of seeds 1 and 2, except seed 1 basalt: 72 (53–136) |
+| FPS, full pack, Complementary Unbound r5.9.3 defaults (build `5b92c58`) | Seed 1: 72–207 (Elderbough 72, Elder Tree 114, Crown 134). Seed 2: 99–221 |
+| FPS while far terrain generates (device session 2, seed 2 Elderbough) | 22 average (20–40) over that 10 s window |
 | Chunk generation throughput in game | Not measured |
-| Frame time at render distance 12 + DH, no shaders | Not measured |
-| Frame time with Complementary Unbound | Not measured |
 | DH LOD build time to full horizon | Not measured |
 | Memory (heap) after 10 min of exploration | Not measured |
 | Save size per km² explored | Not measured |
+
+The same stops ran about twice as fast in later runs than in the first run of a day (87–139 FPS
+without shaders, cause unknown), so compare numbers within one run only. 225–238 FPS is close to
+the 240 the game seems to cap at, so the true headroom without shaders is not known.
