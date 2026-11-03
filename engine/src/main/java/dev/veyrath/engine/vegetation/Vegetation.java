@@ -338,9 +338,12 @@ public final class Vegetation {
             double density = p.plants * (0.5 + biomes.patch(x * 1.7 + 911, z * 1.7 - 377));
             if (Hash.unit(h) >= density) continue;
             Material plant = pickPlant(p, Hash.unit(Hash.mix(h)));
-            // Flowers grow in drifts, not evenly: outside a drift they give way to grass.
+            // Flowers grow in drifts, not evenly: outside a drift most give way to grass, and the
+            // few that stay are single blooms of any colour the biome has.
             if (plant != null && isFlower(plant)) {
-                if (biomes.patch(x * 3.1 - 1777, z * 3.1 + 5153) < 0.6) plant = Material.GRASS_TUFT;
+                if (biomes.patch(x * 3.1 - 1777, z * 3.1 + 5153) < 0.56) {
+                    if (Hash.unit(Hash.mix(h ^ 0x57A7L)) > 0.12) plant = Material.GRASS_TUFT;
+                }
                 // A drift is mostly one colour (a field of poppies, a field of cornflowers),
                 // chosen by a smooth field, with a few strays of the others.
                 else if (Hash.unit(Hash.mix(h ^ 0x5EEDL)) > 0.15) plant = driftFlower(p, biomes.patch(x * 0.8 + 313, z * 0.8 - 919), plant);

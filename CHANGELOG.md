@@ -13,6 +13,8 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
 - Vesperfall hoodoo groves (stepped, fluted columns, many with overhanging cap rocks) and
   Cinderwake columnar basalt stacks replace the single tall spires; `/veyrath tp basalt`.
 - Cinderwake ambient particles are dark ash flecks instead of white ash, which read as snow.
+- Single flowers between the drifts: 87–94 % of chunks within 256 blocks of spawn now have
+  flowers (33–44 % before), and the spawn meadows of seeds 1 and 2 are no longer flowerless.
 - Neighbouring realms start building in the background once a player comes within 8 km of a
   realm edge, and every realm build is logged (`Realm x,z built in N ms`).
 - **World engine** (`engine/`), pure Java 25 with no Minecraft dependency:

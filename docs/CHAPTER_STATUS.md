@@ -89,7 +89,8 @@ and preview tool, not yet seen in Minecraft), **Partial**, **Not started** and *
   waterfall spray; a DH answer that never waits for a realm build; the shader comparison and
   tuned defaults (TD-004).
 - **Looks:** Aethercrown crags repeat at similar sizes; the ground under the Crown is only dimly
-  lit; ground cover is thin in places.
+  lit; ground cover is thin in places (single flowers between drifts since this commit; not yet
+  seen in game).
 
 ## Session log
 
