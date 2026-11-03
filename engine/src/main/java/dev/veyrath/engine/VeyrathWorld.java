@@ -177,7 +177,7 @@ public final class VeyrathWorld {
         FloatingIslands islands = new FloatingIslands(atlas);
         dev.veyrath.engine.cave.Caves caves = new dev.veyrath.engine.cave.Caves(spec);
         dev.veyrath.engine.formation.Arches arches = new dev.veyrath.engine.formation.Arches(terrain, spec.seed());
-        Vegetation vegetation = new Vegetation(spec, terrain, biomes, caves);
+        Vegetation vegetation = new Vegetation(spec, terrain, biomes, caves, islands);
         var window = new dev.veyrath.engine.formation.MountainWindow(terrain, spec.seed());
         ChunkComposer composer = new ChunkComposer(spec, terrain, biomes, painter, islands, vegetation, caves, arches, window);
         return new Realm(atlas, terrain, biomes, painter, islands, arches, window, vegetation, composer);

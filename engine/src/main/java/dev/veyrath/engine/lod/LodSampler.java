@@ -235,6 +235,22 @@ public final class LodSampler {
                         col.add(soilBottom, soilTop, rocky ? Material.STONE : Material.DIRT);
                         col.add(soilTop, soilTop + 1, rocky ? Material.STONE : Material.GRASS);
                         filled = soilTop + 1;
+                        // Island trees above the island top (at most VEG_RUNS runs).
+                        int islandTreeTop = centre.vegetation().lodIslandColumn(c.x, c.z, soilTop, ctx.island.rim, step, ctx.vegetation, ctx.trees);
+                        if (islandTreeTop >= filled) {
+                            int added = 0, y = filled;
+                            while (y <= islandTreeTop) {
+                                short m = ctx.trees[y - minY];
+                                int e = y + 1;
+                                while (e <= islandTreeTop && ctx.trees[e - minY] == m) e++;
+                                if (added == VEG_RUNS - 1) e = islandTreeTop + 1;
+                                col.add(y, e, m);
+                                added++;
+                                y = e;
+                            }
+                            java.util.Arrays.fill(ctx.trees, filled - minY, islandTreeTop - minY + 1, (short) 0);
+                            filled = islandTreeTop + 1;
+                        }
                     }
                 }
                 // 6. Air to the top of the world.

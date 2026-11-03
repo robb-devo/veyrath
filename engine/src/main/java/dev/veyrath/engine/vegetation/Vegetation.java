@@ -117,13 +117,20 @@ public final class Vegetation {
     public static final class Context {
         final ColumnInfo c = new ColumnInfo(), cx = new ColumnInfo(), cz = new ColumnInfo();
         final TerrainSampler.Scratch scratch = new TerrainSampler.Scratch();
-        final List<Tree> giants = new ArrayList<>(), trees = new ArrayList<>();
+        final List<Tree> giants = new ArrayList<>(), trees = new ArrayList<>(), islandTrees = new ArrayList<>();
+        final dev.veyrath.engine.formation.FloatingIslands.Hit island = new dev.veyrath.engine.formation.FloatingIslands.Hit();
         short[] column = new short[0];
     }
 
-    public Vegetation(WorldSpec spec, TerrainSampler terrain, BiomeSelector biomes, dev.veyrath.engine.cave.Caves caves) {
+    /** Island trees: one candidate per 9-block cell on the grassy part of every island. */
+    private static final int ISLAND_CELL = 9;
+    private final dev.veyrath.engine.formation.FloatingIslands islands;
+
+    public Vegetation(WorldSpec spec, TerrainSampler terrain, BiomeSelector biomes, dev.veyrath.engine.cave.Caves caves,
+                      dev.veyrath.engine.formation.FloatingIslands islands) {
         this.spec = spec;
         this.caves = caves;
+        this.islands = islands;
         this.terrain = terrain;
         this.biomes = biomes;
         this.seed = Hash.derive(spec.seed(), "vegetation");
@@ -251,6 +258,7 @@ public final class Vegetation {
         treesFor(bx, bz, bx + 15, bz + 15, true, ctx);
         for (Tree t : ctx.giants) t.draw(out);
         for (Tree t : ctx.trees) t.draw(out);
+        for (Tree t : ctx.islandTrees) t.draw(out);
         plants(out);
     }
 
@@ -262,12 +270,54 @@ public final class Vegetation {
     void treesFor(int x0, int z0, int x1, int z1, boolean small, Context ctx) {
         ctx.giants.clear();
         ctx.trees.clear();
+        ctx.islandTrees.clear();
         int m = REACH[TREES] + GIANT_CLEARANCE;
         addElder(x0 - m, z0 - m, x1 + m, z1 + m, ctx);
         collect(GIANT, x0 - m, z0 - m, x1 + m, z1 + m, ctx.giants, ctx.giants, ctx);
+        islandTrees(x0, z0, x1, z1, ctx);
         if (!small) return;
         collect(TREES, x0, z0, x1, z1, ctx.giants, ctx.trees, ctx);
         collect(SPARSE, x0, z0, x1, z1, ctx.giants, ctx.trees, ctx);
+    }
+
+    /**
+     * Trees on floating islands that may reach the rectangle: broadleaf, bloom and pine groves on
+     * the grassy part of each island, elders on the Crown of Aether. Kept apart from ground trees
+     * because LOD columns add them above the island, not above the ground.
+     */
+    private void islandTrees(int x0, int z0, int x1, int z1, Context ctx) {
+        if (islands == null) return;
+        int reach = REACH[TREES];
+        long is = seed ^ 0x1D5A7E3B9C2F4A61L;
+        for (int j = Math.floorDiv(z0 - reach, ISLAND_CELL); j <= Math.floorDiv(z1 + reach, ISLAND_CELL); j++) {
+            for (int i = Math.floorDiv(x0 - reach, ISLAND_CELL); i <= Math.floorDiv(x1 + reach, ISLAND_CELL); i++) {
+                long h = Hash.hash(is, i, j);
+                if (Hash.unit(h) >= 0.5) continue;
+                int bx = i * ISLAND_CELL + 1 + (int) (Hash.unit(Hash.mix(h + 1)) * (ISLAND_CELL - 2));
+                int bz = j * ISLAND_CELL + 1 + (int) (Hash.unit(Hash.mix(h + 2)) * (ISLAND_CELL - 2));
+                islands.column(bx + 0.5, bz + 0.5, ctx.island);
+                var isl = ctx.island.island;
+                if (isl == null || ctx.island.rim > 0.75 || ctx.island.top > spec.maxY() - 40) continue;
+                double u = Hash.unit(Hash.mix(h + 3));
+                TreeKind kind = isl.crown() ? (u < 0.6 ? TreeKind.ELDER : TreeKind.BLOOM)
+                        : (u < 0.4 ? TreeKind.BLOOM : u < 0.75 ? TreeKind.BROADLEAF : TreeKind.PINE);
+                Tree t = Tree.build(kind, bx, MathUtil.floor(ctx.island.top) + 1, bz, Hash.mix(h + 4));
+                if (t.maxX() >= x0 && t.minX() <= x1 && t.maxZ() >= z0 && t.minZ() <= z1) ctx.islandTrees.add(t);
+            }
+        }
+    }
+
+    /**
+     * Island trees on the vertical line through (px, pz) above an island whose top block is
+     * {@code islandTop} (at rim position {@code rim}): like {@link #lodColumn}, with a canopy
+     * estimate where the trees are not collected at this step.
+     */
+    public int lodIslandColumn(double px, double pz, int islandTop, double rim, int step, Context ctx, short[] col) {
+        int top = Integer.MIN_VALUE, minY = spec.minY();
+        for (Tree t : ctx.islandTrees) top = Math.max(top, t.column(px, pz, col, minY, islandTop));
+        if (top != Integer.MIN_VALUE || step <= 16 || rim > 0.75) return top;
+        long h = Hash.hash(seed ^ 0x6A09E667F3BCC909L, MathUtil.floor(px), MathUtil.floor(pz));
+        return Hash.unit(h) < 0.45 ? canopy(col, minY, islandTop, TreeKind.BROADLEAF, 0.4, Hash.unit(Hash.mix(h))) : Integer.MIN_VALUE;
     }
 
     private void plants(ChunkBuffer out) {
@@ -341,6 +391,7 @@ public final class Vegetation {
     public void collectForLod(int x0, int z0, int x1, int z1, int step, Context ctx) {
         ctx.giants.clear();
         ctx.trees.clear();
+        ctx.islandTrees.clear();
         if (step <= 16) treesFor(x0, z0, x1, z1, step <= 2, ctx);
         else addElder(x0, z0, x1, z1, ctx); // the landmark shows at every distance
     }

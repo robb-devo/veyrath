@@ -95,3 +95,6 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
 - **Crystal fault lines** in the Prismmere: winding fissures with an amethyst or quartz vein
   and rows of crystal outcrops and spires (11 faults with 991 crystals on seed 1). Trees keep
   off them. `/veyrath tp fault` stands beside the nearest; the seed tour visits it.
+- **Trees on floating islands**: broadleaf, bloom and pine groves on the grassy part of every
+  island, elders on the Crown of Aether. In chunks and in Distant Horizons LOD, where they are
+  added above the island, with a canopy estimate at coarse detail.
