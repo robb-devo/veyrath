@@ -196,3 +196,50 @@ Machine: AMD Ryzen 9 9955HX (16 cores / 32 threads), NVIDIA GeForce RTX 5070 Lap
 1. In-game tour of build `3b278a7` or later on the owner's PC, with screenshots of every landmark.
 2. Frame rates with and without shaders; Distant Horizons seam check (WP7, WP8, WP10).
 3. Acceptance report (WP11), then stop for review.
+
+### Device session 2 (2026-11-03, `robbs-strix`)
+
+**Launcher profile fix.** The owner's VEYRATH launch from the official launcher (Microsoft Store
+build 3.42.5) logged `Loading 4 mods`: Fabric saw an empty mods folder in
+`%APPDATA%\.minecraft-veyrath`. Starting the same classpath with the launcher's own Java runtime
+offline in that folder loaded all 91 mods. The packaged launcher does not see game folders
+outside `.minecraft` that it did not create. The installer now uses
+`%APPDATA%\.minecraft\instances\veyrath` (25cc62a), and an offline start from there loads 91 mods,
+including VEYRATH. Not yet confirmed by the owner through the launcher itself.
+
+**Full pack in the dev client.** `-Pveyrath.fullPack=true` loads the jars from the profile's mods
+folder: Sodium 0.9.2, Iris 1.11.7, DH 3.3.4, Lithium 0.26.3, FerriteCore 9.0.0, C2ME
+0.4.2-alpha.0.115, Mod Menu 21.0.0, Placeholder API 3.2.0, plus Fabric API 0.165.2 and VEYRATH
+from the build (92 mods). The tour asserts that `veyrath:veyrath` is in the `minecraft:normal`
+preset tag (it is). Errors: only DH `SQLException: stmt pointer is closed` when a world closes.
+
+**FPS** (10 s averages per stop, 24-chunk render distance, 1920x1080 test window; `maxFps` 260,
+idle limiter off). The numbers differ between runs, so compare within a run only:
+- Seed 2, full pack, no shaders, with ambient particles (final run): 202–237 at 15 of 16 stops
+  (the max of about 240 at most stops looks like a frame cap); Elderbough 22 average (20–40) for
+  that 10 s window while far terrain generated.
+- Seed 2, full pack, no shaders, before the particles (earlier run): 193–237. Particles: no
+  measurable drop.
+- Seed 1, full pack, Complementary Unbound r5.9.3: 48–139 (spawn 52, Crown 48, crown_falls 58,
+  most stops 90–130).
+- Seed 1 and 2, full pack, no shaders, first run of the day: 87–139. The same stops ran about 2x
+  faster in later runs; the cause is unknown (window focus or GPU state).
+
+**Distant Horizons band: test artifact.** The sky-coloured band and pillars between chunks and LOD
+came from the tour raising render distance after the world had started. With render distance set
+before world creation, the band does not appear (`seed2_spawn_w_fullpack.png`).
+
+**Ground cover census** (64x64 columns around each stop). Seed 2 spawn: short grass in 1053 of
+4096 columns (26 %; the engine predicts 1961 of 6400, 31 %), so grass is present. Flowers only at
+fault (408) and crown_falls (94–144). Cave vines 10 and hanging roots 1 under the Crown (seed 2).
+Falling water 32 at the seed 1 waterfall. No Ashen Wastes cell within 6 km of seed 2 spawn.
+
+**Looks wrong**
+- Shaders: distant LOD terrain is washed out to pale grey-white, with streaks
+  (`seed1_aethercrown_e_shaders.png`).
+- Spires: a single 2-block-wide banded pillar reads as artificial (`seed1_spires_e_shaders.png`).
+- Undersides of the Crown islands are solid black (`seed2_crown_falls_w_fullpack.png`); the Crown
+  waterfall reads as a thin straight column.
+- None of the Cinderwake waterfall views frames the fall itself.
+- Mossdeep spores and Cinderwake ash are faint white dots; ash could read as light snow at a
+  glance.
