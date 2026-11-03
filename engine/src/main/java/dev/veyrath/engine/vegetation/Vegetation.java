@@ -440,6 +440,7 @@ public final class Vegetation {
         if (plant == Material.LARGE_FERN_TOP) return ground == Material.LARGE_FERN;
         if (plant == Material.REEDS) return ground == Material.REEDS || ground.isSoil() || ground == Material.SAND || ground == Material.RED_SAND;
         if (plant == Material.AMETHYST_CLUSTER || plant == Material.AMETHYST_BUD) return ground.isSolid();
+        if (plant == Material.GLOW_LICHEN) return ground.isSolid() && !ground.isLeaves();
         // Mushrooms survive in any light only on podzol.
         if (plant == Material.MUSHROOM_BROWN || plant == Material.MUSHROOM_RED) return ground == Material.PODZOL;
         if (plant == Material.DRY_SHRUB) {

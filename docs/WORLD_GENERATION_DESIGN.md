@@ -161,7 +161,7 @@ in order:
 | Giant arches | In engine (`formation/Arches`) | One candidate per 900-block cell: Vesperfall 70 %, Cinderwake 30 %, Aethercrown 20 % (27 arches on seed 1). Span 70–170, rise 0.38–0.63 of the span above the higher foot, band 7–15 thick and 10–22 wide, legs flared, apex off-centre, thickness varying along the band. Both feet dry, 20+ blocks from rivers, similar ground. Rock and beds from `SurfacePainter.rockAt`. In chunks and LOD. `/veyrath tp arch` |
 | Rock bridges, overhangs | Planned (WP5) | Need 3D volumes |
 | Small arches | In engine (`formation/Arches`) | One candidate per 320-block cell: Vesperfall 35 %, Cinderwake 15 %, Aethercrown 12 %, Sunmantle 5 %. Span 22–52, band 5–10 wide and 4–7 thick, apex 8+ blocks over the ground (156 on seed 1, beside 28 giant arches) |
-| Pillars and spires | In engine (`terrain/RockSpires`) | One candidate per 176-block cell: Vesperfall 45 %, Cinderwake 30 %, on dry, gentle ground 30+ blocks from rivers and 90 from the Rift. Groups of one to five fluted, tapering columns, radius 3–9, 18–75 tall: banded hoodoos in the Vesperfall, basalt in the Cinderwake (808 spires on seed 1, 255 of them 50+ tall). `/veyrath tp spires` |
+| Hoodoo groves and basalt stacks | In engine (`terrain/RockSpires`) | One candidate per 176-block cell: Vesperfall 45 %, Cinderwake 30 %, on dry, gentle ground 30+ blocks from rivers and 90 from the Rift. Vesperfall: a ragged mound (radius 9–19) with three to nine hoodoos, 9–45 tall and at most 7.5 times their radius (2.2–4.8), narrowing upward in weathered steps with fluted sides; 55 % carry a pale cap rock that overhangs the column (painted as a separate span in chunks and LODs). Cinderwake: one or two stacks of hexagonal basalt columns (radius 6–15, 14–44 tall, at most 3 times the radius), highest in the middle, with broken columns and a skirt of column rubble, always painted basalt. `/veyrath tp spires`, `/veyrath tp basalt` |
 | Boulder fields | In engine (`terrain/RockSpires`) | One candidate per 56-block cell: Aethercrown 30 %, Elderbough 12 %, Sunmantle 10 %. One to six rounded boulders 2–4 high (13,147 on seed 1) |
 | Crystal fault lines | In engine (`terrain/CrystalFaults`) | One candidate per 1400-block cell of dry Prismmere ground (80 %): a gently winding line of 500–1200 blocks that stops where it leaves the Prismmere or meets water (11 faults, 8.3 km, 991 crystals on seed 1). A fissure up to 4 blocks deep and 10 wide with a 2-block amethyst or quartz vein on its floor, and crystal clusters every 14–32 blocks, a fifth of them spires of 30–55 blocks. Trees keep 12 blocks off. Only dry ground 8+ blocks from rivers, outside lake halos and 6+ blocks above sea level. `/veyrath tp fault` |
 | The mountain window | In engine (`formation/MountainWindow`) | One per realm: a gate through a thin, high ridge within 6 km of the highest summit. Candidates are atlas crests that drop 45+ blocks within 75 on both sides; the best 80 are checked on the fine terrain. Both mouths open above the outside ground, rock stands 25+ blocks over the opening and 12+ blocks beside it, shortest tunnel wins. Flat floor, rough arched top, widening to the mouths. Seeds 1–3: 72 × 42, 73 × 34, 82 × 35 blocks at y742, y673, y653, 114–120 blocks through. Carved in chunks; an air run in LOD. `/veyrath tp window` |
@@ -186,12 +186,30 @@ in order:
   sections and DH column data.
 
 - **Waterfalls**: about a third of islands with radius 45+ have one fall, as wide as radius / 40
-  blocks (plus or minus one); the Crown has four (11, 7, 5 and 5 wide). Each strip is a water
-  source in a notch at the island's outermost column in that row, held on every other side, and
-  a column of falling water beside it, outside every island, down to the first solid block or
-  water. The curtain's rows run across the fall's main axis, so it has no gaps.
-- **Undersides**: hanging roots (5 % of columns) and cave vines 2–10 blocks long (2.5 %), 30 % of
-  vine blocks with glow berries.
+  blocks (plus or minus one); the Crown has four, one on each side (21, 9, 7 and 5 wide; the
+  widest is the Veil). Each fall leaves the island straight out along one axis; there the ragged
+  edge gives way to a straight face square to the fall and a ledge of at least 9 blocks of rock,
+  so the lip is level and the curtain is one flat sheet (all 21 Veil strips at the same distance
+  on seeds 1 and 2). Each strip is a water source at the lip, held on every other side, and a
+  column of falling water beside it, outside every island, down to the first solid block or
+  water. Behind the lip a pond two blocks deep, reaching up to 9 blocks in, feeds the curtain
+  (214 pond cells on the Crown of seed 1); pond cells that could not hold their water are dropped.
+- **Plunge pools** (`terrain/PlungePools`): falls three blocks or wider land in an oval pool, its
+  long axis along the curtain, the water one block below the lowest ground around the shore and
+  3.5–6.5 deep. Skipped where the landing is already wet, has more than 16 blocks of relief or is
+  near the sea (7, 9 and 6 pools on seeds 1–3, all four Crown falls on seeds 1 and 3; none leak:
+  0 water faces open to air).
+- **Undersides**: little sky light reaches under a large island (in Minecraft, sky light only
+  creeps 15 blocks in from the edge), so glowing plants light it: hanging roots (4 % of columns),
+  cave vines 2–10 blocks long (4.5 %, half the vine blocks with glow berries, light 14) and
+  patches of glow lichen on the rock (light 7). The ground deep in the shadow (10+ blocks inside
+  the footprint) gets patches of glow lichen too. Measured with an approximate light model
+  (`preview light`, sky and block light spread roughly as in Minecraft) over 96×96 blocks under the
+  Crown of seed 1: underside cells at light 0 fell from 51 % to 11 % at the centre and from 33 %
+  to 3 % halfway to the rim (mean light 2.7 → 5.8 and 4.2 → 7.4); the shaded ground from 100 %
+  at light 0 to 29 % and 3 % (mean 0 → 3.5 and 4.7). Far away, DH lights LODs with sky light
+  only, so the LOD generator gives the lowest 4 blocks of an overhang over a 6+ block gap block
+  light 7 and the ground beneath it 4, matching the near terrain.
 - **Trees** on the grassy part of every island (see Vegetation).
 
 - **Satellites**: up to four islets (radius 6–18) around each island of radius 60+, and ten to

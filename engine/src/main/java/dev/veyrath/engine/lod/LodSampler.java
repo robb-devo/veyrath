@@ -66,6 +66,7 @@ public final class LodSampler {
         short[] paint;
         final TerrainSampler.Scratch scratch = new TerrainSampler.Scratch();
         final FloatingIslands.Hit island = new FloatingIslands.Hit();
+        final double[] cap = new double[2];
         final dev.veyrath.engine.formation.Arches.Hit arch = new dev.veyrath.engine.formation.Arches.Hit();
         final double[] window = new double[2];
         final java.util.List<FloatingIslands.Fall> falls = new java.util.ArrayList<>();
@@ -229,6 +230,17 @@ public final class LodSampler {
                     }
                 }
 
+                // 5a2. A hoodoo's cap rock over this column, if any.
+                if (realm.terrain().rocks() != null && realm.terrain().rocks().cap(c.x, c.z, ctx.cap)) {
+                    int b = Math.max(MathUtil.floor(ctx.cap[0]), filled);
+                    int t = Math.min(MathUtil.floor(ctx.cap[1]), maxY - 2);
+                    if (t >= b) {
+                        if (b > filled) col.add(filled, b, air);
+                        col.add(b, t + 1, Material.STRATA_PALE);
+                        filled = t + 1;
+                    }
+                }
+
                 // 5. Floating island over this column, if any.
                 realm.islands().column(c.x, c.z, ctx.island);
                 if (ctx.island.island != null) {
@@ -265,7 +277,7 @@ public final class LodSampler {
                 if (!ctx.falls.isEmpty() && ctx.island.island == null) {
                     int cx0 = MathUtil.floor(x0) + i * step, cz0 = MathUtil.floor(z0) + j * step;
                     for (FloatingIslands.Fall f : ctx.falls) {
-                        if (f.fallX() < cx0 || f.fallX() >= cx0 + step || f.fallZ() < cz0 || f.fallZ() >= cz0 + step) continue;
+                        if (!f.pours() || f.fallX() < cx0 || f.fallX() >= cx0 + step || f.fallZ() < cz0 || f.fallZ() >= cz0 + step) continue;
                         if (f.sourceY() >= filled && f.sourceY() < maxY) {
                             col.add(filled, f.sourceY() + 1, Material.WATERFALL);
                             filled = f.sourceY() + 1;

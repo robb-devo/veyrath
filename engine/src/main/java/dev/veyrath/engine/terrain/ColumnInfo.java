@@ -51,6 +51,8 @@ public final class ColumnInfo {
     public boolean nearFault;
     /** On or right beside a rock spire or boulder: trees keep off it. */
     public boolean nearRock;
+    /** Rock the painter must use here (a basalt stack), or null for the province's own rock. */
+    public dev.veyrath.engine.surface.Material rockFace;
 
     public enum WaterKind { NONE, SEA, LAKE, RIVER }
 

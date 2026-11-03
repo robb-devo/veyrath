@@ -49,8 +49,9 @@ public final class VeyrathBiomes {
      */
     private static List<AmbientParticle> ambientParticles(VBiome b) {
         return switch (b) {
-            // Cinderwake: drifting ash at about a fifth of basalt deltas.
-            case ASHEN_WASTES, CINDER_PEAKS, EMBERVEIN_FLATS, CHARWOOD -> AmbientParticle.of(ParticleTypes.WHITE_ASH, 0.024f);
+            // Cinderwake: dark flecks of drifting ash (soul sand valley's particle at about twice its
+            // rate); the white ash of basalt deltas read as snow here.
+            case ASHEN_WASTES, CINDER_PEAKS, EMBERVEIN_FLATS, CHARWOOD -> AmbientParticle.of(ParticleTypes.ASH, 0.012f);
             // Damp, shaded hollows and marshes: floating spores.
             case MOSSDEEP_HOLLOWS, GLOWMIRE, GLOAMREED_MARSH -> AmbientParticle.of(ParticleTypes.SPORE_BLOSSOM_AIR, 0.008f);
             // Sunlit meadows: the odd mote of pollen.

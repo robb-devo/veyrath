@@ -32,6 +32,8 @@ public final class ChunkComposer {
     private final dev.veyrath.engine.cave.Caves caves;
     private final dev.veyrath.engine.formation.Arches arches;
     private final dev.veyrath.engine.formation.MountainWindow window;
+    /** Patches of glow lichen under floating islands and on the shaded ground beneath them. */
+    private final dev.veyrath.engine.math.Fractal glow;
 
     /** Per-thread working state. */
     public static final class Context {
@@ -44,6 +46,9 @@ public final class ChunkComposer {
         final double[] window = new double[2];
         final dev.veyrath.engine.formation.Arches.Hit arch = new dev.veyrath.engine.formation.Arches.Hit();
         final java.util.List<FloatingIslands.Fall> falls = new java.util.ArrayList<>();
+        /** Per column: how far inside the footprint of the island overhead (0 when open to the sky). */
+        final double[] shade = new double[256];
+        final double[] cap = new double[2];
 
         public Context() {
             for (int i = 0; i < cols.length; i++) cols[i] = new ColumnInfo();
@@ -67,6 +72,7 @@ public final class ChunkComposer {
         this.painter = painter;
         this.islands = islands;
         this.vegetation = vegetation;
+        this.glow = new dev.veyrath.engine.math.Fractal(Hash.derive(spec.seed(), "glow-lichen"), 22, 2, 2.0, 0.5);
     }
 
     public void compose(int chunkX, int chunkZ, ChunkBuffer out, Context ctx) {
@@ -123,10 +129,18 @@ public final class ChunkComposer {
                         if (at >= ab) topSolid = Math.max(topSolid, at);
                     }
                 }
+                // The pale cap rock of a hoodoo, overhanging its column.
+                if (terrain.rocks() != null && terrain.rocks().cap(bx + x + 0.5, bz + z + 0.5, ctx.cap)) {
+                    int cb = Math.max(MathUtil.floor(ctx.cap[0]), groundY - 3), ct = Math.min(MathUtil.floor(ctx.cap[1]), spec.maxY() - 2);
+                    int base = col * out.height - minY;
+                    for (int y = cb; y <= ct; y++) out.mat[base + y] = (short) Material.STRATA_PALE.ordinal();
+                    if (ct >= cb) topSolid = Math.max(topSolid, ct);
+                }
 
                 // Floating islands
                 out.islandBottom[col] = Short.MIN_VALUE;
                 out.islandTop[col] = Short.MIN_VALUE;
+                ctx.shade[col] = 0;
                 if (islands != null) {
                     islands.column(bx + x + 0.5, bz + z + 0.5, ctx.island);
                     if (ctx.island.island != null) {
@@ -136,6 +150,7 @@ public final class ChunkComposer {
                             paintIsland(out, col, b, t, ctx.island, bx + x, bz + z, c, groundY);
                             out.islandBottom[col] = (short) b;
                             out.islandTop[col] = (short) t;
+                            ctx.shade[col] = (1 - ctx.island.rim) * ctx.island.island.radius();
                             topSolid = Math.max(topSolid, t);
                         }
                     }
@@ -163,8 +178,34 @@ public final class ChunkComposer {
         }
         if (caves != null) caves.carve(out, g, ctx.caves);
         if (vegetation != null) vegetation.decorate(out, ctx.vegetation);
+        shadeLichen(out, ctx);
         markSteps(out, g);
         islandFalls(out, ctx);
+    }
+
+    /**
+     * Deep in the shadow of a floating island no sky light reaches the ground, so glow lichen
+     * spreads over it in patches; their glow keeps the shaded ground from going black.
+     */
+    private void shadeLichen(ChunkBuffer out, Context ctx) {
+        if (islands == null) return;
+        int bx = out.chunkX << 4, bz = out.chunkZ << 4;
+        short air = (short) Material.AIR.ordinal(), tuft = (short) Material.GRASS_TUFT.ordinal(), lichen = (short) Material.GLOW_LICHEN.ordinal();
+        for (int col = 0; col < 256; col++) {
+            double shade = ctx.shade[col];
+            if (shade < 10) continue; // sky light still reaches in from the edge
+            int g = out.ground[col], y = g + 1;
+            if (out.fluidTop[col] > g || y >= out.islandBottom[col] - 1) continue;
+            int base = col * out.height - out.minY;
+            short here = out.mat[base + y];
+            if (here != air && here != tuft) continue;
+            Material below = Material.byId(out.mat[base + g]);
+            if (!below.isSolid() || below.isLeaves()) continue;
+            int x = bx + (col & 15), z = bz + (col >> 4);
+            double patch = MathUtil.smoothstep(-0.35, 0.35, glow.fbm(x * 1.4 + 711, z * 1.4));
+            double deep = MathUtil.smoothstep(10, 30, shade);
+            if (Hash.unit(Hash.hash(spec.seed() ^ 0x611C4E2L, x, z)) < (0.04 + 0.3 * patch) * deep) out.mat[base + y] = lichen;
+        }
     }
 
     /**
@@ -185,11 +226,14 @@ public final class ChunkComposer {
             int lx = f.lipX() - bx, lz = f.lipZ() - bz;
             if (lx >= 0 && lx < 16 && lz >= 0 && lz < 16) {
                 int col = (lz << 4) | lx, base = col * out.height - out.minY;
-                if (out.islandTop[col] != Short.MIN_VALUE && y <= out.islandTop[col] && y > out.islandBottom[col] + 1) {
-                    out.mat[base + y] = water;
+                // The pond behind the lip is two blocks deep, the lip itself one.
+                int floor = f.pours() ? y : y - 1;
+                if (out.islandTop[col] != Short.MIN_VALUE && y <= out.islandTop[col] && floor > out.islandBottom[col] + 1) {
+                    for (int k = floor; k <= y; k++) out.mat[base + k] = water;
                     for (int k = y + 1; k <= out.islandTop[col]; k++) out.mat[base + k] = air;
                 }
             }
+            if (!f.pours()) continue;
             int fx = f.fallX() - bx, fz = f.fallZ() - bz;
             if (fx >= 0 && fx < 16 && fz >= 0 && fz < 16) {
                 int col = (fz << 4) | fx, base = col * out.height - out.minY;
@@ -257,20 +301,24 @@ public final class ChunkComposer {
                              int groundY) {
         int base = col * out.height - spec.minY();
         long h = Hash.hash(hit.island.seed(), x, z);
-        // Hanging plants under the island: tufts of roots, and vines that end in a tip, some
-        // with glowing berries that light the underside. They keep well clear of the ground.
+        // Under the island: tufts of roots, vines that end in a tip (many with glowing berries),
+        // and patches of glow lichen on the rock. Little sky light reaches the underside of a large
+        // island, so the berries and the lichen are what light it. All keep clear of the ground.
         double hang = Hash.unit(Hash.mix(h + 77));
-        if (hit.rim < 0.92 && bottom - 1 > groundY + 4) {
+        if (hit.rim < 0.95 && bottom - 1 > groundY + 4) {
             short air = (short) Material.AIR.ordinal();
-            if (hang < 0.05) {
+            double patch = MathUtil.smoothstep(-0.3, 0.4, glow.fbm(x, z));
+            if (hang < 0.04) {
                 if (out.mat[base + bottom - 1] == air) out.mat[base + bottom - 1] = (short) Material.HANGING_ROOTS.ordinal();
-            } else if (hang < 0.075) {
+            } else if (hang < 0.085) {
                 int len = Math.min(2 + (int) (9 * Hash.unit(Hash.mix(h + 78))), bottom - 1 - (groundY + 4));
                 for (int k = 1; k <= len && out.mat[base + bottom - k] == air; k++) {
                     Material m = k == len ? Material.HANGING_VINE_TIP
-                            : Hash.unit(Hash.mix(h + 79 + k)) < 0.3 ? Material.HANGING_VINE_LIT : Material.HANGING_VINE;
+                            : Hash.unit(Hash.mix(h + 79 + k)) < 0.5 ? Material.HANGING_VINE_LIT : Material.HANGING_VINE;
                     out.mat[base + bottom - k] = (short) m.ordinal();
                 }
+            } else if (hang < 0.1 + 0.3 * patch) {
+                if (out.mat[base + bottom - 1] == air) out.mat[base + bottom - 1] = (short) Material.GLOW_LICHEN_CEILING.ordinal();
             }
         }
         boolean rocky = hit.rim > 0.9 || Hash.unit(h) < 0.04;

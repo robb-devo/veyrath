@@ -141,6 +141,7 @@ public final class SurfacePainter {
 
     /** Base rock of the province at height y. */
     public Material rockAt(ColumnInfo c, int y, double mix) {
+        if (c.rockFace != null && y > c.ground - 60) return c.rockFace; // a basalt stack
         if (y < -64) return mix > 0.55 ? Material.TUFF : Material.DEEPSLATE;
         if (y < 0 && mix * 32 + y < -16) return Material.DEEPSLATE;
         if (c.archetype == Archetype.VESPERFALL_RIFTLANDS) return strata(c, y);

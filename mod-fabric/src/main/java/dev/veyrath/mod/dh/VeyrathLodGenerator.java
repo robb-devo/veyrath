@@ -33,10 +33,27 @@ import java.util.function.Consumer;
  * <p>Columns come from {@link LodSampler}, which uses the same terrain sampler, biome selection
  * and surface painter as the chunk generator, so near and far terrain agree. Sky light is left at
  * 0 because DH lights submitted LODs itself; lava carries block light 15.
+ *
+ * <p>DH's sky light leaves the undersides of floating islands, and the ground in their shadow,
+ * at 0, so far away they would render black. Near the player the glow lichen and glow berries
+ * the composer places there light them (on average about 6 to 7 under the Crown and 4 on the
+ * ground beneath it, measured on seed 1); far away a matching block light stands in: the lowest
+ * blocks of a solid run hanging over a gap of at least {@value #GAP} blocks get
+ * {@value #UNDERSIDE_LIGHT}, and the top run of the ground under it gets {@value #SHADE_LIGHT}.
+ * Trees and water never count as overhangs.
  */
 final class VeyrathLodGenerator implements IDhApiWorldGenerator {
     /** Largest detail level we generate directly (2^8 = 256 blocks per column); DH down-samples beyond. */
     private static final byte LARGEST_DETAIL = 8;
+    private static final int GAP = 6, UNDERSIDE_LIGHT = 7, SHADE_LIGHT = 4, UNDERSIDE_DEPTH = 4;
+    /** Materials that never make an overhang: plants, leaves, wood and fluids. */
+    private static final boolean[] SOFT = new boolean[Material.values().length];
+
+    static {
+        for (Material m : Material.values()) {
+            SOFT[m.ordinal()] = m == Material.AIR || m.isPlant() || m.isLeaves() || m.isFluid() || m.name().endsWith("_WOOD");
+        }
+    }
 
     private final IDhApiLevelWrapper level;
     private final IDhApiBlockStateWrapper[] blocks = new IDhApiBlockStateWrapper[Material.values().length];
@@ -121,11 +138,24 @@ final class VeyrathLodGenerator implements IDhApiWorldGenerator {
                 IDhApiBiomeWrapper biome = biomes[col.biome];
                 List<DhApiTerrainDataPoint> points = w.points;
                 points.clear();
+                short airId = (short) Material.AIR.ordinal();
                 for (int r = 0; r < col.count; r++) {
                     short m = col.material[r];
                     int blockLight = m == lava ? 15 : m == magma ? 3 : 0;
-                    points.add(DhApiTerrainDataPoint.create((byte) 0, blockLight, 0,
-                            col.bottom[r] - minY, col.top[r] - minY, blocks[m], biome));
+                    int b = col.bottom[r] - minY, t = col.top[r] - minY;
+                    boolean gapBelow = r >= 2 && col.material[r - 1] == airId && col.top[r - 1] - col.bottom[r - 1] >= GAP
+                            && col.material[r - 2] != airId;
+                    if (blockLight == 0 && !SOFT[m] && gapBelow) {
+                        // The underside of a floating island (or an arch): its lowest blocks glow.
+                        int split = Math.min(t, b + UNDERSIDE_DEPTH);
+                        points.add(DhApiTerrainDataPoint.create((byte) 0, UNDERSIDE_LIGHT, 0, b, split, blocks[m], biome));
+                        if (split < t) points.add(DhApiTerrainDataPoint.create((byte) 0, 0, 0, split, t, blocks[m], biome));
+                        continue;
+                    }
+                    boolean overhangAbove = r + 2 < col.count && col.material[r + 1] == airId
+                            && col.top[r + 1] - col.bottom[r + 1] >= GAP && !SOFT[col.material[r + 2]];
+                    if (blockLight == 0 && m != airId && overhangAbove) blockLight = SHADE_LIGHT; // ground in an island's shadow
+                    points.add(DhApiTerrainDataPoint.create((byte) 0, blockLight, 0, b, t, blocks[m], biome));
                 }
                 data.setApiDataPointColumn(x, z, EDhApiWorldGenerationStep.TERRAIN, points);
             }

@@ -22,6 +22,7 @@ import java.util.Map;
  *   bench  [--seed S]                           engine benchmark (realm build, chunk composition)
  *   audit  [--seed S] [--per N]                 world-quality audit (unstable water/lava, ranges)
  *   voxel  [--seed S] [--biome B] [--size N]    block-level render of composed chunks (trees, water)
+ *   light  [--seed S] [--at crown|crown0.6|x,z] [--half N]  approximate light under floating islands
  * </pre>
  */
 public final class PreviewMain {
@@ -48,6 +49,7 @@ public final class PreviewMain {
             case "audit" -> Audit.run(spec, Integer.parseInt(opt(args, "--per", "6")));
             case "riftprobe" -> RiftProbe.run(spec);
             case "falls" -> FallList.run(spec);
+            case "light" -> LightProbe.run(spec, opt(args, "--at", "crown"), Integer.parseInt(opt(args, "--half", "3")));
             case "caves" -> CaveProfile.run(spec);
             default -> System.out.println("unknown command " + cmd);
         }

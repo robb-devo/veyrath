@@ -173,8 +173,8 @@ public final class VeyrathWorld {
 
     private Realm build(int rx, int rz) {
         RealmAtlas atlas = AtlasBuilder.build(spec, rx, rz, progress);
-        TerrainSampler terrain = new TerrainSampler(atlas);
         FloatingIslands islands = new FloatingIslands(atlas);
+        TerrainSampler terrain = new TerrainSampler(atlas, islands);
         dev.veyrath.engine.cave.Caves caves = new dev.veyrath.engine.cave.Caves(spec);
         dev.veyrath.engine.formation.Arches arches = new dev.veyrath.engine.formation.Arches(terrain, spec.seed());
         Vegetation vegetation = new Vegetation(spec, terrain, biomes, caves, islands);

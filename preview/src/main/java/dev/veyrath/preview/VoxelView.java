@@ -49,7 +49,8 @@ final class VoxelView {
                 Material.FLOWER_YELLOW, 0xf1f902, Material.FLOWER_RED, 0xd1271f, Material.FLOWER_BLUE, 0x4669e0,
                 Material.FLOWER_WHITE, 0xe9ecec, Material.FLOWER_VIOLET, 0xb663e6, Material.DRY_SHRUB, 0x6b4f29,
                 Material.MOSS_CARPET, 0x596e2d, Material.HANGING_ROOTS, 0x8f6a4f, Material.HANGING_VINE, 0x4f6b2a,
-                Material.HANGING_VINE_LIT, 0xf2a83b, Material.HANGING_VINE_TIP, 0x4f6b2a, Material.REEDS, 0x94c065,
+                Material.HANGING_VINE_LIT, 0xf2a83b, Material.HANGING_VINE_TIP, 0x4f6b2a,
+                Material.GLOW_LICHEN, 0x7fbfa5, Material.GLOW_LICHEN_CEILING, 0x7fbfa5, Material.REEDS, 0x94c065,
                 Material.AMETHYST_CLUSTER, 0xa07fd6, Material.AMETHYST_BUD, 0x9a76cf, Material.MUSHROOM_BROWN, 0x9a7458,
                 Material.MUSHROOM_RED, 0xc8352d,
         };

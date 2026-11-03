@@ -6,6 +6,13 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
 ## [Unreleased] — 0.1.0-ch01
 
 ### Added
+- Waterfalls leave islands through a straight, level lip, so each falls as one flat curtain; the
+  Crown's Veil is 21 blocks wide, fed by a pond behind the lip and landing in a plunge pool.
+- Island undersides and the ground in their shadow are lit by glow lichen and glow-berry vines
+  instead of staying black; DH LODs get a matching block light.
+- Vesperfall hoodoo groves (stepped, fluted columns, many with overhanging cap rocks) and
+  Cinderwake columnar basalt stacks replace the single tall spires; `/veyrath tp basalt`.
+- Cinderwake ambient particles are dark ash flecks instead of white ash, which read as snow.
 - **World engine** (`engine/`), pure Java 25 with no Minecraft dependency:
   - Realm atlas: continent, climate, mountain belts, provinces, eight archetype regions, the
     Great Rift, multi-resolution stream-power erosion, volcanoes and the Cinder Throne, talus

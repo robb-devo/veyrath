@@ -70,6 +70,7 @@ public final class TerrainSampler {
     /** Set at the end of construction, after the caldera; null while it is being built. */
     private CrystalFaults faults;
     private RockSpires rocks;
+    private PlungePools pools;
 
     /** Per-thread scratch state; create one per worker thread. */
     public static final class Scratch {
@@ -105,6 +106,17 @@ public final class TerrainSampler {
         if (site != null) caldera = site.withCrystals(this);
         faults = CrystalFaults.build(this);
         rocks = RockSpires.build(this);
+    }
+
+    /** A realm's terrain with plunge pools where the broad waterfalls of {@code islands} land. */
+    public TerrainSampler(RealmAtlas atlas, dev.veyrath.engine.formation.FloatingIslands islands) {
+        this(atlas);
+        pools = PlungePools.build(this, islands);
+    }
+
+    /** The realm's plunge pools (empty when built without islands). */
+    public java.util.List<PlungePools.Pool> pools() {
+        return pools == null ? java.util.List.of() : pools.all();
     }
 
     /** The realm's rock spires and boulders (never null once constructed). */
@@ -368,6 +380,7 @@ public final class TerrainSampler {
         out.quartz = false;
         out.nearFault = false;
         out.nearRock = false;
+        out.rockFace = null;
         boolean calderaNear = false;
         double calderaLake = Double.NaN;
         PrismCaldera cal = caldera;
@@ -421,14 +434,25 @@ public final class TerrainSampler {
                 && Double.isNaN(out.crystal) && out.riverDistance > out.riverHalfWidth + 8 && h > sea + 6) {
             h = faults.apply(x, z, h, out);
         }
+        // --- plunge pools where broad island waterfalls land
+        PlungePools.Pool pool = pools == null ? null : pools.near(x, z);
+        double poolLake = Double.NaN;
+        if (pool != null) {
+            h = PlungePools.carve(pool, x, z, h);
+            if (h < pool.level()) poolLake = pool.level();
+        }
         // --- rock spires and boulders on dry ground away from water
-        if (rocks != null && kind == ColumnInfo.WaterKind.NONE && Double.isNaN(lakeLevel) && !calderaNear
+        if (rocks != null && pool == null && kind == ColumnInfo.WaterKind.NONE && Double.isNaN(lakeLevel) && !calderaNear
                 && Double.isNaN(out.crystal) && out.riverDistance > out.riverHalfWidth + 10 && h > sea + 4) {
             h = rocks.apply(x, z, h, out);
         }
 
         // --- water
-        out.nearLake = !Double.isNaN(lakeLevel) || calderaNear;
+        out.nearLake = !Double.isNaN(lakeLevel) || calderaNear || pool != null;
+        if (!Double.isNaN(poolLake) && kind == ColumnInfo.WaterKind.NONE) {
+            water = poolLake;
+            kind = ColumnInfo.WaterKind.LAKE;
+        }
         if (!Double.isNaN(calderaLake) && kind == ColumnInfo.WaterKind.NONE) {
             water = calderaLake;
             kind = ColumnInfo.WaterKind.LAKE;

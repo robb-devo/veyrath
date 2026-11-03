@@ -28,10 +28,12 @@ public enum Material {
     // Ground plants, one block tall, placed on soil
     GRASS_TUFT, FERN, FLOWER_YELLOW, FLOWER_RED, FLOWER_BLUE, FLOWER_WHITE, FLOWER_VIOLET, DRY_SHRUB, MOSS_CARPET,
     // Two-block plants (lower half, then the top half above it), reeds at the water's edge,
-    // crystal and fungal flora
+    // crystal and fungal flora, and glow lichen lying on the ground in the shade of floating islands
     TALL_GRASS, TALL_GRASS_TOP, LARGE_FERN, LARGE_FERN_TOP, REEDS, AMETHYST_CLUSTER, AMETHYST_BUD, MUSHROOM_BROWN, MUSHROOM_RED,
-    // Hanging plants under floating islands: roots, and vines (some with glowing berries) ending in a tip
-    HANGING_ROOTS, HANGING_VINE, HANGING_VINE_LIT, HANGING_VINE_TIP;
+    GLOW_LICHEN,
+    // Hanging plants under floating islands: roots, vines (some with glowing berries) ending in a
+    // tip, and glow lichen on the rock overhead
+    HANGING_ROOTS, HANGING_VINE, HANGING_VINE_LIT, HANGING_VINE_TIP, GLOW_LICHEN_CEILING;
 
     private static final Material[] VALUES = values();
 

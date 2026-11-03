@@ -94,10 +94,13 @@ public final class MaterialPalette {
         put(Material.AMETHYST_BUD, Blocks.MEDIUM_AMETHYST_BUD);
         put(Material.MUSHROOM_BROWN, Blocks.BROWN_MUSHROOM);
         put(Material.MUSHROOM_RED, Blocks.RED_MUSHROOM);
+        // Glow lichen on the face of the block below it (ground) or above it (island undersides).
+        put(Material.GLOW_LICHEN, Blocks.GLOW_LICHEN.defaultBlockState().setValue(BlockStateProperties.DOWN, true));
         put(Material.HANGING_ROOTS, Blocks.HANGING_ROOTS);
         put(Material.HANGING_VINE, Blocks.CAVE_VINES_PLANT);
         put(Material.HANGING_VINE_LIT, Blocks.CAVE_VINES_PLANT.defaultBlockState().setValue(BlockStateProperties.BERRIES, true));
         put(Material.HANGING_VINE_TIP, Blocks.CAVE_VINES);
+        put(Material.GLOW_LICHEN_CEILING, Blocks.GLOW_LICHEN.defaultBlockState().setValue(BlockStateProperties.UP, true));
         for (Material m : Material.values()) {
             if (STATES[m.ordinal()] == null) throw new IllegalStateException("No block for material " + m);
         }

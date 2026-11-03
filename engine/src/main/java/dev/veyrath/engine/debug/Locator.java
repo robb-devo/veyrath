@@ -31,7 +31,7 @@ public final class Locator {
 
     /** Target names accepted by {@link #find}. */
     public static List<String> targets() {
-        List<String> t = new ArrayList<>(List.of("spawn", "rift", "rift_rim", "crown", "throne", "summit", "waterfall", "elder_tree", "arch", "caldera", "window", "fault", "crown_falls", "spires"));
+        List<String> t = new ArrayList<>(List.of("spawn", "rift", "rift_rim", "crown", "throne", "summit", "waterfall", "elder_tree", "arch", "caldera", "window", "fault", "crown_falls", "spires", "basalt"));
         for (Archetype a : Archetype.values()) t.add(archetypeTarget(a));
         return t;
     }
@@ -124,19 +124,21 @@ public final class Locator {
                 // On the ground 160 blocks out from the Veil, the Crown's widest waterfall.
                 FloatingIslands.Island crown = realm.islands().crown();
                 if (crown == null) return null;
-                var falls = realm.islands().falls(crown);
-                if (falls.isEmpty()) return null;
-                FloatingIslands.Fall f = falls.get(Math.min(5, falls.size() - 1));
+                var curtains = realm.islands().curtains(crown);
+                if (curtains.isEmpty()) return null;
+                var strips = curtains.get(0).strips(); // the widest comes first
+                FloatingIslands.Fall f = strips.get(strips.size() / 2);
                 int dx = f.fallX() - f.lipX(), dz = f.fallZ() - f.lipZ();
                 return stand(terrain, c, s, t, f.fallX() + 0.5 + 160 * dx, f.fallZ() + 0.5 + 160 * dz,
                         "facing the Veil of the Crown, a waterfall from y" + f.sourceY());
             }
-            case "spires" -> {
-                // Beside the nearest spire over 50 blocks tall (Vesperfall hoodoos, Cinderwake basalt).
+            case "spires", "basalt" -> {
+                // Beside the nearest tall hoodoo (a Vesperfall grove) or the nearest large basalt stack (Cinderwake).
+                boolean hoodoo = t.equals("spires");
                 RockSpires.Rock best = null;
                 double bd = Double.MAX_VALUE;
                 for (RockSpires.Rock k : terrain.rocks().all()) {
-                    if (!k.spire() || k.height() < 50) continue;
+                    if (hoodoo ? k.kind() != RockSpires.Kind.HOODOO || k.height() < 28 : k.kind() != RockSpires.Kind.BASALT || k.radius() < 9) continue;
                     double d = Math.hypot(k.x() - fromX, k.z() - fromZ);
                     if (d < bd) {
                         bd = d;
@@ -144,7 +146,8 @@ public final class Locator {
                     }
                 }
                 if (best == null) return null;
-                return stand(terrain, c, s, t, best.x() - 45, best.z(), "45 blocks west of a " + (int) best.height() + "-block rock spire");
+                return stand(terrain, c, s, t, best.x() - 40, best.z(), "40 blocks west of a " + (int) best.height() + "-block "
+                        + (hoodoo ? "hoodoo" : "basalt stack"));
             }
             case "fault" -> {
                 // The nearest crystal fault: stand 30 blocks beside the middle of its line.

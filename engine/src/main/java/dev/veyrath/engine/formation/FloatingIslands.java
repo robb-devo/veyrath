@@ -23,9 +23,11 @@ import dev.veyrath.engine.region.Archetype;
  *
  * <p>Waterfalls: about a third of the larger islands have a spring at their edge that pours
  * down to the ground, one to four blocks wide, and the Crown of Aether has four broad falls, the
- * widest (the Veil) eleven blocks across. A fall is a list of
- * {@link Fall} cells: a water source in a notch of the island's edge (the lip) and the column of
- * falling water beside it, outside the island.
+ * widest (the Veil) twenty-one blocks across. Each fall leaves the island straight out along one
+ * axis ({@link Anchor}); there the ragged edge gives way to a straight face, so the lip is level
+ * and the water falls as one flat curtain. A fall is a list of {@link Fall} cells: water sources
+ * along the lip, the columns of falling water beside them outside the island, and a shallow pond
+ * behind the lip that feeds them.
  */
 public final class FloatingIslands {
     private static final int CELL = 384;
@@ -40,17 +42,59 @@ public final class FloatingIslands {
     private final java.util.concurrent.ConcurrentHashMap<Long, java.util.Optional<Island>> cells = new java.util.concurrent.ConcurrentHashMap<>();
 
     /**
-     * One block-wide strip of an island waterfall: the water source sits in column (lipX, lipZ)
-     * at {@code sourceY}, and the water falls down column (fallX, fallZ), beside it and outside
-     * every island, from {@code sourceY} to the first solid block below.
+     * One cell of an island waterfall. A strip of the curtain: the water source sits in column
+     * (lipX, lipZ) at {@code sourceY}, and the water falls down column (fallX, fallZ), beside it
+     * and outside every island, from {@code sourceY} to the first solid block or water below. A
+     * pond cell behind the lip ({@link #pours()} false) holds water at {@code sourceY} and the
+     * block below it.
      */
-    public record Fall(int lipX, int lipZ, int fallX, int fallZ, int sourceY) {}
+    public record Fall(int lipX, int lipZ, int fallX, int fallZ, int sourceY) {
+        static final int NONE = Integer.MIN_VALUE;
+
+        /** True for a strip of the curtain, false for a cell of the pond behind the lip. */
+        public boolean pours() {
+            return fallX != NONE;
+        }
+    }
+
+    /** Where a waterfall leaves an island: straight out along the axis (sx, sz), {@code width} blocks wide. */
+    public record Anchor(int sx, int sz, int width) {}
+
+    /** One waterfall: its anchor, the level of its source, and its strips in order across the curtain. */
+    public record Curtain(Anchor anchor, int sourceY, java.util.List<Fall> strips) {}
+
+    private final java.util.concurrent.ConcurrentHashMap<Long, java.util.List<Curtain>> curtains = new java.util.concurrent.ConcurrentHashMap<>();
 
     private final java.util.concurrent.ConcurrentHashMap<Long, java.util.List<Fall>> falls = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.concurrent.ConcurrentHashMap<Long, java.util.List<Island>> satellites = new java.util.concurrent.ConcurrentHashMap<>();
 
-    /** One island's parameters (immutable). */
-    public record Island(double x, double y, double z, double radius, double dome, double depth, long seed, boolean crown) {}
+    /** One island's parameters (immutable), with the anchors of its waterfalls (most have none). */
+    public record Island(double x, double y, double z, double radius, double dome, double depth, long seed, boolean crown,
+                         java.util.List<Anchor> anchors) {}
+
+    /**
+     * The island's waterfalls: the Crown has four, one on each side, about a third of the islands
+     * of radius 45+ have one, the rest none.
+     */
+    private static java.util.List<Anchor> anchorsFor(double radius, boolean crown, long islandSeed) {
+        long h = Hash.mix(islandSeed ^ 0x0FA11FA11L);
+        int[] widths;
+        if (crown) {
+            widths = new int[] {21, 9, 7, 5}; // the Veil of the Crown and three lesser falls
+        } else if (radius >= 45 && Hash.unit(h) < 0.35) {
+            widths = new int[] {Math.max(1, (int) (radius / 40) + (Hash.unit(Hash.mix(h + 1)) < 0.5 ? 0 : 1) - 1)};
+        } else {
+            return java.util.List.of();
+        }
+        int[][] dirs = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
+        int rot = (int) (4 * Hash.unit(Hash.mix(h + 10)));
+        java.util.List<Anchor> out = new java.util.ArrayList<>();
+        for (int n = 0; n < widths.length; n++) {
+            int[] d = dirs[(n + rot) & 3];
+            out.add(new Anchor(d[0], d[1], widths[n]));
+        }
+        return java.util.List.copyOf(out);
+    }
 
     /** Mutable query result. */
     public static final class Hit {
@@ -115,7 +159,8 @@ public final class FloatingIslands {
         if (y - radius * 1.2 < ground + 30) return null; // would touch the terrain
         double dome = 4 + radius * (0.05 + 0.08 * Hash.unit(Hash.mix(h + 4)));
         double depth = radius * (0.7 + 0.8 * Hash.unit(Hash.mix(h + 5)));
-        return new Island(cx, y, cz, radius, dome, depth, Hash.mix(h + 6), false);
+        long islandSeed = Hash.mix(h + 6);
+        return new Island(cx, y, cz, radius, dome, depth, islandSeed, false, anchorsFor(radius, false, islandSeed));
     }
 
     /** The world-tier island, or null if the realm has no Aetherreach. */
@@ -127,7 +172,8 @@ public final class FloatingIslands {
         if (!hasCrown) return null;
         double ground = Math.max(atlas.elevation(crownX, crownZ), atlas.spec.seaLevel());
         double y = Math.min(ground + 360, atlas.spec.maxY() - 90);
-        return new Island(crownX, y, crownZ, 330, 34, 300, Hash.mix(seed + 99), true);
+        long islandSeed = Hash.mix(seed + 99);
+        return new Island(crownX, y, crownZ, 330, 34, 300, islandSeed, true, anchorsFor(330, true, islandSeed));
     }
 
     /**
@@ -193,14 +239,24 @@ public final class FloatingIslands {
             double ground = Math.max(atlas.elevation(x, z), atlas.spec.seaLevel());
             double depth = r * (0.9 + 0.8 * Hash.unit(Hash.mix(hk + 4)));
             if (y - depth * 1.3 < ground + 30) continue; // would come too close to the terrain
-            out.add(new Island(x, y, z, r, 2 + r * 0.12, depth, Hash.mix(hk + 5), false));
+            out.add(new Island(x, y, z, r, 2 + r * 0.12, depth, Hash.mix(hk + 5), false, java.util.List.of()));
         }
         return java.util.List.copyOf(out);
     }
 
-    /** The island's waterfall cells (empty for most islands). Deterministic; cached per island. */
+    /** The island's waterfall cells, strips and pond cells (empty for most islands). Deterministic; cached per island. */
     public java.util.List<Fall> falls(Island is) {
-        return falls.computeIfAbsent(is.seed(), k -> buildFalls(is));
+        return falls.computeIfAbsent(is.seed(), k -> {
+            java.util.List<Fall> all = new java.util.ArrayList<>();
+            for (Curtain c : curtains(is)) all.addAll(c.strips());
+            for (Curtain c : curtains(is)) all.addAll(ponds(is, c));
+            return java.util.List.copyOf(all);
+        });
+    }
+
+    /** The island's waterfalls, widest first for the Crown. Deterministic; cached per island. */
+    public java.util.List<Curtain> curtains(Island is) {
+        return curtains.computeIfAbsent(is.seed(), k -> buildCurtains(is));
     }
 
     /**
@@ -227,39 +283,24 @@ public final class FloatingIslands {
         if (x1 < is.x() - reach || x0 > is.x() + reach || z1 < is.z() - reach || z0 > is.z() + reach) return;
         for (Fall f : falls(is)) {
             boolean lip = f.lipX() >= x0 && f.lipX() <= x1 && f.lipZ() >= z0 && f.lipZ() <= z1;
-            boolean fall = f.fallX() >= x0 && f.fallX() <= x1 && f.fallZ() >= z0 && f.fallZ() <= z1;
+            boolean fall = f.pours() && f.fallX() >= x0 && f.fallX() <= x1 && f.fallZ() >= z0 && f.fallZ() <= z1;
             if (lip || fall) out.add(f);
         }
     }
 
-    private java.util.List<Fall> buildFalls(Island is) {
-        long h = Hash.mix(is.seed() ^ 0x0FA11FA11L);
-        int[] widths;
-        if (is.crown()) {
-            widths = new int[] {11, 7, 5, 5}; // the Veil of the Crown and three lesser falls
-        } else if (is.radius() >= 45 && Hash.unit(h) < 0.35) {
-            widths = new int[] {Math.max(1, (int) (is.radius() / 40) + (Hash.unit(Hash.mix(h + 1)) < 0.5 ? 0 : 1) - 1)};
-        } else {
-            return java.util.List.of();
-        }
-        int count = widths.length;
-        java.util.List<Fall> out = new java.util.ArrayList<>();
+    private java.util.List<Curtain> buildCurtains(Island is) {
+        java.util.List<Curtain> out = new java.util.ArrayList<>();
         Hit hit = new Hit(), other = new Hit();
-        for (int n = 0; n < count; n++) {
-            int width = widths[n];
-            double a = 2 * Math.PI * (n + 0.8 * Hash.unit(Hash.mix(h + 10 + n))) / count;
-            double ca = Math.cos(a), sa = Math.sin(a);
-            // The water falls off the edge along the main axis of the direction (water never
-            // flows diagonally), so the strips are consecutive rows across that axis and the
-            // curtain has no gaps.
-            boolean alongX = Math.abs(ca) >= Math.abs(sa);
-            int sx = alongX ? (ca > 0 ? 1 : -1) : 0, sz = alongX ? 0 : (sa > 0 ? 1 : -1);
-            int baseX = MathUtil.floor(is.x() + ca * is.radius()), baseZ = MathUtil.floor(is.z() + sa * is.radius());
+        for (Anchor an : is.anchors()) {
+            int width = an.width(), sx = an.sx(), sz = an.sz();
+            boolean alongX = sx != 0;
+            // The rows of the curtain run across the axis; the island's edge there is straight
+            // (see evaluate), so every row reaches it at the same distance.
+            int baseX = MathUtil.floor(is.x() + sx * is.radius()), baseZ = MathUtil.floor(is.z() + sz * is.radius());
             java.util.List<int[]> strips = new java.util.ArrayList<>();
             int sourceY = Integer.MAX_VALUE;
             for (int k = -(width - 1) / 2; k <= width / 2; k++) {
-                // March outward along the row to the island's outermost column (the lip); the
-                // ragged rim can leave bays further in, which are passed over.
+                // March outward along the row to the island's outermost column (the lip).
                 int lipX = Integer.MIN_VALUE, lipZ = 0;
                 double lipTop = 0, lipBottom = 0;
                 for (int d = -(int) (0.5 * is.radius()); d <= (int) (0.4 * is.radius()) + 2; d++) {
@@ -293,9 +334,68 @@ public final class FloatingIslands {
                 sourceY = Math.min(sourceY, y);
                 strips.add(new int[] {lipX, lipZ, fx, fz});
             }
-            for (int[] st : strips) out.add(new Fall(st[0], st[1], st[2], st[3], sourceY));
+            if (strips.isEmpty()) continue;
+            java.util.List<Fall> cells = new java.util.ArrayList<>();
+            for (int[] st : strips) cells.add(new Fall(st[0], st[1], st[2], st[3], sourceY));
+            out.add(new Curtain(an, sourceY, java.util.List.copyOf(cells)));
         }
         return java.util.List.copyOf(out);
+    }
+
+    /**
+     * The pond behind a curtain's lip: a half-ellipse of cells reaching up to nine blocks in from
+     * the lip (fewer for narrow falls), each holding water at the source level and the block
+     * below. Cells that could not hold their water (a neighbour neither water nor rock up to the
+     * source level) are dropped until all remaining cells are held.
+     */
+    private java.util.List<Fall> ponds(Island is, Curtain c) {
+        int w = c.strips().size(), y = c.sourceY(), sx = c.anchor().sx(), sz = c.anchor().sz();
+        int reach = (int) MathUtil.clamp(Math.round(w * 0.45), 1, 9);
+        java.util.Set<Long> lips = new java.util.HashSet<>();
+        for (Fall f : c.strips()) lips.add(key(f.lipX(), f.lipZ()));
+        java.util.LinkedHashMap<Long, int[]> cells = new java.util.LinkedHashMap<>();
+        Hit hit = new Hit();
+        for (int i = 0; i < w; i++) {
+            Fall f = c.strips().get(i);
+            double across = (i + 0.5) / w * 2 - 1;
+            int depth = (int) Math.round(reach * Math.sqrt(Math.max(0, 1 - across * across)) + 0.4);
+            for (int j = 1; j <= depth; j++) {
+                int px = f.lipX() - sx * j, pz = f.lipZ() - sz * j;
+                if (lips.contains(key(px, pz))) continue;
+                if (!evaluate(is, px + 0.5, pz + 0.5, hit) || MathUtil.floor(hit.top) < y || MathUtil.floor(hit.bottom) > y - 3) break;
+                cells.put(key(px, pz), new int[] {px, pz});
+            }
+        }
+        boolean changed = true;
+        while (changed && !cells.isEmpty()) {
+            changed = false;
+            var it = cells.values().iterator();
+            while (it.hasNext()) {
+                int[] p = it.next();
+                int[][] nb = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+                boolean held = true;
+                for (int[] d : nb) {
+                    int nx = p[0] + d[0], nz = p[1] + d[1];
+                    long k = key(nx, nz);
+                    if (cells.containsKey(k) || lips.contains(k)) continue;
+                    if (!evaluate(is, nx + 0.5, nz + 0.5, hit) || MathUtil.floor(hit.top) < y || MathUtil.floor(hit.bottom) > y - 2) {
+                        held = false;
+                        break;
+                    }
+                }
+                if (!held) {
+                    it.remove();
+                    changed = true;
+                }
+            }
+        }
+        java.util.List<Fall> out = new java.util.ArrayList<>();
+        for (int[] p : cells.values()) out.add(new Fall(p[0], p[1], Fall.NONE, Fall.NONE, y));
+        return out;
+    }
+
+    private static long key(int x, int z) {
+        return ((long) x << 32) ^ (z & 0xFFFFFFFFL);
     }
 
     private boolean evaluate(Island is, double x, double z, Hit hit) {
@@ -303,13 +403,27 @@ public final class FloatingIslands {
         double r = Math.sqrt(dx * dx + dz * dz);
         if (r >= is.radius() * 1.25) return false; // beyond the widest rim (about 1.18 radii)
         double rim = is.radius() * (0.82 + 0.36 * (0.5 + 0.5 * edge.fbm(x + is.seed() % 1000, z)));
-        if (r >= rim) return false;
-        double t = r / rim;
-        double topY = is.y() + is.dome() * (1 - t * t) + 2.5 * top.fbm(x, z) - 3 * MathUtil.smoothstep(0.85, 1.0, t);
+        // Where a waterfall leaves the island the ragged edge gives way to a straight face square
+        // to the fall, one radius out, so the lip is level and the curtain is one flat sheet.
+        double inside = rim - r, flat = 0;
+        for (Anchor a : is.anchors()) {
+            double along = dx * a.sx() + dz * a.sz();
+            if (along <= 0) continue;
+            double across = Math.abs(dx * a.sz() - dz * a.sx());
+            double half = a.width() * 0.5 + 3, blend = MathUtil.clamp(is.radius() * 0.15, 8, 36);
+            double w = 1 - MathUtil.smoothstep(half, half + blend, across);
+            if (w <= 0) continue;
+            inside += (is.radius() - along - inside) * w;
+            flat = Math.max(flat, w);
+        }
+        if (inside <= 0) return false;
+        double t = r / (r + inside);
+        double topY = is.y() + is.dome() * (1 - t * t) + 2.5 * top.fbm(x, z) * (1 - 0.8 * flat) - 3 * MathUtil.smoothstep(0.85, 1.0, t);
         double cone = Math.pow(Math.max(0, 1 - Math.pow(t, 1.25)), 0.85);
         double bottomY = is.y() - is.depth() * cone * (0.75 + 0.5 * (0.5 + 0.5 * under.fbm(x, z)))
                 - 8 * Math.max(0, under.fbm(x * 1.9, z * 1.9)) * (1 - t);
-        bottomY = Math.min(bottomY, topY - 3);
+        // The straight face at a waterfall is a ledge of solid rock that holds the pond behind the lip.
+        bottomY = Math.min(bottomY, topY - 3 - 6 * flat);
         hit.island = is;
         hit.top = topY;
         hit.bottom = bottomY;
