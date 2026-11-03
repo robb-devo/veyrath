@@ -106,13 +106,17 @@ distance, 1920x1080 window, `maxFps` 260. FPS values are 10-second averages per 
 
 | Metric | Value |
 |---|---|
-| World creation to spawn ready | 6.2–10.3 s vanilla client (seeds 1–3); 6.4–11.7 s with Sodium, Iris and DH |
+| World creation to spawn ready | 6.2–10.3 s vanilla client (seeds 1–3); 6.4–11.7 s with Sodium, Iris and DH. Spawn realm build in the log: 5.3–5.4 s (build `15455c0`) |
 | Reopen a saved world to ready | 1.5–2.2 s |
-| FPS, full pack, no shaders (build `5b92c58`) | 225–238 at every stop of seeds 1 and 2, except seed 1 basalt: 72 (53–136) |
-| FPS, full pack, Complementary Unbound r5.9.3 defaults (build `5b92c58`) | Seed 1: 72–207 (Elderbough 72, Elder Tree 114, Crown 134). Seed 2: 99–221 |
+| FPS, full pack, no shaders (build `15455c0`, seed 1) | 215–238 at all 20 samples, basalt included |
+| FPS, full pack, Complementary Unbound r5.9.3 defaults (build `15455c0`, seed 1) | 71–220 (Elderbough 71, Elder Tree 111, Crown 128, basalt 158 and 188) |
+| FPS, previous build `de595f5`, seeds 1 / 2 | No shaders 171–235 / 171–237 (seed 1 window 171, seed 2 spawn 171). Complementary 99–222 / 97–222 (Elderbough 99 / 97) |
+| FPS, build `5b92c58` (device session 3) | No shaders 225–238 except seed 1 basalt 72 (53–136); Complementary seed 1 72–207, seed 2 99–221 |
+| FPS with Photon v1.4 / Bliss 2.1.2 (build `15455c0`, 3 stops) | 175–201 / 178–221. Both render wrong (black sky with white patches / overexposure) |
 | FPS while far terrain generates (device session 2, seed 2 Elderbough) | 22 average (20–40) over that 10 s window |
+| DH far view at spawn, seed 1, Complementary (build `de595f5`) | Far mountains drawn 27 s after spawn was ready; horizon complete at 85 s |
+| Neighbouring realm build in game (realm 0,-1, seed 1) | 11.3–11.5 s, between the arch and caldera stops |
 | Chunk generation throughput in game | Not measured |
-| DH LOD build time to full horizon | Not measured |
 | Memory (heap) after 10 min of exploration | Not measured |
 | Save size per km² explored | Not measured |
 

@@ -44,8 +44,8 @@ where they differ.
 | Mod Menu | 21.0.0 | Mod list and settings | Optional | MIT | Installed |
 | Placeholder API | 3.2.0+26.3 | Library required by Mod Menu 21 | With Mod Menu | LGPL-3.0-only | Installed (added to `modpack.json` after the first install warned about it) |
 | Complementary Unbound | r5.9.3 | Default shader pack | Optional | Custom licence (Modrinth: `LicenseRef-Custom`) | Installed, selected in `iris.properties` |
-| Photon | v1.4 | Comparison shader pack | Optional | Modrinth id `LicenseRef-` (blank; check the pack's own licence file) | Installed |
-| Bliss | 2.1.2 | Comparison shader pack | Optional | All rights reserved (Modrinth) | Installed |
+| Photon | v1.4 | Comparison shader pack | Optional | Modrinth id `LicenseRef-` (blank; check the pack's own licence file) | Installed; renders wrong here |
+| Bliss | 2.1.2 | Comparison shader pack | Optional | All rights reserved (Modrinth) | Installed; renders wrong here |
 
 "Newest" means the installer takes the newest release whose Modrinth listing names Minecraft
 26.3 and Fabric. It prints and records the exact versions installed.
@@ -57,7 +57,7 @@ where they differ.
 | Iris 1.11.7 ↔ Sodium 0.9.2 | Required pair | "Iris 1.11.7 needs Sodium 0.9.2 on 26.3" (syntaxmine) | Yes (full-pack tour, device sessions 2 and 3) |
 | Distant Horizons 3.3.4 ↔ Iris 1.11.7 | Compatible | DH 3.3.4 changelog fixes an Iris transparency issue on 26.3 | Yes, with Complementary Unbound. Far terrain looks pale with it (open) |
 | Distant Horizons ↔ Sodium | Compatible | Commonly run together. DH renders its own LOD meshes | Yes |
-| Shader packs ↔ Distant Horizons | Compatible for packs that support DH | DH works only with packs that explicitly support it. All three candidates advertise DH support | Complementary Unbound: yes. Photon, Bliss: not yet |
+| Shader packs ↔ Distant Horizons | Compatible for packs that support DH | DH works only with packs that explicitly support it. All three candidates advertise DH support | Complementary Unbound: yes (far terrain pale). Photon v1.4: black sky with white patches. Bliss 2.1.2: heavy overexposure (device session 4) |
 | VEYRATH generator ↔ C2ME | Compatible | C2ME generates chunks in parallel. Engine test `parallelCompositionMatchesSequential` proves the engine is thread-safe | Yes (no errors in the full-pack runs) |
 | VEYRATH LOD generator ↔ Distant Horizons | Compatible | `API_DATA_SOURCES` path implemented against DH API 7.2.0 source. Engine test proves LOD columns match chunk columns at block detail | Yes ("VEYRATH LOD generator registered"; islands, forests and ranges render as LOD) |
 | VEYRATH ↔ Lithium, FerriteCore | No interaction expected | They optimise game logic and memory, not generation | Yes (no errors in the full-pack runs) |

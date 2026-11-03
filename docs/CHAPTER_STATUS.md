@@ -14,9 +14,9 @@ Read this first when resuming.
   owner's PC (`robbs-strix`) with the full 92-mod pack, seeds 1 and 2, shaders off and on. The
   acceptance report is the Claude Doc "VEYRATH Chapter 01 acceptance report"; the owner tests
   last, then decides on Chapter 02.
-- **Open.** The owner's own launcher start; pale far terrain with shaders; the seed 1 basalt
-  stop at 72 fps without shaders; neighbouring realms built on first touch (prewarm near realm
-  edges since `b0d0e06`). Not built: VEYRATH blocks and textures (WP9), lake-outlet falls and
+- **Open.** The owner's own launcher start; pale far terrain with shaders; Photon and Bliss
+  render wrong; neighbouring realms built on first touch (prewarm near realm edges since
+  `b0d0e06`). Not built: VEYRATH blocks and textures (WP9), lake-outlet falls and
   hanging valleys, a DH answer that never waits for a realm build. See Known limitations below.
 - **Build constraints.** The cloud machine cannot reach the Fabric, Mojang or Modrinth servers,
   so it builds and tests only `engine/` and `preview/` (`-Pveyrath.skipMod=true`). The mod is
@@ -52,7 +52,7 @@ and preview tool, not yet seen in Minecraft), **Partial**, **Not started** and *
 
 | Criterion | State | Evidence or gap |
 |---|---|---|
-| The dedicated VEYRATH launcher profile works | Partial | Installer run on the owner's PC: profile added, backup written, second run adds nothing. An offline start from `.minecraft\instances\veyrath` loads all mods including VEYRATH. The owner's own start through the launcher is still to come |
+| The dedicated VEYRATH launcher profile works | Partial | Installer run on the owner's PC: profile added, backup written, second run adds nothing; final install of `15455c0` (device session 4). An offline start from `.minecraft\instances\veyrath` logs `Loading 91 mods` and `VEYRATH initialised`. The owner's own start through the launcher is still to come |
 | The selected modloader and dependencies work together | Met | Full pack (92 mods: Sodium, Iris, DH, Lithium, FerriteCore, C2ME, Mod Menu, Placeholder API, Fabric API, VEYRATH) runs the seed tour on seeds 1 and 2. Only log error: DH `SQLException: stmt pointer is closed` on world close |
 | The custom Overworld generates successfully | Met | Seeds 1, 2, 3 create, tour, save and reopen without errors. World creation to spawn 6.2–11.7 s, reopen 1.5–2.2 s. VEYRATH is in the World Type list (asserted by the tour) |
 | The world is geographically coherent | Met | Atlas maps for seeds 1–3: continent, provinces, drainage-following rivers; the tour shows the same layout in game |
@@ -65,10 +65,10 @@ and preview tool, not yet seen in Minecraft), **Partial**, **Not started** and *
 | Rivers, lakes and waterfalls work | Met | 0 bank leaks on seeds 1–3, 462 waterfalls on seed 1 (101 of 20+ blocks), falling water counted in game. Lake-outlet falls and hanging valleys not built |
 | Biome transitions are visually convincing | Not verified | The owner's judgement |
 | Multiple world seeds have been evaluated | Met | Seeds 1–3 in the engine, seeds 1 and 2 toured in game with screenshots (`docs/media/ingame/`) |
-| Shader integration works | Partial | Complementary Unbound with DH runs (seed 1 72–207 fps, seed 2 99–221). Far terrain looks pale with it; Photon and Bliss not compared yet |
+| Shader integration works | Partial | Complementary Unbound with DH runs (newest build, seed 1: 71–220 fps). Far terrain looks pale with it. Photon and Bliss load but render wrong (black sky / overexposure) |
 | Distant Horizons works with our custom terrain | Met | VEYRATH LOD generator feeds DH; islands, forests and ranges render at distance; LOD equals chunks at block detail (test). The earlier seam band was a test artifact (render distance raised after world start) |
-| Distant landscapes look coherent | Partial | Without shaders yes. With shaders far terrain washes out; the LOD slope fix (`de595f5`) is being checked |
-| Performance has been measured and evaluated | Met | [PERFORMANCE_BENCHMARKS.md](PERFORMANCE_BENCHMARKS.md): 225–238 fps without shaders except seed 1 basalt (72); 72–221 with Complementary; engine 1.7–2.3 ms per chunk. Not measured: 1 % lows, long-play memory, save size |
+| Distant landscapes look coherent | Partial | Without shaders yes. With shaders far terrain washes out to blue-white; the LOD slope fix (`de595f5`) added some grey rock but did not change the overall look |
+| Performance has been measured and evaluated | Met | [PERFORMANCE_BENCHMARKS.md](PERFORMANCE_BENCHMARKS.md): newest build 215–238 fps without shaders, 71–220 with Complementary; far view complete 85 s after spawn; engine 1.7–2.3 ms per chunk. Not measured: 1 % lows, long-play memory, save size |
 | No critical generation, loading or saving bugs | Partial | None seen in the create, save and reopen cycles. Not tested with long play |
 | The world is genuinely enjoyable to explore | Not verified | The owner's judgement |
 | The technical foundation supports future expansion | Met | Engine has no Minecraft dependency. Extension points listed in [TECHNICAL_ARCHITECTURE.md](TECHNICAL_ARCHITECTURE.md#extension-points-for-later-chapters) |
@@ -78,19 +78,25 @@ and preview tool, not yet seen in Minecraft), **Partial**, **Not started** and *
 
 - **Launcher start** by the owner not yet confirmed.
 - **Pale far terrain with shaders** (Complementary Unbound): distant mountains wash out to
-  grey-white; the Crown underside looks pale and partly see-through far away. Fog tuning did not
-  help (device session 3).
-- **Neighbouring realms** are built on first touch (4–6 s on the owner's PC, 8.5 s on 4 cloud
-  cores); far terrain that needs them waits. Since `b0d0e06` they start building when a player is
-  within 8 km of a realm edge, at below-normal priority. In-game effect not measured yet.
-- **Seed 1 basalt** ran at 72 fps without shaders (225+ elsewhere); cause unknown.
-- **FPS varies between runs** (first run of a day about half as fast).
+  blue-white; the Crown underside looks pale and partly see-through far away. Fog tuning
+  (device session 3) and the LOD slope fix (device session 4) did not change the overall look.
+- **Neighbouring realms** are built on first touch (11.3–11.5 s in game for realm 0,-1 on seed 1);
+  far terrain that needs them waits. Since `b0d0e06` they start building when a player is within
+  8 km of a realm edge, at below-normal priority.
+- **Photon v1.4 and Bliss 2.1.2** render wrong with this setup (black sky with white patches;
+  heavy overexposure). Complementary Unbound stays the default.
+- **FPS varies between runs** (first run of a day about half as fast). The seed 1 basalt dip to
+  72 fps (device session 3) did not recur in session 4.
+- **Log messages** with shaders on: DH "Close the existing render pass" (twice, while DH shows its
+  chat warnings), Iris "Opaque + Translucent pass ran with shaders on" (once), DH
+  `stmt pointer is closed` on world close. None stopped the game.
 - **Not built:** VEYRATH blocks and textures (WP9); lake-outlet falls, hanging valleys and
-  waterfall spray; a DH answer that never waits for a realm build; the shader comparison and
-  tuned defaults (TD-004).
+  waterfall spray; a DH answer that never waits for a realm build; shader tuning for distant
+  terrain (TD-004).
 - **Looks:** Aethercrown crags repeat at similar sizes; the ground under the Crown is only dimly
-  lit; ground cover is thin in places (single flowers between drifts since this commit; not yet
-  seen in game).
+  lit; ground cover is thin in places (single flowers between drifts since `15455c0`: 29–31
+  within 32 blocks of spawn on seed 1, too small to see from 40 blocks up).
+- **Repository size:** `docs/media/ingame` holds about 150 MB of PNG screenshots.
 
 ## Session log
 
