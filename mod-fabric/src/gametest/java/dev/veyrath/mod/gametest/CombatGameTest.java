@@ -11,6 +11,7 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContex
 import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptions;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Options;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -53,7 +54,8 @@ public final class CombatGameTest implements FabricClientGameTest {
             server.runCommand("gamerule send_command_feedback false");
             server.runCommand("difficulty normal");
             server.runCommand("time set noon");
-            server.runCommand("effect give @p minecraft:saturation infinite 1 true");
+            // A short saturation pulse fills food without leaving an effect icon in the screenshots.
+            server.runCommand("effect give @p minecraft:saturation 1 255 true");
             int y = server.computeOnServer(s -> s.getPlayerList().getPlayers().getFirst().blockPosition().getY());
             LOG.info("ground y {}", y);
             server.runCommand(String.format(Locale.ROOT, "tp @p %.1f %d %.1f 0 12", PX, y, PZ));
@@ -116,29 +118,43 @@ public final class CombatGameTest implements FabricClientGameTest {
         server.runCommand(String.format(Locale.ROOT, "tp @p %.1f %d %.1f 0 12", PX, y, PZ));
         context.waitTicks(10);
         server.runCommand(summon("husk", PX, y, PZ + 1.4, "{Tags:[\"vt_air\"],PersistenceRequired:1b,Rotation:[180f,0f]}"));
-        context.waitTicks(2);
+        CombatTrace.step("wait 2 after summon");
+        context.waitTicks(1);
+        CombatTrace.start(42); // from the tick before the first ATTACK press until 40 ticks after it
+        context.waitTicks(1);
         float before = health(sp, "vt_air");
         double peak = 0;
+        CombatTrace.step("tap ATTACK 1 (jab), wait 3");
         tap(context, ATTACK, 3);
+        CombatTrace.step("tap ATTACK 2 (cross), wait 4");
         tap(context, ATTACK, 4);
         int huskId = sp.getServer().computeOnServer(s -> tagged(s, "vt_air").getId());
         startYTrace(huskId);
         logFighter(context, "after jab+cross");
+        CombatTrace.step("tap USE (launcher), wait 5");
         tap(context, USE, 5);
         logFighter(context, "after launcher press");
+        CombatTrace.step("screenshot c05");
         shot(context, "c05_launcher", false);
+        CombatTrace.step("tap JUMP, wait 5");
         tap(context, JUMP, 5);
         peak = Math.max(peak, height(sp, "vt_air", y));
+        CombatTrace.step("tap ATTACK (air 1), wait 3");
         tap(context, ATTACK, 3);
         peak = Math.max(peak, height(sp, "vt_air", y));
+        CombatTrace.step("screenshot c06");
         shot(context, "c06_air_string", true);
+        CombatTrace.step("tap ATTACK (air 2), wait 3");
         tap(context, ATTACK, 3);
         peak = Math.max(peak, height(sp, "vt_air", y));
+        CombatTrace.step("tap ATTACK (air 3), wait 3");
         tap(context, ATTACK, 3);
+        CombatTrace.step("wait 30 (peak sampling)");
         for (int i = 0; i < 30; i++) {
             peak = Math.max(peak, height(sp, "vt_air", y));
             context.waitTick();
         }
+        CombatTrace.step("-");
         LOG.info("launcher juggle: husk client Y per tick for {} ticks after the launcher: {}", Y_TRACE_TICKS, yTraceLine());
         float after = health(sp, "vt_air");
         LOG.info("launcher juggle: husk health {} -> {}, peak height {} blocks", before, after, String.format(Locale.ROOT, "%.2f", peak));
@@ -314,6 +330,7 @@ public final class CombatGameTest implements FabricClientGameTest {
         context.runOnClient(mc -> {
             mc.gui.hud.getChat().clearMessages(false);
             mc.gui.toastManager().clear();
+            mc.gui.hud.setOverlayMessage(Component.empty(), false);
             if (!hud) GameTests.setHudHidden(mc, true);
         });
         LOG.info("screenshot {}", context.takeScreenshot(TestScreenshotOptions.of("combat_" + name)));
