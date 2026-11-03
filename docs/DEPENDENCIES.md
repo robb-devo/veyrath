@@ -1,6 +1,6 @@
 # Dependencies and compatibility
 
-Last updated: 2026-11-02. Versions in the build come from `gradle/libs.versions.toml`. Versions in
+Last updated: 2026-11-03 (first device build and install on `robbs-strix`). Versions in the build come from `gradle/libs.versions.toml`. Versions in
 the player install come from `modpack/modpack.json`.
 
 **Verification states**
@@ -21,10 +21,10 @@ where they differ.
 | Java (JDK) | 25 | Required by Minecraft 26.x and by the build toolchain | GPL-2.0 with Classpath Exception (OpenJDK) | Verified. Engine builds and tests run on OpenJDK 25.0.4.1 |
 | Gradle | 9.6.0 (wrapper) | Build | Apache-2.0 | Verified. Version named in Fabric's 26.3 post. Engine and preview build with it |
 | Foojay toolchain resolver | 1.0.0 | Downloads a JDK 25 when none is installed | Apache-2.0 | Verified (resolves from the Gradle plugin portal) |
-| Fabric Loom | `1.17-SNAPSHOT` | Minecraft dev plugin (`net.fabricmc.fabric-loom`) | MIT | **Unverified.** Fabric's 26.3 post names Loom 1.17. Whether to pin a 1.17.x release instead of the snapshot is checked on the first device build |
+| Fabric Loom | `1.17.21` | Minecraft dev plugin (`net.fabricmc.fabric-loom`) | MIT | **Verified** (device build 2026-11-03). Newest 1.17.x release. Loom 1.18.4 needs Gradle 9.7 and 1.19.3 needs Gradle 9.8; the wrapper is 9.6.0 |
 | Fabric Loader | 0.19.5 | Mod loader | Apache-2.0 | Source only (Fabric 26.3 post) |
-| Fabric API | `0.153.0+26.3` | Events, registries, data generation | Apache-2.0 | **Unverified placeholder.** Pin the newest `*+26.3` release from Fabric's Maven metadata on the first device build |
-| Distant Horizons (compile only) | `maven.modrinth:distanthorizons:3.3.4-26.3` | LOD API classes for `dh/` | LGPL-3.0 (API: LGPL-3.0-only) | **Unverified coordinate.** API 7.2.0 confirmed in DH source tag 3.3.4. Fallback: `maven.modrinth:DistantHorizonsApi:7.2.0`, or build with `-Pveyrath.dh=false` |
+| Fabric API | `0.165.0+26.3` | Events, registries, data generation, client game tests | Apache-2.0 | **Verified** (newest `*+26.3` in Fabric's Maven metadata on 2026-11-03; build, datagen and client game test run) |
+| Distant Horizons (compile only) | `maven.modrinth:distanthorizons:3.3.4-26.3` | LOD API classes for `dh/` | LGPL-3.0-only | **Verified** (resolves; `dh/` compiles against it) |
 | JUnit Jupiter | 5.13.4 | Engine tests | EPL-2.0 | Verified (tests run) |
 
 ## Player install (VEYRATH profile)
@@ -34,17 +34,18 @@ where they differ.
 | Minecraft Java Edition | 26.3 | Platform | Yes | Proprietary (Mojang EULA). The owner's own licence | Verified release |
 | Fabric Loader | 0.19.5 | Loader | Yes | Apache-2.0 | Source only |
 | Fabric API | newest for 26.3 (installer picks) | Required by VEYRATH | Yes | Apache-2.0 | Source only |
-| VEYRATH | local build | The world | Yes | All rights reserved (no licence chosen yet) | Not built yet |
-| Sodium | mc26.3-0.9.2-fabric | Renderer | Yes (for Iris) | PolyForm Shield 1.0.0 | Source only |
-| Iris | 1.11.7+26.3-fabric | Shader loader | Yes (for shaders) | LGPL-3.0-only | Source only |
-| Distant Horizons | 3.3.4-26.3 | Far terrain (VEYRATH supplies the data) | Strongly recommended | LGPL-3.0 | Source only |
-| Lithium | newest for 26.3 | Game-logic optimisation | Recommended | LGPL-3.0-only | Source only |
-| FerriteCore | newest for 26.3 | Memory | Recommended | MIT | Source only |
-| C2ME | newest for 26.3 | Parallel chunk generation and I/O | Recommended (`-SkipC2ME` to leave out) | MIT | Source only |
-| Mod Menu | newest for 26.3 | Mod list and settings | Optional | MIT | Source only |
-| Complementary Unbound | newest (r5.9.3 tagged for 26.3) | Default shader pack | Optional | Custom licence (Complementary licence agreement) | Source only |
-| Photon | newest (v1.4 tagged for 26.3) | Comparison shader pack | Optional | Not yet checked | Source only |
-| Bliss | newest (2.1.2 tagged for 26.3) | Comparison shader pack | Optional | Not yet checked | Source only |
+| VEYRATH | local build (`veyrath-0.1.0-ch01.jar`) | The world | Yes | All rights reserved (no licence chosen yet) | Built and installed 2026-11-03 |
+| Sodium | mc26.3-0.9.2-fabric | Renderer | Yes (for Iris) | PolyForm Shield 1.0.0 | Installed |
+| Iris | 1.11.7+26.3-fabric | Shader loader | Yes (for shaders) | LGPL-3.0-only | Installed |
+| Distant Horizons | 3.3.4-26.3 | Far terrain (VEYRATH supplies the data) | Strongly recommended | LGPL-3.0-only | Installed |
+| Lithium | mc26.3-0.26.3-fabric | Game-logic optimisation | Recommended | LGPL-3.0-only | Installed |
+| FerriteCore | 9.0.0-fabric | Memory | Recommended | MIT | Installed |
+| C2ME | 0.4.2-alpha.0.115+26.3 (**pre-release**: no release build for 26.3) | Parallel chunk generation and I/O | Recommended (`-SkipC2ME` to leave out) | MIT | Installed |
+| Mod Menu | 21.0.0 | Mod list and settings | Optional | MIT | Installed |
+| Placeholder API | 3.2.0+26.3 | Library required by Mod Menu 21 | With Mod Menu | LGPL-3.0-only | Installed (added to `modpack.json` after the first install warned about it) |
+| Complementary Unbound | r5.9.3 | Default shader pack | Optional | Custom licence (Modrinth: `LicenseRef-Custom`) | Installed, selected in `iris.properties` |
+| Photon | v1.4 | Comparison shader pack | Optional | Modrinth id `LicenseRef-` (blank; check the pack's own licence file) | Installed |
+| Bliss | 2.1.2 | Comparison shader pack | Optional | All rights reserved (Modrinth) | Installed |
 
 "Newest" means the installer takes the newest release whose Modrinth listing names Minecraft
 26.3 and Fabric. It prints and records the exact versions installed.
@@ -60,7 +61,7 @@ where they differ.
 | VEYRATH generator ↔ C2ME | Compatible | C2ME generates chunks in parallel. Engine test `parallelCompositionMatchesSequential` proves the engine is thread-safe | No |
 | VEYRATH LOD generator ↔ Distant Horizons | Compatible | `API_DATA_SOURCES` path implemented against DH API 7.2.0 source. Engine test proves LOD columns match chunk columns at block detail | No |
 | VEYRATH ↔ Lithium, FerriteCore | No interaction expected | They optimise game logic and memory, not generation | No |
-| VEYRATH ↔ y −256..1023 dimension | Supported by the dimension-type format | Limits as of 1.21 (TD-006). 26.3 format still to check | No |
+| VEYRATH ↔ y −256..1023 dimension | Supported | Dimension type rebuilt from vanilla 26.3 `overworld.json` (environment-attribute format) | Yes: worlds generate, summit reached at y938 (vanilla client) |
 | VEYRATH ↔ other world-generation or biome mods (Terralith, Tectonic, biome packs) | **Incompatible by design** | VEYRATH replaces the Overworld generator and biome source | — |
 | VEYRATH ↔ vanilla structures (villages and others) | Not generated in Chapter 01 | Custom generator. Structures are a future Chapter | — |
 
