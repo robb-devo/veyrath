@@ -27,6 +27,9 @@ public enum Material {
     PALE_WOOD, BLOOM_LEAVES, EMBER_WOOD, EMBER_LEAVES, FEN_WOOD, FEN_LEAVES, CHAR_WOOD,
     // Ground plants, one block tall, placed on soil
     GRASS_TUFT, FERN, FLOWER_YELLOW, FLOWER_RED, FLOWER_BLUE, FLOWER_WHITE, FLOWER_VIOLET, DRY_SHRUB, MOSS_CARPET,
+    // Two-block plants (lower half, then the top half above it), reeds at the water's edge,
+    // crystal and fungal flora
+    TALL_GRASS, TALL_GRASS_TOP, LARGE_FERN, LARGE_FERN_TOP, REEDS, AMETHYST_CLUSTER, AMETHYST_BUD, MUSHROOM_BROWN, MUSHROOM_RED,
     // Hanging plants under floating islands: roots, and vines (some with glowing berries) ending in a tip
     HANGING_ROOTS, HANGING_VINE, HANGING_VINE_LIT, HANGING_VINE_TIP;
 

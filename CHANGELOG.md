@@ -106,6 +106,8 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   fine detail. `/veyrath tp crown_falls` stands 160 blocks out from the Veil.
 - **Hanging roots and glow-berry vines** under the floating islands; the berries light the
   undersides.
+- **More ground flora**: tall grass and large ferns, reeds at the water's edge, amethyst clusters
+  and buds in the Prismmere, mushrooms on Elderwood podzol.
 - **Mountain rock**: the Aethercrown shows folded beds of stone, andesite, deepslate, tuff,
   diorite and calcite instead of one grey stone; steep faces get crag relief (ribs and ledges a
   few blocks deep) instead of an even staircase; snow clings to steep faces high up; scree

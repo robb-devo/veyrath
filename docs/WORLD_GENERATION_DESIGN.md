@@ -303,8 +303,13 @@ Code: `engine/.../vegetation/` (`Vegetation`, `Tree`, `TreeKind`). No vanilla fe
 
 *Engine render of generated chunks (`preview voxel`), not an in-game screenshot.*
 
-Not yet: island vegetation, hanging vines and roots, tall grass and reeds, crystal and fungal
-flora, custom textures (phase B).
+Ground flora also includes tall grass (18 % of grass tufts) and large ferns (30 % of ferns)
+where there is room, reeds (sugar cane, 1–3 tall) on soil or sand right at the water's edge
+where Minecraft lets them stand, amethyst clusters and buds in the Prismmere, and mushrooms on
+Elderwood podzol. Island undersides carry hanging roots and glow-berry vines (see Floating
+islands).
+
+Not yet: custom textures (phase B).
 
 ## Landmark tiers (planned, WP6)
 

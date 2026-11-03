@@ -7,6 +7,7 @@ import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 
 /**
  * Maps engine materials to block states.
@@ -84,6 +85,15 @@ public final class MaterialPalette {
         put(Material.FLOWER_VIOLET, Blocks.ALLIUM);
         put(Material.DRY_SHRUB, Blocks.DEAD_BUSH);
         put(Material.MOSS_CARPET, Blocks.MOSS_CARPET);
+        put(Material.TALL_GRASS, Blocks.TALL_GRASS);
+        put(Material.TALL_GRASS_TOP, Blocks.TALL_GRASS.defaultBlockState().setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, DoubleBlockHalf.UPPER));
+        put(Material.LARGE_FERN, Blocks.LARGE_FERN);
+        put(Material.LARGE_FERN_TOP, Blocks.LARGE_FERN.defaultBlockState().setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, DoubleBlockHalf.UPPER));
+        put(Material.REEDS, Blocks.SUGAR_CANE);
+        put(Material.AMETHYST_CLUSTER, Blocks.AMETHYST_CLUSTER);
+        put(Material.AMETHYST_BUD, Blocks.MEDIUM_AMETHYST_BUD);
+        put(Material.MUSHROOM_BROWN, Blocks.BROWN_MUSHROOM);
+        put(Material.MUSHROOM_RED, Blocks.RED_MUSHROOM);
         put(Material.HANGING_ROOTS, Blocks.HANGING_ROOTS);
         put(Material.HANGING_VINE, Blocks.CAVE_VINES_PLANT);
         put(Material.HANGING_VINE_LIT, Blocks.CAVE_VINES_PLANT.defaultBlockState().setValue(BlockStateProperties.BERRIES, true));

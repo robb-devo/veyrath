@@ -68,7 +68,8 @@ public final class Vegetation {
         java.util.Arrays.fill(PROFILES, BARE);
         Material G = Material.GRASS_TUFT, F = Material.FERN, Y = Material.FLOWER_YELLOW, R = Material.FLOWER_RED,
                 B = Material.FLOWER_BLUE, W = Material.FLOWER_WHITE, V = Material.FLOWER_VIOLET, D = Material.DRY_SHRUB,
-                M = Material.MOSS_CARPET;
+                M = Material.MOSS_CARPET, AC = Material.AMETHYST_CLUSTER, AB = Material.AMETHYST_BUD,
+                MB = Material.MUSHROOM_BROWN, MR = Material.MUSHROOM_RED;
         // Aethercrown Highlands
         profile(VBiome.STORMPINE_SLOPES, 0, 0.42, picks(TreeKind.STORMPINE, 0.8, TreeKind.PINE, 0.2), 0, NONE, 0.12, G, 3, F, 2);
         profile(VBiome.HIGHMERE_VALES, 0, 0.10, picks(TreeKind.PINE, 0.7, TreeKind.BROADLEAF, 0.3), 0.15, picks(TreeKind.STORMPINE, 1),
@@ -80,16 +81,16 @@ public final class Vegetation {
         profile(VBiome.RIFT_DEPTHS, 0, 0.34, picks(TreeKind.BROADLEAF, 0.7, TreeKind.ELDER, 0.3), 0, NONE, 0.35, F, 3, G, 2);
         // Elderbough Expanse
         profile(VBiome.ELDERWOOD, 0.62, 0.26, picks(TreeKind.ELDER, 0.65, TreeKind.BROADLEAF, 0.35), 0, NONE,
-                0.3, F, 4, G, 3, M, 2);
+                0.3, F, 4, G, 3, M, 2, MB, 0.7, MR, 0.35);
         profile(VBiome.MOSSDEEP_HOLLOWS, 0.4, 0.3, picks(TreeKind.ELDER, 0.6, TreeKind.FEN, 0.4), 0, NONE, 0.45, M, 4, F, 4);
         profile(VBiome.SUNGLADE, 0.12, 0, NONE, 0.12, picks(TreeKind.BROADLEAF, 1), 0.4, G, 6, Y, 2, W, 2, R, 1, B, 1);
         // Aetherreach
         profile(VBiome.CLOUDMEADOW, 0, 0, NONE, 0.05, picks(TreeKind.BLOOM, 1), 0.55, G, 8, W, 1);
         profile(VBiome.AETHER_ISLES, 0, 0.12, picks(TreeKind.BLOOM, 1), 0, NONE, 0.35, G, 5, W, 1, V, 1);
         // Prismmere Wilds
-        profile(VBiome.PRISMMERE_SHORES, 0, 0, NONE, 0.06, picks(TreeKind.BLOOM, 1), 0.2, G, 3);
-        profile(VBiome.SHARDFIELDS, 0, 0, NONE, 0.02, picks(TreeKind.BLOOM, 1), 0.06, G, 1);
-        profile(VBiome.AMETHYST_BLOOM, 0, 0.28, picks(TreeKind.BLOOM, 1), 0, NONE, 0.3, G, 3, V, 2, B, 1);
+        profile(VBiome.PRISMMERE_SHORES, 0, 0, NONE, 0.06, picks(TreeKind.BLOOM, 1), 0.2, G, 3, AB, 0.4);
+        profile(VBiome.SHARDFIELDS, 0, 0, NONE, 0.02, picks(TreeKind.BLOOM, 1), 0.12, G, 1, AC, 1, AB, 2);
+        profile(VBiome.AMETHYST_BLOOM, 0, 0.28, picks(TreeKind.BLOOM, 1), 0, NONE, 0.3, G, 3, V, 2, B, 1, AB, 0.3);
         // Cinderwake Dominion
         profile(VBiome.ASHEN_WASTES, 0, 0, NONE, 0.06, picks(TreeKind.CHARRED, 1), 0.03, D, 1);
         profile(VBiome.CHARWOOD, 0, 0.3, picks(TreeKind.CHARRED, 0.75, TreeKind.EMBERLEAF, 0.25), 0, NONE, 0.04, D, 1);
@@ -345,8 +346,65 @@ public final class Vegetation {
                 else if (Hash.unit(Hash.mix(h ^ 0x5EEDL)) > 0.15) plant = driftFlower(p, biomes.patch(x * 0.8 + 313, z * 0.8 - 919), plant);
             }
             if (plant == null || !supports(top, plant)) continue;
+            // Some tufts and ferns grow tall, two blocks, where there is room.
+            if ((plant == Material.GRASS_TUFT || plant == Material.FERN) && g + 2 < out.minY + out.height
+                    && out.mat[base + g + 2] == air && Hash.unit(Hash.mix(h ^ 0x7A11L)) < (plant == Material.FERN ? 0.3 : 0.18)) {
+                Material lower = plant == Material.FERN ? Material.LARGE_FERN : Material.TALL_GRASS;
+                out.mat[base + g + 1] = (short) lower.ordinal();
+                out.mat[base + g + 2] = (short) (lower.ordinal() + 1);
+                if (g + 2 > out.topSolid[col]) out.topSolid[col] = (short) (g + 2);
+                continue;
+            }
             out.mat[base + g + 1] = (short) plant.ordinal();
             if (g + 1 > out.topSolid[col]) out.topSolid[col] = (short) (g + 1);
+        }
+        reeds(out);
+    }
+
+    /** Chance of reeds on a shore column of each biome (0 where none grow). */
+    private static double reedChance(VBiome b) {
+        return switch (b) {
+            case GLOAMREED_MARSH -> 0.55;
+            case GLOWMIRE -> 0.4;
+            case SUNMANTLE_MEADOWS, SUNMANTLE_GROVES, ELDERWOOD, MOSSDEEP_HOLLOWS, RIFT_DEPTHS, SUNGLADE -> 0.22;
+            case HIGHMERE_VALES, PRISMMERE_SHORES, AMETHYST_BLOOM, CLOUDMEADOW -> 0.12;
+            default -> 0;
+        };
+    }
+
+    /**
+     * Reeds (sugar cane) one to three blocks tall on soil or sand right at the water's edge: as
+     * Minecraft requires, a neighbour of the ground block holds water at the ground block's level.
+     * Only neighbours inside the chunk are checked, so the result never depends on another chunk.
+     */
+    private void reeds(ChunkBuffer out) {
+        int bx = out.chunkX << 4, bz = out.chunkZ << 4;
+        short air = (short) Material.AIR.ordinal(), water = (short) Material.WATER.ordinal();
+        long rs = seed ^ 0x2EED5L;
+        int[] dx = {1, -1, 0, 0}, dz = {0, 0, 1, -1};
+        for (int col = 0; col < 256; col++) {
+            double chance = reedChance(VBiome.values()[out.biome[col]]);
+            if (chance <= 0 || out.fluidTop[col] > out.ground[col]) continue;
+            int g = out.ground[col], x = col & 15, z = col >> 4;
+            int base = col * out.height - out.minY;
+            if (g + 4 >= out.minY + out.height || out.mat[base + g + 1] != air) continue;
+            Material top = Material.byId(out.mat[base + g]);
+            if (!(top.isSoil() || top == Material.SAND || top == Material.RED_SAND)) continue;
+            boolean shore = false;
+            for (int k = 0; k < 4 && !shore; k++) {
+                int nx = x + dx[k], nz = z + dz[k];
+                if (nx < 0 || nx > 15 || nz < 0 || nz > 15) continue;
+                shore = out.mat[((nz << 4) | nx) * out.height - out.minY + g] == water;
+            }
+            if (!shore) continue;
+            long h = Hash.hash(rs, bx + x, bz + z);
+            // Reed beds come in stretches along the shore.
+            if (Hash.unit(h) >= chance * (0.3 + biomes.patch((bx + x) * 2.3 + 71, (bz + z) * 2.3 - 433))) continue;
+            int n = 1 + (int) (3 * Hash.unit(Hash.mix(h)));
+            for (int k = 1; k <= n && out.mat[base + g + k] == air; k++) {
+                out.mat[base + g + k] = (short) Material.REEDS.ordinal();
+                if (g + k > out.topSolid[col]) out.topSolid[col] = (short) (g + k);
+            }
         }
     }
 
@@ -378,6 +436,12 @@ public final class Vegetation {
     /** Whether Minecraft lets {@code plant} stand on {@code ground}. */
     static boolean supports(Material ground, Material plant) {
         if (plant == Material.MOSS_CARPET) return ground.isSolid();
+        if (plant == Material.TALL_GRASS_TOP) return ground == Material.TALL_GRASS;
+        if (plant == Material.LARGE_FERN_TOP) return ground == Material.LARGE_FERN;
+        if (plant == Material.REEDS) return ground == Material.REEDS || ground.isSoil() || ground == Material.SAND || ground == Material.RED_SAND;
+        if (plant == Material.AMETHYST_CLUSTER || plant == Material.AMETHYST_BUD) return ground.isSolid();
+        // Mushrooms survive in any light only on podzol.
+        if (plant == Material.MUSHROOM_BROWN || plant == Material.MUSHROOM_RED) return ground == Material.PODZOL;
         if (plant == Material.DRY_SHRUB) {
             return ground.isSoil() || ground == Material.SAND || ground == Material.RED_SAND
                     || (ground.ordinal() >= Material.STRATA_RED.ordinal() && ground.ordinal() <= Material.STRATA_UMBER.ordinal());

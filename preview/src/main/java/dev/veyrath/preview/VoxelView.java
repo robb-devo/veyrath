@@ -49,7 +49,9 @@ final class VoxelView {
                 Material.FLOWER_YELLOW, 0xf1f902, Material.FLOWER_RED, 0xd1271f, Material.FLOWER_BLUE, 0x4669e0,
                 Material.FLOWER_WHITE, 0xe9ecec, Material.FLOWER_VIOLET, 0xb663e6, Material.DRY_SHRUB, 0x6b4f29,
                 Material.MOSS_CARPET, 0x596e2d, Material.HANGING_ROOTS, 0x8f6a4f, Material.HANGING_VINE, 0x4f6b2a,
-                Material.HANGING_VINE_LIT, 0xf2a83b, Material.HANGING_VINE_TIP, 0x4f6b2a,
+                Material.HANGING_VINE_LIT, 0xf2a83b, Material.HANGING_VINE_TIP, 0x4f6b2a, Material.REEDS, 0x94c065,
+                Material.AMETHYST_CLUSTER, 0xa07fd6, Material.AMETHYST_BUD, 0x9a76cf, Material.MUSHROOM_BROWN, 0x9a7458,
+                Material.MUSHROOM_RED, 0xc8352d,
         };
         for (int i = 0; i < t.length; i += 2) c[((Material) t[i]).ordinal()] = (Integer) t[i + 1];
         return c;
@@ -250,7 +252,8 @@ final class VoxelView {
     private static int colour(Material m, int[] pal, int grass, int foliage, int water) {
         if (m == Material.WATER) return water;
         if (m == Material.WATERFALL) return shade(water, 1.25); // white water
-        if (m == Material.GRASS || m == Material.GRASS_TUFT || m == Material.FERN) return m == Material.GRASS ? grass : shade(grass, 0.85);
+        if (m == Material.GRASS || m == Material.GRASS_TUFT || m == Material.FERN || m == Material.TALL_GRASS || m == Material.TALL_GRASS_TOP
+                || m == Material.LARGE_FERN || m == Material.LARGE_FERN_TOP) return m == Material.GRASS ? grass : shade(grass, 0.85);
         if (m.isLeaves() && m != Material.CONIFER_LEAVES) return shade(foliage, 0.8);
         return pal[m.ordinal()];
     }
