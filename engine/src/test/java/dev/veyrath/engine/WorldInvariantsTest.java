@@ -108,6 +108,8 @@ class WorldInvariantsTest {
                     assertEquals(chunk.biome[col], lod.biome, "biome differs at " + x + "," + z);
                     int top = Math.max(chunk.ground[col], chunk.fluidTop[col]);
                     for (int y = chunk.ground[col] - 2; y <= top; y++) {
+                        // LOD does not carve caves; a cave mouth may open the ground in chunks.
+                        if (y <= chunk.ground[col] && chunk.get(x, y, z) == Material.AIR.ordinal()) continue;
                         assertEquals(chunk.get(x, y, z), materialAt(lod, y), "material differs at " + x + "," + y + "," + z);
                     }
                 }

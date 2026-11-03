@@ -108,6 +108,7 @@ public final class Vegetation {
 
     private final WorldSpec spec;
     private final TerrainSampler terrain;
+    private final dev.veyrath.engine.cave.Caves caves;
     private final BiomeSelector biomes;
     private final long seed;
 
@@ -119,8 +120,9 @@ public final class Vegetation {
         short[] column = new short[0];
     }
 
-    public Vegetation(WorldSpec spec, TerrainSampler terrain, BiomeSelector biomes) {
+    public Vegetation(WorldSpec spec, TerrainSampler terrain, BiomeSelector biomes, dev.veyrath.engine.cave.Caves caves) {
         this.spec = spec;
+        this.caves = caves;
         this.terrain = terrain;
         this.biomes = biomes;
         this.seed = Hash.derive(spec.seed(), "vegetation");
@@ -152,6 +154,8 @@ public final class Vegetation {
         terrain.sample(bx + 0.5, bz + 0.5, c, ctx.scratch);
         if (c.wet() || !Double.isNaN(c.lava) || c.volcano > 0.3 || c.ground < spec.seaLevel() + 1) return null;
         if (c.riverDistance < c.riverHalfWidth + 3) return null;
+        // No tree on or right beside a cave mouth, where the ground may be open.
+        if (caves != null && caves.entrance(c, dev.veyrath.engine.cave.Caves.NEAR_ENTRANCE)) return null;
         // Fine slope from two more samples: keeps trees off cliffs, rift walls and terrace risers.
         terrain.sample(bx + 2.5, bz + 0.5, ctx.cx, ctx.scratch);
         terrain.sample(bx + 0.5, bz + 2.5, ctx.cz, ctx.scratch);

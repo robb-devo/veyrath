@@ -173,8 +173,9 @@ public final class VeyrathWorld {
         RealmAtlas atlas = AtlasBuilder.build(spec, rx, rz, progress);
         TerrainSampler terrain = new TerrainSampler(atlas);
         FloatingIslands islands = new FloatingIslands(atlas);
-        Vegetation vegetation = new Vegetation(spec, terrain, biomes);
-        ChunkComposer composer = new ChunkComposer(spec, terrain, biomes, painter, islands, vegetation);
+        dev.veyrath.engine.cave.Caves caves = new dev.veyrath.engine.cave.Caves(spec);
+        Vegetation vegetation = new Vegetation(spec, terrain, biomes, caves);
+        ChunkComposer composer = new ChunkComposer(spec, terrain, biomes, painter, islands, vegetation, caves);
         return new Realm(atlas, terrain, biomes, painter, islands, vegetation, composer);
     }
 }

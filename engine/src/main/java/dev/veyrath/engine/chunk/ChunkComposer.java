@@ -29,6 +29,7 @@ public final class ChunkComposer {
     private final SurfacePainter painter;
     private final FloatingIslands islands;
     private final Vegetation vegetation;
+    private final dev.veyrath.engine.cave.Caves caves;
 
     /** Per-thread working state. */
     public static final class Context {
@@ -37,6 +38,7 @@ public final class ChunkComposer {
         final FloatingIslands.Hit island = new FloatingIslands.Hit();
         final double[] slope = new double[256], ground = new double[256];
         final Vegetation.Context vegetation = new Vegetation.Context();
+        final dev.veyrath.engine.cave.Caves.Context caves = new dev.veyrath.engine.cave.Caves.Context();
 
         public Context() {
             for (int i = 0; i < cols.length; i++) cols[i] = new ColumnInfo();
@@ -49,8 +51,9 @@ public final class ChunkComposer {
     }
 
     public ChunkComposer(WorldSpec spec, TerrainSampler terrain, BiomeSelector biomes, SurfacePainter painter, FloatingIslands islands,
-                         Vegetation vegetation) {
+                         Vegetation vegetation, dev.veyrath.engine.cave.Caves caves) {
         this.spec = spec;
+        this.caves = caves;
         this.terrain = terrain;
         this.biomes = biomes;
         this.painter = painter;
@@ -121,6 +124,7 @@ public final class ChunkComposer {
                 out.topSolid[col] = (short) topSolid;
             }
         }
+        if (caves != null) caves.carve(out, g, ctx.caves);
         if (vegetation != null) vegetation.decorate(out, ctx.vegetation);
         markSteps(out, g);
     }

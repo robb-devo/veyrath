@@ -42,6 +42,8 @@ final class Audit {
         long banks, rockBanks;
         /** Water beside a waterfall column (the lip of a fall into the Rift). */
         long falls;
+        /** Cave air below the ground, solid blocks below the ground, and columns whose ground block is open (cave mouths). */
+        long caveAir, underground, mouths;
         /** Water blocks handed to Minecraft to flow (river steps). */
         long flow;
         int minGround = Integer.MAX_VALUE, maxGround = Integer.MIN_VALUE;
@@ -124,6 +126,9 @@ final class Audit {
             total.banks += s.banks;
             total.rockBanks += s.rockBanks;
             total.falls += s.falls;
+            total.caveAir += s.caveAir;
+            total.underground += s.underground;
+            total.mouths += s.mouths;
             total.flow += s.flow;
             total.minGround = Math.min(total.minGround, s.minGround);
             total.maxGround = Math.max(total.maxGround, s.maxGround);
@@ -136,9 +141,9 @@ final class Audit {
         System.out.println("bank deficit = blocks between the water block and the neighbour's ground: 1 / 2 / 3-5 / 6+");
         for (var e : new Object[][]{{"provinces", total}, {"rivers", rivers}, {"lakes", lakes}, {"sea", sea}}) {
             Stats s = (Stats) e[1];
-            System.out.printf(Locale.ROOT, "  %-10s bank %6d  step %6d  deficit %d / %d / %d / %d  raised to contain water: %d of %d columns, flow marks %d, levee lips %d, rock-topped banks %d of %d, fall lips %d%n",
+            System.out.printf(Locale.ROOT, "  %-10s bank %6d  step %6d  deficit %d / %d / %d / %d  raised to contain water: %d of %d columns, flow marks %d, levee lips %d, rock-topped banks %d of %d, fall lips %d, caves %.2f%%, mouths %d%n",
                     e[0], s.sideAirBank, s.sideAirStep, s.bankDeficit[0], s.bankDeficit[1], s.bankDeficit[2], s.bankDeficit[3],
-                    s.contained, s.columns, s.flow, s.lips, s.rockBanks, s.banks, s.falls);
+                    s.contained, s.columns, s.flow, s.lips, s.rockBanks, s.banks, s.falls, 100.0 * s.caveAir / Math.max(1, s.underground), s.mouths);
         }
     }
 
@@ -167,6 +172,11 @@ final class Audit {
                 s.columns++;
                 s.minGround = Math.min(s.minGround, c.ground[col]);
                 s.maxGround = Math.max(s.maxGround, c.ground[col]);
+                for (int y = spec.minY() + 1; y <= c.ground[col]; y++) {
+                    s.underground++;
+                    if (c.get(x, y, z) == air) s.caveAir++;
+                }
+                if (c.get(x, c.ground[col], z) == air) s.mouths++;
                 if (c.fluidTop[col] > c.ground[col]) s.wetColumns++;
                 else {
                     if (isLip(g, x, z)) s.lips++;

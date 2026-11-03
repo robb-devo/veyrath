@@ -123,6 +123,7 @@ final class VoxelView {
             lo = Math.min(lo, b.ground[col] - 2);
             hi = Math.max(hi, Math.max(b.topSolid[col], b.fluidTop[col]) + 1);
         }
+        if (System.getProperty("veyrath.cut") != null) lo -= Integer.parseInt(System.getProperty("veyrath.cut")) + 48;
         hi = Math.min(hi, lo + 420);
         final int y0 = lo, ny = hi - lo + 1;
         short[] vox = new short[size * size * ny];
@@ -137,6 +138,19 @@ final class VoxelView {
                 foliage[z * size + x] = bio.foliage;
                 waterC[z * size + x] = bio.water;
                 for (int y = 0; y < ny; y++) vox[(z * size + x) * ny + y] = b.get(col & 15, y0 + y, col >> 4);
+            }
+        }
+        // Preview only: veyrath.cut = N removes every block above (ground - N), revealing caves.
+        String cut = System.getProperty("veyrath.cut");
+        if (cut != null) {
+            int depth = Integer.parseInt(cut);
+            for (int k = 0; k < n * n; k++) {
+                ChunkBuffer b = chunks[k];
+                int ox = (k % n) * 16, oz = (k / n) * 16;
+                for (int col = 0; col < 256; col++) {
+                    int x = ox + (col & 15), z = oz + (col >> 4);
+                    for (int y = Math.max(0, b.ground[col] - depth - y0); y < ny; y++) vox[(z * size + x) * ny + y] = 0;
+                }
             }
         }
         // Preview only: let marked water flow straight down beside it, roughly as Minecraft will

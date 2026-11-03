@@ -48,6 +48,7 @@ public final class PreviewMain {
             case "audit" -> Audit.run(spec, Integer.parseInt(opt(args, "--per", "6")));
             case "riftprobe" -> RiftProbe.run(spec);
             case "falls" -> FallList.run(spec);
+            case "caves" -> CaveProfile.run(spec);
             default -> System.out.println("unknown command " + cmd);
         }
     }
