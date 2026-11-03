@@ -20,7 +20,7 @@ import dev.veyrath.engine.terrain.ColumnInfo;
 public final class SurfacePainter {
     private final WorldSpec spec;
     private final BiomeSelector biomes;
-    private final Fractal rockMix, soil, bands;
+    private final Fractal rockMix, soil, bands, fold;
     private final long seed;
     private static final Material[] STRATA = {
             Material.STRATA_RED, Material.STRATA_ORANGE, Material.STRATA_RED, Material.STRATA_OCHRE,
@@ -35,6 +35,7 @@ public final class SurfacePainter {
         this.rockMix = new Fractal(Hash.derive(seed, "rock"), 28, 3, 2.0, 0.5);
         this.soil = new Fractal(Hash.derive(seed, "soil"), 22, 2, 2.0, 0.5);
         this.bands = new Fractal(Hash.derive(seed, "bands"), 700, 2, 2.0, 0.5);
+        this.fold = new Fractal(Hash.derive(seed, "fold"), 420, 2, 2.0, 0.5);
     }
 
     /**
@@ -54,7 +55,10 @@ public final class SurfacePainter {
         boolean steep = slope > 1.25 + 0.25 * soilN;
         int soilDepth = steep ? 0 : (int) MathUtil.clamp(Math.round(3.5 - slope * 2.2 + soilN * 1.5), 1, 5);
         double snowLine = biomes.snowLine(c);
-        boolean snowy = c.ground > snowLine + soilN * 25 && slope < 1.55;
+        // Snow lies on gentle ground above the snow line, and high up it clings to steep faces
+        // too, dusting each ledge of a cliff.
+        boolean snowy = (c.ground > snowLine + soilN * 25 && slope < 1.55)
+                || (c.ground > snowLine + 70 + soilN * 30 && slope < 2.6);
         boolean underwater = c.wet();
         boolean crystal = !Double.isNaN(c.crystal);
         Material crystalMat = c.quartz ? Material.CRYSTAL_STONE : Material.AMETHYST;
@@ -102,7 +106,8 @@ public final class SurfacePainter {
         return switch (b) {
             case CROWNSPIRE_PEAKS -> Material.SNOW;
             case AETHERCROWN_CRAGS -> slope > 0.7 ? Material.GRAVEL : (n > 0.2 ? Material.STONE : Material.GRASS);
-            case STORMPINE_SLOPES -> n > 0.35 ? Material.PODZOL : Material.GRASS;
+            case STORMPINE_SLOPES -> slope > 1.0 && n > 0.3 ? Material.GRAVEL // scree patches on the steep stretches
+                    : n > 0.35 ? Material.PODZOL : Material.GRASS;
             case HIGHMERE_VALES, SUNMANTLE_MEADOWS, SUNMANTLE_GROVES, CLOUDMEADOW, AETHER_ISLES, SUNGLADE, AMETHYST_BLOOM -> Material.GRASS;
             case VESPER_MESAS -> n > 0.45 ? Material.COARSE_DIRT : (n < -0.4 ? Material.RED_SAND : Material.GRASS);
             case EMBERLEAF_LEDGES -> slope > 0.8 ? rockAt(c, (int) c.ground, mix) : Material.GRASS;
@@ -146,10 +151,23 @@ public final class SurfacePainter {
             case CINDERWAKE_DOMINION -> m > 0.3 ? Material.BLACKSTONE : m < -0.55 ? Material.OBSIDIAN
                     : m < -0.25 ? Material.STRATA_RED : Material.BASALT; // red scoria beds in the basalt
             case PRISMMERE_WILDS -> m > 0.45 ? Material.CRYSTAL_STONE : (m < -0.45 ? Material.AMETHYST : Material.CALCITE);
-            case AETHERCROWN_HIGHLANDS -> m > 0.4 ? Material.ANDESITE : (m < -0.55 ? Material.DIORITE : Material.STONE);
+            case AETHERCROWN_HIGHLANDS -> alpine(c, y, mix);
             case GLOAMREED_FEN -> m > 0.5 ? Material.TUFF : Material.STONE;
             default -> m > 0.55 ? Material.ANDESITE : (m < -0.6 ? Material.GRANITE : Material.STONE);
         };
+    }
+
+    /**
+     * Aethercrown rock: folded beds about 6 blocks thick that dip and bend across a range (a
+     * smooth fold field lifts the beds by up to about 50 blocks), so cliffs show diagonal grey,
+     * dark, olive and pale layers instead of one grey stone.
+     */
+    private Material alpine(ColumnInfo c, int y, double mix) {
+        double t = y + 55 * fold.fbm(c.x, c.z) + 4 * mix;
+        long h = Hash.hash(seed ^ 0xA17E5L, MathUtil.floor(t / 6.0));
+        double u = Hash.unit(h);
+        return u < 0.40 ? Material.STONE : u < 0.62 ? Material.ANDESITE : u < 0.76 ? Material.DEEPSLATE
+                : u < 0.88 ? Material.TUFF : u < 0.94 ? Material.DIORITE : Material.CALCITE;
     }
 
     /** Offset of the rock-type threshold for the 4-block bed at height y (about +-0.3). */

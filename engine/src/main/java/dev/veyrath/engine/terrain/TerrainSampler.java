@@ -58,7 +58,7 @@ public final class TerrainSampler {
 
     private final RealmAtlas atlas;
     private final WorldSpec spec;
-    private final Fractal ridged, erosive, rough, grain, strataStep, mesa, riftJag, massif;
+    private final Fractal ridged, erosive, rough, grain, cragGrain, strataStep, mesa, riftJag, massif;
     private final dev.veyrath.engine.math.GullyNoise gully1, gully2, gully3, riftChute;
     private final DomainWarp detailWarp;
     private final RiverNetwork riftNet;
@@ -87,6 +87,7 @@ public final class TerrainSampler {
         erosive = new Fractal(Hash.derive(s, "erosive"), 360, 5, 2.0, 0.5);
         rough = new Fractal(Hash.derive(s, "rough"), 48, 3, 2.1, 0.5);
         grain = new Fractal(Hash.derive(s, "grain"), 13, 2, 2.3, 0.45);
+        cragGrain = new Fractal(Hash.derive(s, "crag"), 12, 2, 2.2, 0.35);
         strataStep = new Fractal(Hash.derive(s, "strata"), 900, 2, 2.0, 0.5);
         mesa = new Fractal(Hash.derive(s, "mesa"), 220, 3, 2.0, 0.5);
         riftJag = new Fractal(Hash.derive(s, "rift-jag"), 110, 3, 2.1, 0.5);
@@ -232,6 +233,10 @@ public final class TerrainSampler {
         // Fine grain on gentle ground breaks the long, map-like contour steps of smooth slopes
         // into short irregular ones. Fades out on steep ground, where it is not needed.
         h += grain.fbm(x, z) * 1.1 * calm * (1 - MathUtil.smoothstep(0.5, 1.2, sl));
+        // Crag relief on steep ground: buttresses and ledges a few blocks deep, so a steep face
+        // reads as broken rock instead of the even staircase a smooth slope makes in blocks.
+        double steep = MathUtil.smoothstep(0.75, 1.4, slope) * calm * coastCalm;
+        if (steep > 0.01) h += (cragGrain.ridged(x, z, 1.6) - 0.45) * 7 * steep;
 
         // --- strata terraces (flat treads, steep risers); stronger on high ground
         double st = strata * MathUtil.smoothstep(sea + 30, sea + 140, h);

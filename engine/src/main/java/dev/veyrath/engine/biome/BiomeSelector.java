@@ -4,6 +4,7 @@ import dev.veyrath.engine.WorldSpec;
 import dev.veyrath.engine.math.Fractal;
 import dev.veyrath.engine.math.Hash;
 import dev.veyrath.engine.math.MathUtil;
+import dev.veyrath.engine.region.Archetype;
 import dev.veyrath.engine.terrain.ColumnInfo;
 
 /**
@@ -22,9 +23,14 @@ public final class BiomeSelector {
         this.sea = spec.seaLevel();
     }
 
-    /** Snow line (absolute y) for a column; colder provinces have lower snow lines. */
+    /**
+     * Snow line (absolute y) for a column; colder provinces have lower snow lines. The dry,
+     * sun-baked Vesperfall and the volcanic Cinderwake keep their red and black rock bare except
+     * on their very highest ground.
+     */
     public double snowLine(ColumnInfo c) {
-        return sea + 560 - 320 * (0.5 - c.temperature);
+        double dry = c.weights[Archetype.VESPERFALL_RIFTLANDS.ordinal()] + c.weights[Archetype.CINDERWAKE_DOMINION.ordinal()];
+        return sea + 560 - 320 * (0.5 - c.temperature) + 300 * MathUtil.clamp01(dry);
     }
 
     /** Tree line (absolute y). */
