@@ -62,6 +62,8 @@ public final class CombatServer {
     static final int IDLE_DROP = 200;
 
     static final Identifier GRAVITY_ID = VeyrathMod.id("combat_gravity");
+    /** Downward speed kept while frozen on the ground (vanilla reports a body at rest with zero speed as airborne). */
+    static final double GROUND_PRESS = 0.0784;
     static final Identifier STEP_ID = VeyrathMod.id("stance_step");
 
     static final class Pending {
@@ -338,7 +340,8 @@ public final class CombatServer {
         } else {
             f.tickFollower(grounded, false);
             if (f.frozen()) {
-                en.setDeltaMovement(0, 0, 0);
+                // Pressed onto the ground while frozen, so it does not read as airborne (see LocalCombat.GROUND_PRESS).
+                en.setDeltaMovement(0, grounded ? -GROUND_PRESS : 0, 0);
             } else {
                 Vec3 v = f.takeVelocity();
                 if (v != null) {
@@ -425,7 +428,7 @@ public final class CombatServer {
             d.setYBodyRot(face);
             if (o.velocity() != null) de.fighter.queueVelocity(o.velocity());
             if (de.fighter.inHitstop()) {
-                d.setDeltaMovement(0, 0, 0);
+                d.setDeltaMovement(0, d.onGround() ? -GROUND_PRESS : 0, 0);
                 setModifier(d, Attributes.GRAVITY, GRAVITY_ID, -1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
                 de.appliedGravity = 0;
                 ((EntityInvoker) d).veyrath$markHurt();

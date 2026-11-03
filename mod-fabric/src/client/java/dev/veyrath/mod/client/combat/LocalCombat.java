@@ -53,6 +53,12 @@ public final class LocalCombat {
     private LocalCombat() {}
 
     static final double AIR_ACCEL = 0.025;
+    /**
+     * Downward speed kept while frozen on the ground. At zero speed vanilla finds no collision below
+     * and reports the body airborne, so the ticks after every hit-stop ran as air ticks on the
+     * client while the server copy stayed grounded (seen in the launcher trace).
+     */
+    static final double GROUND_PRESS = 0.0784;
     static final Identifier GRAVITY_ID = VeyrathMod.id("combat_gravity");
     static final Identifier STEP_ID = VeyrathMod.id("stance_step");
     static final double LOCK_RANGE = 24, LOCK_KEEP = 32;
@@ -302,6 +308,7 @@ public final class LocalCombat {
         double bounce = fighter.bounceVelocity();
         if (!Double.isNaN(bounce)) vy = bounce;
         if (in.forcesVertical()) vy = in.vy();
+        if (fighter.frozen() && grounded) vy = -GROUND_PRESS;
         p.setDeltaMovement(vx, vy, vz);
 
         double g = in.gravity();
