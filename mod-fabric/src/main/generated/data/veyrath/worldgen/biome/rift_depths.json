@@ -6,7 +6,10 @@
         "spawns_by_category": {}
       },
       "modifier": "overlay"
-    }
+    },
+    "minecraft:visual/fog_color": "#c9b7a6",
+    "minecraft:visual/sky_color": "#9eb4d6",
+    "minecraft:visual/water_fog_color": "#0f4a57"
   },
   "carvers": [],
   "downfall": 0.9,

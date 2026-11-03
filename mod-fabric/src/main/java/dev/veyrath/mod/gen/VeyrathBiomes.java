@@ -8,6 +8,8 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeGenerationSettings;
 import net.minecraft.world.level.biome.BiomeSpecialEffects;
+import net.minecraft.util.ARGB;
+import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.level.biome.MobSpawnSettings;
 
 /**
@@ -41,10 +43,11 @@ public final class VeyrathBiomes {
                 .waterColor(b.water)
                 .grassColorOverride(b.grass)
                 .foliageColorOverride(b.foliage);
-        // UNVERIFIED for 26.3: sky/fog/water-fog colours moved to environment attributes in
-        // late 1.21.x; set them here if BiomeSpecialEffects still exposes them, otherwise via
-        // Biome.BiomeBuilder#setAttribute (fix on first device build).
+        // 26.3: sky, fog and water-fog colours are environment attributes, not special effects.
         return new Biome.BiomeBuilder()
+                .setAttribute(EnvironmentAttributes.SKY_COLOR, ARGB.vector3fFromRGB24(b.sky))
+                .setAttribute(EnvironmentAttributes.FOG_COLOR, ARGB.vector3fFromRGB24(b.fog))
+                .setAttribute(EnvironmentAttributes.WATER_FOG_COLOR, ARGB.vector3fFromRGB24(b.waterFog))
                 .hasPrecipitation(b.downfall > 0.05f)
                 .temperature(b.temperature)
                 .downfall(b.downfall)
