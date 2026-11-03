@@ -9,15 +9,16 @@ Chapter 02 and later must not start without the owner's explicit approval.
 
 Read this first when resuming.
 
-- **Where we are.** Chapter 00 documents are written and the world engine is implemented and
-  tested outside Minecraft. The Fabric mod adapter, the Distant Horizons integration and the
-  Windows installer are written. **None of them has run on the owner's PC yet.** The cloud build
-  machine cannot reach the Fabric, Mojang or Modrinth servers, so it cannot compile the mod or
-  start Minecraft.
-- **Next step.** Do the first build on the owner's PC (`robbs-strix`, Windows). Follow
-  [TESTING_GUIDE.md](TESTING_GUIDE.md), sections "First device build", "Dimension type check",
-  "Installer" and "In-game smoke test". Then continue the work packages in
-  [CHAPTER_01_PLAN.md](CHAPTER_01_PLAN.md) in order.
+- **Where we are.** Chapter 00 is done. The world engine has every Chapter 01 landform and
+  landmark planned in WP2–WP6, verified with tests, the audit and preview renders in the cloud.
+  The mod builds and runs on the owner's PC (`robbs-strix`), but the last in-game tour used build
+  `d292482`: the Elder Tree, arches, Prism Caldera, mountain window, crystal faults and massifs
+  are not yet seen in game. The cloud machine cannot reach the Fabric, Mojang or Modrinth
+  servers, so it cannot compile the mod or start Minecraft.
+- **Next step.** On the owner's PC: pull `ch01-world`, build, reinstall the profile jar, run
+  `SeedTourGameTest` on seeds 1 and 2 (it visits every landmark), then measure frame rates with
+  and without Complementary Unbound and check the Distant Horizons seam (WP7, WP8, WP10). Then
+  write the acceptance report (WP11) and stop for the owner's review.
 - **Source of truth.** This file, [TECHNICAL_DECISIONS.md](TECHNICAL_DECISIONS.md) and
   [DEPENDENCIES.md](DEPENDENCIES.md). Conversation history is not needed.
 
@@ -52,19 +53,19 @@ and preview tool, not yet seen in Minecraft), **Partial**, **Not started** and *
 | The selected modloader and dependencies work together | Partial | Mod builds against 26.3. Dev client runs VEYRATH with Sodium 0.9.2, Iris 1.11.7 and DH 3.3.4 without crashes. Lithium, FerriteCore, C2ME, Mod Menu not yet run together (only via the launcher profile) |
 | The custom Overworld generates successfully | Met | Client game test: seeds 1, 2, 3 create, tour 8 landmarks, save and reopen without errors. World creation to spawn 6.2–11.7 s, reopen 1.5–2.2 s |
 | The world is geographically coherent | Engine only | Atlas maps for seeds 1–3: continent, provinces, drainage-following rivers |
-| The initial biome ecosystem is implemented | Partial | 26 biomes with terrain, surface materials, trees and ground plants. No ambient particles or sounds |
-| Large mountain ranges work | Engine only | Belts, massifs, stream-power erosion. Highest summits y925–959 on seeds 1–3. Known issue: ranges read as uniform walls from afar |
-| Extreme valleys and ravines work | Engine only | The Great Rift, glacial troughs and river valleys |
-| Colossal trees and forests work | Engine only | Elderbough giants and eight other tree kinds, in chunks and in Distant Horizons LOD. Not yet seen in game |
+| The initial biome ecosystem is implemented | Partial | 26 biomes with terrain, surface materials, trees and ground plants, and caves (tunnels, caverns, hillside mouths). No ambient particles or sounds |
+| Large mountain ranges work | Engine only | Belts, massifs, stream-power erosion. Highest summits y925–959 on seeds 1–3. Aethercrown crests now rise into massifs and drop to passes, with needle clusters (`docs/media/seed1_crest_profile_massifs.png`). Remaining: the crag texture repeats at similar sizes, so distant ranges can still look busy and even. Not yet judged in game |
+| Extreme valleys and ravines work | Engine only | The Great Rift (walls with bays, chutes, ledges and scree, layered rock), glacial troughs, river valleys and slot canyons with waterfalls |
+| Colossal trees and forests work | Engine only | Elderbough giants, eight other tree kinds and one Elder Tree per realm (290–330 tall), in chunks and in Distant Horizons LOD. Trees from an earlier build seen in game; the Elder Tree not yet |
 | Floating islands work | Engine only | Aetherreach islands and the Crown of Aether cluster. No island vegetation or waterfalls yet |
-| Extraordinary natural landmarks work | Partial | Great Rift, Crown of Aether, Cinder Throne and Crownspire massif. No four-tier landmark system yet (WP6) |
-| Rivers, lakes and waterfalls work | Partial | Rivers and lakes work, and no water spills over a bank (0 leaks on seeds 1–3). No waterfalls or rapids yet: 0.1–0.3 % of river water blocks stand beside lower water |
+| Extraordinary natural landmarks work | Engine only | World tier: Great Rift, Crown of Aether, Cinder Throne, Crownspire, Elder Tree, Prism Caldera, mountain window. Regional: waterfalls, giant arches. Local: crystal faults, cave mouths. All on seeds 1–3, each with a `/veyrath tp` target, preview renders in `docs/media/`. Not yet seen in game |
+| Rivers, lakes and waterfalls work | Engine only | No water spills over a bank (0 leaks on seeds 1–3, including the caldera lake). 462 waterfalls on seed 1 (101 of 20+ blocks), rapids handed to Minecraft as flowing water, rivers pour over the Rift lip. Not yet seen in game |
 | Biome transitions are visually convincing | Not verified | Needs in-game review |
 | Multiple world seeds have been evaluated | Partial | Seeds 1–3 toured in game (36 screenshots each, `docs/media/ingame/`). Visual review is first-pass only |
 | Shader integration works | Not verified | Iris loads; no shader pack was active in the dev run. Complementary Unbound is preselected in the player profile, untested |
 | Distant Horizons works with our custom terrain | Partial | "VEYRATH LOD generator registered" logged; distant islands, forests and ranges render as LOD. Seam bug: a sky-coloured band and thin vertical pillars between loaded chunks and LOD after teleports (not yet known whether it clears once chunks finish loading). DH logged `SQLException: stmt pointer is closed` 3× when a world closed |
 | Distant landscapes look coherent | Not verified | — |
-| Performance has been measured and evaluated | Engine only | [PERFORMANCE_BENCHMARKS.md](PERFORMANCE_BENCHMARKS.md). No in-game figures |
+| Performance has been measured and evaluated | Engine only | [PERFORMANCE_BENCHMARKS.md](PERFORMANCE_BENCHMARKS.md). Cloud, 4 cores, with all landmarks: chunk 1.92 ms mean (p95 2.62), 1880 chunks/s on 4 threads, realm build 8.1 s, LOD detail 0 21.6 ms. No in-game frame rates |
 | No critical generation, loading or saving bugs | Partial | None seen in 5 create/save/reopen cycles. Not tested with long play |
 | The world is genuinely enjoyable to explore | Not verified | — |
 | The technical foundation supports future expansion | Partial | Engine has no Minecraft dependency. Extension points listed in [TECHNICAL_ARCHITECTURE.md](TECHNICAL_ARCHITECTURE.md#extension-points-for-later-chapters) |
@@ -177,3 +178,21 @@ Machine: AMD Ryzen 9 9955HX (16 cores / 32 threads), NVIDIA GeForce RTX 5070 Lap
 3. Shader pack check in the launcher profile (needs the owner to press Play).
 4. Find the cause of the half-speed server ticks during far teleports.
 
+### Session 3 (2026-11-03, overnight, cloud)
+
+**Completed** (engine, tests, audit and preview renders; not yet in game)
+- River banks are grass one block above the water; slopes are measured on the water surface.
+- Rift walls with bays, chutes, ledges and scree; layered rock beds; Cinderwake colours; fine
+  grain on gentle slopes instead of contour lines.
+- Waterfalls on steep reaches (462 on seed 1) and rivers that pour over the Rift lip.
+- Caves (tunnels, caverns, hillside mouths) sealed from water by a crust.
+- Landmarks: the Elder Tree, giant arches (27 on seed 1), the Prism Caldera, the mountain
+  window and crystal faults, each with a locator target and on the seed tour.
+- Aethercrown massifs, passes and needle clusters.
+- Audit: 0 bank leaks and 0 water above air on seeds 1–3 after every change; the caldera
+  shoreline is audited too. Engine tests: 10 of 10 pass.
+
+**Next tasks**
+1. In-game tour of build `3b278a7` or later on the owner's PC, with screenshots of every landmark.
+2. Frame rates with and without shaders; Distant Horizons seam check (WP7, WP8, WP10).
+3. Acceptance report (WP11), then stop for review.
