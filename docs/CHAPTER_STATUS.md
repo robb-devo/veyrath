@@ -9,16 +9,18 @@ Chapter 02 and later must not start without the owner's explicit approval.
 
 Read this first when resuming.
 
-- **Where we are.** Chapter 00 is done. The world engine has every Chapter 01 landform and
-  landmark planned in WP2–WP6, verified with tests, the audit and preview renders in the cloud.
-  The mod builds and runs on the owner's PC (`robbs-strix`), but the last in-game tour used build
-  `d292482`: the Elder Tree, arches, Prism Caldera, mountain window, crystal faults and massifs
-  are not yet seen in game. The cloud machine cannot reach the Fabric, Mojang or Modrinth
-  servers, so it cannot compile the mod or start Minecraft.
-- **Next step.** On the owner's PC: pull `ch01-world`, build, reinstall the profile jar, run
-  `SeedTourGameTest` on seeds 1 and 2 (it visits every landmark), then measure frame rates with
-  and without Complementary Unbound and check the Distant Horizons seam (WP7, WP8, WP10). Then
-  write the acceptance report (WP11) and stop for the owner's review.
+- **Where we are.** Chapter 00 is done. Chapter 01 is built: every landform and landmark planned
+  in WP2 to WP6, the Distant Horizons generator and the installer. It was toured in game on the
+  owner's PC (`robbs-strix`) with the full 92-mod pack, seeds 1 and 2, shaders off and on. The
+  acceptance report is the Claude Doc "VEYRATH Chapter 01 acceptance report"; the owner tests
+  last, then decides on Chapter 02.
+- **Open.** The owner's own launcher start; pale far terrain with shaders; the seed 1 basalt
+  stop at 72 fps without shaders; neighbouring realms built on first touch (prewarm near realm
+  edges since `b0d0e06`). Not built: VEYRATH blocks and textures (WP9), lake-outlet falls and
+  hanging valleys, a DH answer that never waits for a realm build. See Known limitations below.
+- **Build constraints.** The cloud machine cannot reach the Fabric, Mojang or Modrinth servers,
+  so it builds and tests only `engine/` and `preview/` (`-Pveyrath.skipMod=true`). The mod is
+  compiled and run on the owner's PC.
 - **Source of truth.** This file, [TECHNICAL_DECISIONS.md](TECHNICAL_DECISIONS.md) and
   [DEPENDENCIES.md](DEPENDENCIES.md). Conversation history is not needed.
 
@@ -29,18 +31,19 @@ Read this first when resuming.
 | 1 | Technical architecture document | [TECHNICAL_ARCHITECTURE.md](TECHNICAL_ARCHITECTURE.md) | Written |
 | 2 | Minecraft version comparison | [research/MINECRAFT_VERSION_COMPARISON.md](research/MINECRAFT_VERSION_COMPARISON.md) | Written, decision TD-001 |
 | 3 | Modloader comparison | [research/MODLOADER_COMPARISON.md](research/MODLOADER_COMPARISON.md) | Written, decision TD-002 |
-| 4 | Dependency and compatibility matrix | [DEPENDENCIES.md](DEPENDENCIES.md) | Written. Several pins are unverified until the first install |
-| 5 | Rendering and shader strategy | [research/RENDERING_AND_SHADER_STRATEGY.md](research/RENDERING_AND_SHADER_STRATEGY.md) | Written. The in-game shader comparison is still to do |
+| 4 | Dependency and compatibility matrix | [DEPENDENCIES.md](DEPENDENCIES.md) | Written. Pins confirmed by the device builds and full-pack runs |
+| 5 | Rendering and shader strategy | [research/RENDERING_AND_SHADER_STRATEGY.md](research/RENDERING_AND_SHADER_STRATEGY.md) | Written. Complementary Unbound run in game; the comparison with Photon and Bliss is still to do |
 | 6 | World-generation architecture proposal | [WORLD_GENERATION_DESIGN.md](WORLD_GENERATION_DESIGN.md) | Written and implemented in `engine/` |
 | 7 | Performance strategy | [PERFORMANCE_STRATEGY.md](PERFORMANCE_STRATEGY.md) | Written |
 | 8 | Asset pipeline proposal | [ASSET_PIPELINE.md](ASSET_PIPELINE.md) | Written |
-| 9 | Development environment | [DEVELOPMENT_ENVIRONMENT.md](DEVELOPMENT_ENVIRONMENT.md) | Written. Not yet set up on the owner's PC |
-| 10 | Dedicated launcher profile | `tools/install/Install-Veyrath.ps1` | Written. Tested on PowerShell 7.6 (Linux) against a mock server only |
+| 9 | Development environment | [DEVELOPMENT_ENVIRONMENT.md](DEVELOPMENT_ENVIRONMENT.md) | Written. Set up on the owner's PC: Temurin JDK 25.0.4, builds with the Gradle wrapper in `IdeaProjects\veyrath` |
+| 10 | Dedicated launcher profile | `tools/install/Install-Veyrath.ps1` | Run on the owner's PC with Windows PowerShell 5.1 against the real services. Game folder moved into `.minecraft\instances\veyrath` so the Microsoft Store launcher sees it |
 | 11 | Repository and directory structure | [TECHNICAL_ARCHITECTURE.md § Repository layout](TECHNICAL_ARCHITECTURE.md#repository-layout) | Done |
 | 12 | Chapter 01 implementation plan | [CHAPTER_01_PLAN.md](CHAPTER_01_PLAN.md) | Written |
 
-The directive asks for the stack to be "validated" before Chapter 01. That needs the first
-device build and install. Until then, Chapter 00 is complete on paper and **pending validation**.
+The directive asks for the stack to be "validated" before Chapter 01. The device builds and the
+full-pack runs on the owner's PC (2026-11-03) did that; only the owner's own launcher start is
+still to come.
 
 ## Chapter 01 acceptance criteria
 
@@ -49,27 +52,44 @@ and preview tool, not yet seen in Minecraft), **Partial**, **Not started** and *
 
 | Criterion | State | Evidence or gap |
 |---|---|---|
-| The dedicated VEYRATH launcher profile works | Partial | Installer ran on the owner's PC (2026-11-03): profile added, backup written, second run adds nothing. Not yet launched through the official launcher (needs the owner's sign-in) |
-| The selected modloader and dependencies work together | Partial | Mod builds against 26.3. Dev client runs VEYRATH with Sodium 0.9.2, Iris 1.11.7 and DH 3.3.4 without crashes. Lithium, FerriteCore, C2ME, Mod Menu not yet run together (only via the launcher profile) |
-| The custom Overworld generates successfully | Met | Client game test: seeds 1, 2, 3 create, tour 8 landmarks, save and reopen without errors. World creation to spawn 6.2–11.7 s, reopen 1.5–2.2 s |
-| The world is geographically coherent | Engine only | Atlas maps for seeds 1–3: continent, provinces, drainage-following rivers |
-| The initial biome ecosystem is implemented | Partial | 26 biomes with terrain, surface materials, trees and ground plants, and caves (tunnels, caverns, hillside mouths). No ambient particles or sounds |
-| Large mountain ranges work | Engine only | Belts, massifs, stream-power erosion. Highest summits y925–959 on seeds 1–3. Aethercrown crests now rise into massifs and drop to passes, with needle clusters (`docs/media/seed1_crest_profile_massifs.png`). Remaining: the crag texture repeats at similar sizes, so distant ranges can still look busy and even. Not yet judged in game |
-| Extreme valleys and ravines work | Engine only | The Great Rift (walls with bays, chutes, ledges and scree, layered rock), glacial troughs, river valleys and slot canyons with waterfalls |
-| Colossal trees and forests work | Engine only | Elderbough giants, eight other tree kinds and one Elder Tree per realm (290–330 tall), in chunks and in Distant Horizons LOD. Trees from an earlier build seen in game; the Elder Tree not yet |
-| Floating islands work | Engine only | Aetherreach islands and the Crown of Aether cluster, with trees on every island (elders on the Crown), in chunks and LOD. No island waterfalls yet. Islands seen in game in an earlier build; island trees not yet |
-| Extraordinary natural landmarks work | Engine only | World tier: Great Rift, Crown of Aether, Cinder Throne, Crownspire, Elder Tree, Prism Caldera, mountain window. Regional: waterfalls, giant arches. Local: crystal faults, cave mouths. All on seeds 1–3, each with a `/veyrath tp` target, preview renders in `docs/media/`. Not yet seen in game |
-| Rivers, lakes and waterfalls work | Engine only | No water spills over a bank (0 leaks on seeds 1–3, including the caldera lake). 462 waterfalls on seed 1 (101 of 20+ blocks), rapids handed to Minecraft as flowing water, rivers pour over the Rift lip. Not yet seen in game |
-| Biome transitions are visually convincing | Not verified | Needs in-game review |
-| Multiple world seeds have been evaluated | Partial | Seeds 1–3 toured in game (36 screenshots each, `docs/media/ingame/`). Visual review is first-pass only |
-| Shader integration works | Not verified | Iris loads; no shader pack was active in the dev run. Complementary Unbound is preselected in the player profile, untested |
-| Distant Horizons works with our custom terrain | Partial | "VEYRATH LOD generator registered" logged; distant islands, forests and ranges render as LOD. Seam bug: a sky-coloured band and thin vertical pillars between loaded chunks and LOD after teleports (not yet known whether it clears once chunks finish loading). DH logged `SQLException: stmt pointer is closed` 3× when a world closed |
-| Distant landscapes look coherent | Not verified | — |
-| Performance has been measured and evaluated | Engine only | [PERFORMANCE_BENCHMARKS.md](PERFORMANCE_BENCHMARKS.md). Cloud, 4 cores, with all landmarks: chunk 1.92 ms mean (p95 2.62), 1880 chunks/s on 4 threads, realm build 8.1 s, LOD detail 0 21.6 ms. No in-game frame rates |
-| No critical generation, loading or saving bugs | Partial | None seen in 5 create/save/reopen cycles. Not tested with long play |
-| The world is genuinely enjoyable to explore | Not verified | — |
-| The technical foundation supports future expansion | Partial | Engine has no Minecraft dependency. Extension points listed in [TECHNICAL_ARCHITECTURE.md](TECHNICAL_ARCHITECTURE.md#extension-points-for-later-chapters) |
+| The dedicated VEYRATH launcher profile works | Partial | Installer run on the owner's PC: profile added, backup written, second run adds nothing. An offline start from `.minecraft\instances\veyrath` loads all mods including VEYRATH. The owner's own start through the launcher is still to come |
+| The selected modloader and dependencies work together | Met | Full pack (92 mods: Sodium, Iris, DH, Lithium, FerriteCore, C2ME, Mod Menu, Placeholder API, Fabric API, VEYRATH) runs the seed tour on seeds 1 and 2. Only log error: DH `SQLException: stmt pointer is closed` on world close |
+| The custom Overworld generates successfully | Met | Seeds 1, 2, 3 create, tour, save and reopen without errors. World creation to spawn 6.2–11.7 s, reopen 1.5–2.2 s. VEYRATH is in the World Type list (asserted by the tour) |
+| The world is geographically coherent | Met | Atlas maps for seeds 1–3: continent, provinces, drainage-following rivers; the tour shows the same layout in game |
+| The initial biome ecosystem is implemented | Met | 26 biomes with terrain, surface materials, trees, ground plants, caves, sky, fog and water colours, Cinderwake ash and Mossdeep spores, seen in game |
+| Large mountain ranges work | Met | Belts, massifs, passes, needle clusters; summits y925–959 (seeds 1–3), summit reached at y938 in game. Remaining: crags repeat at similar sizes, so distant ranges can look busy |
+| Extreme valleys and ravines work | Met | The Great Rift with bays, chutes, ledges, scree and layered rock; glacial troughs; slot canyons, seen in game |
+| Colossal trees and forests work | Met | Elderbough giants, eight other tree kinds and one Elder Tree per realm (290–330 tall), in chunks and LOD, seen in game |
+| Floating islands work | Met | Aetherreach islands and the Crown of Aether with trees; the Veil, a 20-block straight fall of about 335 blocks into a plunge pool; lit undersides (glow lichen, vines, roots) counted in game |
+| Extraordinary natural landmarks work | Met | World tier: Great Rift, Crown of Aether, Cinder Throne, Crownspire, Elder Tree, Prism Caldera, mountain window. Regional and local: waterfalls, arches, hoodoo groves, basalt stacks, crystal faults, cave mouths. Each has a `/veyrath tp` target and is a tour stop |
+| Rivers, lakes and waterfalls work | Met | 0 bank leaks on seeds 1–3, 462 waterfalls on seed 1 (101 of 20+ blocks), falling water counted in game. Lake-outlet falls and hanging valleys not built |
+| Biome transitions are visually convincing | Not verified | The owner's judgement |
+| Multiple world seeds have been evaluated | Met | Seeds 1–3 in the engine, seeds 1 and 2 toured in game with screenshots (`docs/media/ingame/`) |
+| Shader integration works | Partial | Complementary Unbound with DH runs (seed 1 72–207 fps, seed 2 99–221). Far terrain looks pale with it; Photon and Bliss not compared yet |
+| Distant Horizons works with our custom terrain | Met | VEYRATH LOD generator feeds DH; islands, forests and ranges render at distance; LOD equals chunks at block detail (test). The earlier seam band was a test artifact (render distance raised after world start) |
+| Distant landscapes look coherent | Partial | Without shaders yes. With shaders far terrain washes out; the LOD slope fix (`de595f5`) is being checked |
+| Performance has been measured and evaluated | Met | [PERFORMANCE_BENCHMARKS.md](PERFORMANCE_BENCHMARKS.md): 225–238 fps without shaders except seed 1 basalt (72); 72–221 with Complementary; engine 1.7–2.3 ms per chunk. Not measured: 1 % lows, long-play memory, save size |
+| No critical generation, loading or saving bugs | Partial | None seen in the create, save and reopen cycles. Not tested with long play |
+| The world is genuinely enjoyable to explore | Not verified | The owner's judgement |
+| The technical foundation supports future expansion | Met | Engine has no Minecraft dependency. Extension points listed in [TECHNICAL_ARCHITECTURE.md](TECHNICAL_ARCHITECTURE.md#extension-points-for-later-chapters) |
 | Documentation is up to date | Met | As of this commit |
+
+## Known limitations
+
+- **Launcher start** by the owner not yet confirmed.
+- **Pale far terrain with shaders** (Complementary Unbound): distant mountains wash out to
+  grey-white; the Crown underside looks pale and partly see-through far away. Fog tuning did not
+  help (device session 3).
+- **Neighbouring realms** are built on first touch (4–6 s on the owner's PC, 8.5 s on 4 cloud
+  cores); far terrain that needs them waits. Since `b0d0e06` they start building when a player is
+  within 8 km of a realm edge, at below-normal priority. In-game effect not measured yet.
+- **Seed 1 basalt** ran at 72 fps without shaders (225+ elsewhere); cause unknown.
+- **FPS varies between runs** (first run of a day about half as fast).
+- **Not built:** VEYRATH blocks and textures (WP9); lake-outlet falls, hanging valleys and
+  waterfall spray; a DH answer that never waits for a realm build; the shader comparison and
+  tuned defaults (TD-004).
+- **Looks:** Aethercrown crags repeat at similar sizes; the ground under the Crown is only dimly
+  lit; ground cover is thin in places.
 
 ## Session log
 

@@ -10,10 +10,11 @@ world-spanning rift, colossal forests, floating islands and drainage-following r
 
 ## Status
 
-**Chapter 00 done on paper, Chapter 01 in progress.**
-- The world engine works and is tested outside Minecraft.
-- The Fabric mod, the Distant Horizons integration and the installer are written, but **have
-  not yet run in Minecraft**.
+**Chapter 00 done. Chapter 01 (the world) built and waiting for the owner's acceptance test.**
+- The world engine works and is tested outside Minecraft (14 engine tests, world audit).
+- The Fabric mod, the Distant Horizons integration and the installer run on the owner's PC with
+  the full 92-mod pack; an automated client tour visits every landmark on seeds 1 and 2.
+- Chapter 02 has not started and needs the owner's approval.
 
 Details: [docs/CHAPTER_STATUS.md](docs/CHAPTER_STATUS.md).
 

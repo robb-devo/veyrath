@@ -1,6 +1,6 @@
 # Dependencies and compatibility
 
-Last updated: 2026-11-03 (first device build and install on `robbs-strix`). Versions in the build come from `gradle/libs.versions.toml`. Versions in
+Last updated: 2026-11-03 (device builds, installs and full-pack runs on `robbs-strix`). Versions in the build come from `gradle/libs.versions.toml`. Versions in
 the player install come from `modpack/modpack.json`.
 
 **Verification states**
@@ -22,7 +22,7 @@ where they differ.
 | Gradle | 9.6.0 (wrapper) | Build | Apache-2.0 | Verified. Version named in Fabric's 26.3 post. Engine and preview build with it |
 | Foojay toolchain resolver | 1.0.0 | Downloads a JDK 25 when none is installed | Apache-2.0 | Verified (resolves from the Gradle plugin portal) |
 | Fabric Loom | `1.17.21` | Minecraft dev plugin (`net.fabricmc.fabric-loom`) | MIT | **Verified** (device build 2026-11-03). Newest 1.17.x release. Loom 1.18.4 needs Gradle 9.7 and 1.19.3 needs Gradle 9.8; the wrapper is 9.6.0 |
-| Fabric Loader | 0.19.5 | Mod loader | Apache-2.0 | Source only (Fabric 26.3 post) |
+| Fabric Loader | 0.19.5 | Mod loader | Apache-2.0 | Verified (dev client and full-pack runs) |
 | Fabric API | `0.165.0+26.3` | Events, registries, data generation, client game tests | Apache-2.0 | **Verified** (newest `*+26.3` in Fabric's Maven metadata on 2026-11-03; build, datagen and client game test run) |
 | Distant Horizons (compile only) | `maven.modrinth:distanthorizons:3.3.4-26.3` | LOD API classes for `dh/` | LGPL-3.0-only | **Verified** (resolves; `dh/` compiles against it) |
 | JUnit Jupiter | 5.13.4 | Engine tests | EPL-2.0 | Verified (tests run) |
@@ -32,8 +32,8 @@ where they differ.
 | Component | Pinned version | Role | Required? | Licence | State |
 |---|---|---|---|---|---|
 | Minecraft Java Edition | 26.3 | Platform | Yes | Proprietary (Mojang EULA). The owner's own licence | Verified release |
-| Fabric Loader | 0.19.5 | Loader | Yes | Apache-2.0 | Source only |
-| Fabric API | newest for 26.3 (installer picks) | Required by VEYRATH | Yes | Apache-2.0 | Source only |
+| Fabric Loader | 0.19.5 | Loader | Yes | Apache-2.0 | Installed and run |
+| Fabric API | newest for 26.3 (installer picks; 0.165.2+26.3 on 2026-11-03) | Required by VEYRATH | Yes | Apache-2.0 | Installed and run |
 | VEYRATH | local build (`veyrath-0.1.0-ch01.jar`) | The world | Yes | All rights reserved (no licence chosen yet) | Built and installed 2026-11-03 |
 | Sodium | mc26.3-0.9.2-fabric | Renderer | Yes (for Iris) | PolyForm Shield 1.0.0 | Installed |
 | Iris | 1.11.7+26.3-fabric | Shader loader | Yes (for shaders) | LGPL-3.0-only | Installed |
@@ -54,13 +54,13 @@ where they differ.
 
 | Pair | Expected | Basis | Verified in game |
 |---|---|---|---|
-| Iris 1.11.7 ↔ Sodium 0.9.2 | Required pair | "Iris 1.11.7 needs Sodium 0.9.2 on 26.3" (syntaxmine) | No |
-| Distant Horizons 3.3.4 ↔ Iris 1.11.7 | Compatible | DH 3.3.4 changelog fixes an Iris transparency issue on 26.3 | No |
-| Distant Horizons ↔ Sodium | Compatible | Commonly run together. DH renders its own LOD meshes | No |
-| Shader packs ↔ Distant Horizons | Compatible for packs that support DH | DH works only with packs that explicitly support it. All three candidates advertise DH support; not confirmed from this machine | No |
-| VEYRATH generator ↔ C2ME | Compatible | C2ME generates chunks in parallel. Engine test `parallelCompositionMatchesSequential` proves the engine is thread-safe | No |
-| VEYRATH LOD generator ↔ Distant Horizons | Compatible | `API_DATA_SOURCES` path implemented against DH API 7.2.0 source. Engine test proves LOD columns match chunk columns at block detail | No |
-| VEYRATH ↔ Lithium, FerriteCore | No interaction expected | They optimise game logic and memory, not generation | No |
+| Iris 1.11.7 ↔ Sodium 0.9.2 | Required pair | "Iris 1.11.7 needs Sodium 0.9.2 on 26.3" (syntaxmine) | Yes (full-pack tour, device sessions 2 and 3) |
+| Distant Horizons 3.3.4 ↔ Iris 1.11.7 | Compatible | DH 3.3.4 changelog fixes an Iris transparency issue on 26.3 | Yes, with Complementary Unbound. Far terrain looks pale with it (open) |
+| Distant Horizons ↔ Sodium | Compatible | Commonly run together. DH renders its own LOD meshes | Yes |
+| Shader packs ↔ Distant Horizons | Compatible for packs that support DH | DH works only with packs that explicitly support it. All three candidates advertise DH support | Complementary Unbound: yes. Photon, Bliss: not yet |
+| VEYRATH generator ↔ C2ME | Compatible | C2ME generates chunks in parallel. Engine test `parallelCompositionMatchesSequential` proves the engine is thread-safe | Yes (no errors in the full-pack runs) |
+| VEYRATH LOD generator ↔ Distant Horizons | Compatible | `API_DATA_SOURCES` path implemented against DH API 7.2.0 source. Engine test proves LOD columns match chunk columns at block detail | Yes ("VEYRATH LOD generator registered"; islands, forests and ranges render as LOD) |
+| VEYRATH ↔ Lithium, FerriteCore | No interaction expected | They optimise game logic and memory, not generation | Yes (no errors in the full-pack runs) |
 | VEYRATH ↔ y −256..1023 dimension | Supported | Dimension type rebuilt from vanilla 26.3 `overworld.json` (environment-attribute format) | Yes: worlds generate, summit reached at y938 (vanilla client) |
 | VEYRATH ↔ other world-generation or biome mods (Terralith, Tectonic, biome packs) | **Incompatible by design** | VEYRATH replaces the Overworld generator and biome source | — |
 | VEYRATH ↔ vanilla structures (villages and others) | Not generated in Chapter 01 | Custom generator. Structures are a future Chapter | — |
