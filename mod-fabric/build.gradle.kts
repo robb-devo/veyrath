@@ -68,6 +68,12 @@ fabricApi {
     }
 }
 
+// Seed tour options: -Pveyrath.tourSeeds=1,2,3; the screenshot setup tag follows -Pveyrath.devMods.
+loom.runs.matching { it.name == "clientGameTest" }.configureEach {
+    property("veyrath.tourSeeds", providers.gradleProperty("veyrath.tourSeeds").getOrElse("1,2,3"))
+    property("veyrath.tourSetup", if (devMods) "devmods" else "vanilla")
+}
+
 sourceSets.main {
     // Generated biome JSON (gradlew :mod-fabric:runDatagen) is committed and packaged. Loom 1.17
     // already adds src/main/generated as a resource dir; only the datagen cache is excluded.

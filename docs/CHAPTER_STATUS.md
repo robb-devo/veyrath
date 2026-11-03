@@ -1,6 +1,6 @@
 # Chapter status
 
-Last updated: 2026-11-02 · Branch `ch00-foundation` · Version `0.1.0-ch01`
+Last updated: 2026-11-03 · Branch `ch01-world` · Version `0.1.0-ch01`
 
 Authorized scope: **Chapter 00** (Technical Research & Foundation) and **Chapter 01** (The World).
 Chapter 02 and later must not start without the owner's explicit approval.
@@ -48,9 +48,9 @@ and preview tool, not yet seen in Minecraft), **Partial**, **Not started** and *
 
 | Criterion | State | Evidence or gap |
 |---|---|---|
-| The dedicated VEYRATH launcher profile works | Not verified | Installer has run against a mock server only |
-| The selected modloader and dependencies work together | Not verified | Mod not compiled yet |
-| The custom Overworld generates successfully | Engine only | 8 engine tests pass; preview renders in `docs/media/` |
+| The dedicated VEYRATH launcher profile works | Partial | Installer ran on the owner's PC (2026-11-03): profile added, backup written, second run adds nothing. Not yet launched through the official launcher (needs the owner's sign-in) |
+| The selected modloader and dependencies work together | Partial | Mod builds against 26.3. Dev client runs VEYRATH with Sodium 0.9.2, Iris 1.11.7 and DH 3.3.4 without crashes. Lithium, FerriteCore, C2ME, Mod Menu not yet run together (only via the launcher profile) |
+| The custom Overworld generates successfully | Met | Client game test: seeds 1, 2, 3 create, tour 8 landmarks, save and reopen without errors. World creation to spawn 6.2–11.7 s, reopen 1.5–2.2 s |
 | The world is geographically coherent | Engine only | Atlas maps for seeds 1–3: continent, provinces, drainage-following rivers |
 | The initial biome ecosystem is implemented | Partial | 26 biomes with terrain, surface materials, trees and ground plants. No ambient particles or sounds |
 | Large mountain ranges work | Engine only | Belts, massifs, stream-power erosion. Highest summits y925–959 on seeds 1–3. Known issue: ranges read as uniform walls from afar |
@@ -60,12 +60,12 @@ and preview tool, not yet seen in Minecraft), **Partial**, **Not started** and *
 | Extraordinary natural landmarks work | Partial | Great Rift, Crown of Aether, Cinder Throne and Crownspire massif. No four-tier landmark system yet (WP6) |
 | Rivers, lakes and waterfalls work | Partial | Rivers and lakes work, and no water spills over a bank (0 leaks on seeds 1–3). No waterfalls or rapids yet: 0.1–0.3 % of river water blocks stand beside lower water |
 | Biome transitions are visually convincing | Not verified | Needs in-game review |
-| Multiple world seeds have been evaluated | Engine only | Seeds 1, 2 and 3: atlas statistics, benchmarks, audits. No in-game visual review |
-| Shader integration works | Not verified | — |
-| Distant Horizons works with our custom terrain | Not verified | Integration written. A test proves LOD columns match chunks at block detail |
+| Multiple world seeds have been evaluated | Partial | Seeds 1–3 toured in game (36 screenshots each, `docs/media/ingame/`). Visual review is first-pass only |
+| Shader integration works | Not verified | Iris loads; no shader pack was active in the dev run. Complementary Unbound is preselected in the player profile, untested |
+| Distant Horizons works with our custom terrain | Partial | "VEYRATH LOD generator registered" logged; distant islands, forests and ranges render as LOD. Seam bug: a sky-coloured band and thin vertical pillars between loaded chunks and LOD after teleports (not yet known whether it clears once chunks finish loading). DH logged `SQLException: stmt pointer is closed` 3× when a world closed |
 | Distant landscapes look coherent | Not verified | — |
 | Performance has been measured and evaluated | Engine only | [PERFORMANCE_BENCHMARKS.md](PERFORMANCE_BENCHMARKS.md). No in-game figures |
-| No critical generation, loading or saving bugs | Not verified | — |
+| No critical generation, loading or saving bugs | Partial | None seen in 5 create/save/reopen cycles. Not tested with long play |
 | The world is genuinely enjoyable to explore | Not verified | — |
 | The technical foundation supports future expansion | Partial | Engine has no Minecraft dependency. Extension points listed in [TECHNICAL_ARCHITECTURE.md](TECHNICAL_ARCHITECTURE.md#extension-points-for-later-chapters) |
 | Documentation is up to date | Met | As of this commit |
@@ -132,3 +132,48 @@ and preview tool, not yet seen in Minecraft), **Partial**, **Not started** and *
 3. Hydrology: stable water, then waterfalls (WP2).
 4. Fix the summit ceiling and add range silhouette variety (WP3).
 5. Vegetation and colossal trees (WP4).
+
+### Device session (2026-11-03, owner's PC `robbs-strix`)
+
+Machine: AMD Ryzen 9 9955HX (16 cores / 32 threads), NVIDIA GeForce RTX 5070 Laptop GPU (driver
+32.0.16.2101, OpenGL reports NVIDIA 621.01) plus AMD Radeon iGPU, 32 GB RAM, Windows 11 Pro build
+26300, Temurin JDK 25.0.4.
+
+**Completed**
+- First build. Pinned Loom 1.17.21 and Fabric API 0.165.0+26.3. Ported the adapter to the real
+  26.3 API: `buildTerrain` (26.3 merged noise, surface and carvers into one TERRAIN step) replaces
+  `fillFromNoise`/`buildSurface`/`applyCarvers`; `BiomeSource.createResolver`; `ChunkPos` record
+  accessors; `Blocks.DYED_TERRACOTTA`; `FabricPackOutput`; seed from `getWorldGenSettings()`.
+  `addDebugScreenInfo` now overrides the 26.3 signature.
+- Dimension type rebuilt from vanilla 26.3 `overworld.json` (attribute format), changed only
+  `min_y` −256, `height`/`logical_height` 1280 and `visual/cloud_height` 420. World preset format
+  matches vanilla `normal.json`.
+- Biome sky, fog and water-fog colours are now `EnvironmentAttributes` (26.3 moved them).
+- Datagen output committed under `mod-fabric/src/main/generated`.
+- Installer run twice on Windows PowerShell 5.1 against the real services. Added Placeholder API
+  to `modpack.json` (Mod Menu 21 requires it).
+- Client game test `SeedTourGameTest` (own `gametest` source set, not in the mod jar): run with
+  `gradlew :mod-fabric:runClientGameTest [-Pveyrath.devMods=true] [-Pveyrath.tourSeeds=1,2,3]`.
+
+**Measured (dev client, 24-chunk render distance, timings from the test log)**
+- World creation to spawn ready: 10.3 / 6.2 / 6.7 s (seeds 1/2/3, vanilla); 11.7 / 6.4 s
+  (seeds 2/1, Sodium+Iris+DH). Spawn realm atlas: 4.2–6.2 s of that.
+- Reopen to ready: 1.5–2.2 s.
+- 200-tick settle after a teleport: 10–12 s normally (server keeps up), but 20–23 s for all of
+  seed 3 and for late targets of other runs, i.e. the server ran at about half speed while
+  generating far-off terrain. Not investigated yet. No frame-rate measurement taken.
+
+**Visual problems seen**
+1. Distant Horizons seam after teleport: sky-coloured band and thin vertical pillars between the
+   loaded chunks and the LOD ring (`seed2_spawn_w_devmods.png`).
+2. Great Rift walls are flat, vertical planes with regular stripes (vanilla shots, seeds 1 and 2).
+3. Rift rim: snow layer on red strata reads as stripes; looks artificial.
+4. Grass slopes show contour terraces (dirt steps) everywhere.
+5. Cinderwake and the Cinder Throne are uniform grey blackstone with little variation.
+
+**Next tasks**
+1. Diagnose the DH seam (wait longer before the screenshot; then check LOD column bottoms).
+2. Rift wall and range silhouette variety (WP3).
+3. Shader pack check in the launcher profile (needs the owner to press Play).
+4. Find the cause of the half-speed server ticks during far teleports.
+
