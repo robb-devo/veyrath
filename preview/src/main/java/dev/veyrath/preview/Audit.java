@@ -34,6 +34,8 @@ final class Audit {
         long sideAirBank, sideAirStep;
         /** Bank cases by how far the neighbour's ground lies below the water block: 1, 2, 3-5, 6+. */
         final long[] bankDeficit = new long[4];
+        /** Dry columns the composer raised to hold a neighbour's water (see WaterContainment). */
+        long contained;
         int minGround = Integer.MAX_VALUE, maxGround = Integer.MIN_VALUE;
     }
 
@@ -109,6 +111,7 @@ final class Audit {
             total.sideAirBank += s.sideAirBank;
             total.sideAirStep += s.sideAirStep;
             for (int k = 0; k < 4; k++) total.bankDeficit[k] += s.bankDeficit[k];
+            total.contained += s.contained;
             total.minGround = Math.min(total.minGround, s.minGround);
             total.maxGround = Math.max(total.maxGround, s.maxGround);
         }
@@ -120,8 +123,9 @@ final class Audit {
         System.out.println("bank deficit = blocks between the water block and the neighbour's ground: 1 / 2 / 3-5 / 6+");
         for (var e : new Object[][]{{"provinces", total}, {"rivers", rivers}, {"lakes", lakes}, {"sea", sea}}) {
             Stats s = (Stats) e[1];
-            System.out.printf(Locale.ROOT, "  %-10s bank %6d  step %6d  deficit %d / %d / %d / %d%n", e[0], s.sideAirBank, s.sideAirStep,
-                    s.bankDeficit[0], s.bankDeficit[1], s.bankDeficit[2], s.bankDeficit[3]);
+            System.out.printf(Locale.ROOT, "  %-10s bank %6d  step %6d  deficit %d / %d / %d / %d  raised to contain water: %d of %d columns%n",
+                    e[0], s.sideAirBank, s.sideAirStep, s.bankDeficit[0], s.bankDeficit[1], s.bankDeficit[2], s.bankDeficit[3],
+                    s.contained, s.columns);
         }
     }
 
@@ -140,6 +144,7 @@ final class Audit {
     /** Audits the centre chunk of a 3 x 3 grid of composed chunks. */
     private static void audit(WorldSpec spec, ChunkBuffer[] g, Stats s) {
         ChunkBuffer c = g[4];
+        s.contained += c.containedColumns;
         short air = (short) Material.AIR.ordinal(), water = (short) Material.WATER.ordinal(), lava = (short) Material.LAVA.ordinal();
         s.chunks++;
         for (int z = 0; z < 16; z++) {

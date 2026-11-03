@@ -10,13 +10,15 @@ import dev.veyrath.engine.surface.Material;
 import dev.veyrath.engine.surface.SurfacePainter;
 import dev.veyrath.engine.terrain.ColumnInfo;
 import dev.veyrath.engine.terrain.TerrainSampler;
+import dev.veyrath.engine.terrain.WaterContainment;
 
 /**
  * Produces the full material column data of one chunk from the engine.
  *
- * <p>Order: 18 x 18 column samples (1-block border, for slopes) -> biome per column -> surface
- * painting -> floating islands. Each call touches only its own chunk, so any number of chunks can
- * be composed in parallel (required for C2ME and for Distant Horizons' generator threads).
+ * <p>Order: 18 x 18 column samples (1-block border, for slopes) -> slopes and water containment
+ * from the raw samples -> biome per column -> surface painting -> floating islands. Each call
+ * touches only its own chunk, so any number of chunks can be composed in parallel (required for
+ * C2ME and for Distant Horizons' generator threads).
  */
 public final class ChunkComposer {
     private final WorldSpec spec;
@@ -30,6 +32,7 @@ public final class ChunkComposer {
         final ColumnInfo[] cols = new ColumnInfo[18 * 18];
         final TerrainSampler.Scratch scratch = new TerrainSampler.Scratch();
         final FloatingIslands.Hit island = new FloatingIslands.Hit();
+        final double[] slope = new double[256], ground = new double[256];
 
         public Context() {
             for (int i = 0; i < cols.length; i++) cols[i] = new ColumnInfo();
@@ -58,16 +61,30 @@ public final class ChunkComposer {
                 terrain.sample(bx + dx + 0.5, bz + dz + 0.5, ctx.cols[(dz + 1) * 18 + (dx + 1)], ctx.scratch);
             }
         }
+        // Slopes and water containment from the raw samples only, so that the result for a
+        // column does not depend on where the chunk border is (LodSampler does the same).
+        ColumnInfo[] g = ctx.cols;
+        out.containedColumns = 0;
+        for (int z = 0; z < 16; z++) {
+            for (int x = 0; x < 16; x++) {
+                int i = (z + 1) * 18 + (x + 1), col = (z << 4) | x;
+                double gx = (g[i + 1].ground - g[i - 1].ground) * 0.5;
+                double gz = (g[i + 18].ground - g[i - 18].ground) * 0.5;
+                ctx.slope[col] = Math.sqrt(gx * gx + gz * gz);
+                ctx.ground[col] = WaterContainment.containedGround(g[i], g[i - 1], g[i + 1], g[i - 18], g[i + 18]);
+                if (ctx.ground[col] != g[i].ground) out.containedColumns++;
+            }
+        }
+        for (int z = 0; z < 16; z++) for (int x = 0; x < 16; x++) g[(z + 1) * 18 + (x + 1)].ground = ctx.ground[(z << 4) | x];
+
         java.util.Arrays.fill(out.mat, (short) Material.AIR.ordinal());
         int minY = spec.minY();
         for (int z = 0; z < 16; z++) {
             for (int x = 0; x < 16; x++) {
-                ColumnInfo c = ctx.cols[(z + 1) * 18 + (x + 1)];
-                double gx = (ctx.cols[(z + 1) * 18 + (x + 2)].ground - ctx.cols[(z + 1) * 18 + x].ground) * 0.5;
-                double gz = (ctx.cols[(z + 2) * 18 + (x + 1)].ground - ctx.cols[z * 18 + (x + 1)].ground) * 0.5;
-                double slope = Math.sqrt(gx * gx + gz * gz);
-                VBiome biome = biomes.select(c, slope);
+                ColumnInfo c = g[(z + 1) * 18 + (x + 1)];
                 int col = (z << 4) | x;
+                double slope = ctx.slope[col];
+                VBiome biome = biomes.select(c, slope);
                 int groundY = MathUtil.floor(c.ground);
                 painter.paint(c, biome, groundY, slope, out.mat, col * out.height);
                 out.biome[col] = (byte) biome.ordinal();

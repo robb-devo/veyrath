@@ -121,20 +121,22 @@ class WorldInvariantsTest {
     }
 
     /**
-     * Regression guard, not the goal: water with air beside or below it flows in Minecraft on the
-     * first block update. The Chapter 01 target is zero; this only stops it from getting worse
-     * while the hydrology pass is reworked (current values are in docs/PERFORMANCE_BENCHMARKS.md).
+     * Water must never have dry land below it at its side (a "bank" leak) or air beneath it: in
+     * Minecraft such water spills on the first block update. Water beside lower water (a "step"
+     * on a sloped river) is allowed for now and only guarded; rapids and waterfalls will turn
+     * steps into flowing water (current values are in docs/PERFORMANCE_BENCHMARKS.md).
      */
     @Test
-    void unstableWaterStaysRare() {
+    void waterIsContained() {
         VeyrathWorld w = TestWorlds.world(SEED);
         VeyrathWorld.Realm realm = w.realm(0, 0);
         WorldSpec spec = w.spec();
         short air = (short) Material.AIR.ordinal(), water = (short) Material.WATER.ordinal();
-        long total = 0, unstable = 0;
+        long total = 0, bank = 0, below = 0, step = 0;
         ChunkBuffer b = new ChunkBuffer(spec);
         ChunkComposer.Context ctx = new ChunkComposer.Context();
         int chunks = 0;
+        int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
         for (RiverNetwork.Reach r : realm.atlas().rivers.reaches()) {
             for (int i = 0; i < r.size() && chunks < 120; i += 24) {
                 realm.composer().compose((int) Math.floor(r.xs()[i] / 16), (int) Math.floor(r.zs()[i] / 16), b, ctx);
@@ -145,16 +147,24 @@ class WorldInvariantsTest {
                         for (int y = b.ground[col] + 1; y <= b.fluidTop[col]; y++) {
                             if (b.get(x, y, z) != water) continue;
                             total++;
-                            if (b.get(x + 1, y, z) == air || b.get(x - 1, y, z) == air || b.get(x, y, z + 1) == air
-                                    || b.get(x, y, z - 1) == air || b.get(x, y - 1, z) == air) unstable++;
+                            if (b.get(x, y - 1, z) == air) below++;
+                            for (int[] d : dirs) {
+                                if (b.get(x + d[0], y, z + d[1]) != air) continue;
+                                int n = ((z + d[1]) << 4) | (x + d[0]);
+                                if (b.fluidTop[n] > b.ground[n]) step++;
+                                else bank++;
+                                break;
+                            }
                         }
                     }
                 }
             }
         }
         assertTrue(total > 1000, "too little river water sampled: " + total);
-        double share = (double) unstable / total;
-        System.out.printf("unstable river water: %d of %d blocks (%.3f%%) in %d chunks%n", unstable, total, share * 100, chunks);
-        assertTrue(share < 0.01, "unstable water share " + share);
+        System.out.printf("river water: %d blocks in %d chunks; bank leaks %d, air below %d, steps %d (%.3f%%)%n",
+                total, chunks, bank, below, step, 100.0 * step / total);
+        assertEquals(0, bank, "water beside dry land below its surface");
+        assertEquals(0, below, "water above air");
+        assertTrue((double) step / total < 0.01, "river steps share " + (double) step / total);
     }
 }

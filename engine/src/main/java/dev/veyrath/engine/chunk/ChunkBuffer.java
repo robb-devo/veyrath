@@ -25,6 +25,8 @@ public final class ChunkBuffer {
     /** Floating-island solid interval per column, or Short.MIN_VALUE when none. */
     public final short[] islandBottom = new short[256], islandTop = new short[256];
     public int chunkX, chunkZ;
+    /** Columns whose ground was raised to hold a neighbour's water or lava (diagnostics). */
+    public int containedColumns;
 
     public ChunkBuffer(WorldSpec spec) {
         this.minY = spec.minY();

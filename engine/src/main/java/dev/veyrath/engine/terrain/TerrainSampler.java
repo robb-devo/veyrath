@@ -63,6 +63,8 @@ public final class TerrainSampler {
     private final DomainWarp detailWarp;
     private final RiverNetwork riftNet;
     private final double sea;
+    /** 1 on atlas cells within one cell of a lake cell, else 0 (bilinear: smooth lake proximity). */
+    private final float[] lakeHalo;
 
     /** Per-thread scratch state; create one per worker thread. */
     public static final class Scratch {
@@ -87,6 +89,25 @@ public final class TerrainSampler {
         gully2 = new dev.veyrath.engine.math.GullyNoise(Hash.derive(s, "gully2"), 64, 34);
         gully3 = new dev.veyrath.engine.math.GullyNoise(Hash.derive(s, "gully3"), 28, 14);
         riftNet = buildRiftNetwork(atlas);
+        lakeHalo = buildLakeHalo(atlas);
+    }
+
+    private static float[] buildLakeHalo(RealmAtlas atlas) {
+        int n = atlas.n;
+        float[] halo = new float[n * n];
+        for (int j = 0; j < n; j++) {
+            for (int i = 0; i < n; i++) {
+                int c = j * n + i;
+                if (Float.isNaN(atlas.water[c]) || atlas.continent[c] <= 0) continue;
+                for (int dj = -1; dj <= 1; dj++) {
+                    for (int di = -1; di <= 1; di++) {
+                        int a = i + di, b = j + dj;
+                        if (a >= 0 && b >= 0 && a < n && b < n) halo[b * n + a] = 1;
+                    }
+                }
+            }
+        }
+        return halo;
     }
 
     private static RiverNetwork buildRiftNetwork(RealmAtlas atlas) {
@@ -134,9 +155,11 @@ public final class TerrainSampler {
         double elev = MathUtil.smoothstep(10, 520, e);
         double coastCalm = MathUtil.smoothstep(0, 350, out.coastDistance);
 
-        // Lake neighbourhood: calm the detail so lakes keep clean basins and shorelines.
+        // Lake neighbourhood: calm the detail so lakes keep clean basins and shorelines. The
+        // halo is 1 wherever lake water can occur and fades to 0 one atlas cell further out, so
+        // the detail amplitude has no step at the edge of the lake zone.
         double lakeLevel = lakeLevel(x, z);
-        double calm = Double.isNaN(lakeLevel) ? 1.0 : 0.25;
+        double calm = 1.0 - 0.75 * MathUtil.smoothstep(0, 1, atlas.sampleLinear(lakeHalo, x, z));
 
         // --- detail
         // Macro gradient (downslope direction) drives slope-aligned gully detail.
@@ -211,8 +234,9 @@ public final class TerrainSampler {
                 double t = (d - hw) / bank;
                 double target = level + 1.0 + (h - level - 1.0) * MathUtil.smoothstep(0, 1, t);
                 h = Math.min(h, target);
-                // Never leave dry ground below the water level right beside the channel.
-                if (Double.isNaN(lakeLevel) && t < 0.25) h = Math.max(h, level + 0.6);
+                // Never leave dry ground below the water level right beside the channel, unless
+                // a lake drowns this stretch of river (lake level at or above the river's).
+                if (t < 0.25 && !(lakeLevel > level - 1.0)) h = Math.max(h, level + 0.6);
             }
         }
 
@@ -270,7 +294,10 @@ public final class TerrainSampler {
             }
         }
         if (h < sea) {
-            if (out.coastDistance < 2500 || atlas.continent[ci] <= 0) {
+            if (kind != ColumnInfo.WaterKind.NONE && water >= sea) {
+                // A river or lake whose bed dips below sea level near the coast keeps its own
+                // (higher) surface; switching to sea level here would punch a hole in it.
+            } else if (out.coastDistance < 2500 || atlas.continent[ci] <= 0) {
                 water = sea;
                 kind = ColumnInfo.WaterKind.SEA;
             } else if (kind == ColumnInfo.WaterKind.NONE) {

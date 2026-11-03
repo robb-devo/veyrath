@@ -44,7 +44,7 @@ metres, not at a line.
 - **Identity:** high fantasy alpine. Bright, cold and enormous.
 - **Terrain:** belt-driven ranges with summit massifs (the Crownspire), ridged crests, glacial
   troughs with flat floors, and turquoise lakes behind moraine dams.
-- **Elevation:** y218–925, with the atlas maximum at y943.
+- **Elevation:** y218–925 in sampled chunks; the highest summits reach y925–959 on seeds 1–3.
 - **Geology:** stone, andesite and diorite. Snow and packed ice above the snow line.
 - **Water:** mountain streams, glacial lakes (frozen when high), and waterfalls planned at
   valley steps.

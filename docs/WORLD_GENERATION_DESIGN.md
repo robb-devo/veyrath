@@ -93,11 +93,11 @@ coarse level's *change* (delta upsampling), so fine initial detail survives.
 hierarchy of peaks instead of uniform crests. The strongest is the **Crownspire**, in the
 province with the highest belt load.
 
-**Soft ceiling.** Elevations above `maxY − 200` (y823) are compressed with
-`823 + 120·tanh((h − 823)/120)`. **Known issue:** all three test seeds saturate this, so their
-highest ground is exactly y943. The relief scale is too high, and the tops of the highest summits
-are flattened. Fix planned in WP3: rescale relief so the highest summit lands near y900 before
-the knee.
+**Summit ceiling.** After talus relaxation, elevations above a knee at `maxY − 263` (y760) are
+compressed with a square-root curve, `760 + 140·(√(1 + (h − 760)/70) − 1)`, which keeps summits
+pointed instead of flattening them. A `tanh` guard above `maxY − 83` (y940) caps ground below
+y980. Seeds 1–3 reach y934, y959 and y925 with no pile-up at the cap. `preview atlas` prints the
+highest ground before the ceiling and how many cells it touched.
 
 Cost: 6.8–7.2 s of the 9.5–10.3 s realm build on 4 cores.
 
@@ -131,7 +131,12 @@ in order:
 5. **Glacial troughs.** Large Aethercrown valleys get wide, flat floors and steep walls.
 6. **River channels and banks**, from the atlas river network.
 7. **The Great Rift.** Near-vertical layered walls down to the rift floor.
-8. **Water.** Sea, lakes (atlas basins with a fine shoreline) and river surfaces.
+8. **Water.** Sea, lakes (atlas basins with a fine shoreline) and river surfaces. A river or lake
+   keeps its own surface where its bed dips below sea level near the coast.
+9. **Containment** (in `ChunkComposer` and `LodSampler`, from the raw samples): a dry column whose
+   ground lies below a neighbour's top water or lava block is raised level with it, so no fluid
+   has open air beside it. Water beside lower water (a step on a sloped river) is left for
+   rapids and waterfalls.
 
 ## Formations
 
@@ -189,7 +194,7 @@ High lakes freeze.
 | 64 | Sea level |
 | 60–200 | Lowlands, vales, forests, fens, coasts |
 | 200–600 | Highlands, Vesperfall plateaus (y510–590), Cinderwake volcano flanks (up to y650) |
-| 600–943 | Aethercrown summits (Crownspire massif near the ceiling) |
+| 600–980 | Aethercrown summits (Crownspire massif highest, y925–959 on seeds 1–3) |
 | about 190–950 | Floating islands (110–480 blocks above the ground, capped at `maxY − 70`) |
 | 1023 | Build limit |
 

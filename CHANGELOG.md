@@ -32,3 +32,14 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   - Profile backup and restore.
   - Modrinth downloads with SHA-512 checks and licence recording.
 - **Documentation** (`docs/`): Chapter 00 deliverables and the mandatory project documents.
+- **Water containment** (`WaterContainment`): dry columns below a neighbour's water surface are
+  raised level with it, in chunks and in block-detail LOD alike.
+- **Audit**: side-air water is split into bank leaks and river steps.
+
+### Fixed
+- The highest summits no longer flatten at y943: new summit ceiling (square-root knee at y760,
+  cap below y980) applied after talus relaxation.
+- Rivers and lakes whose bed dips below sea level near the coast no longer drop to sea level
+  there, which left holes in the water.
+- River banks next to lakes now hold the river, and lake-side terrain detail no longer jumps at
+  the edge of the lake zone. Bank leaks: 0 on seeds 1–3.

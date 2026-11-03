@@ -53,12 +53,12 @@ and preview tool, not yet seen in Minecraft), **Partial**, **Not started** and *
 | The custom Overworld generates successfully | Engine only | 8 engine tests pass; preview renders in `docs/media/` |
 | The world is geographically coherent | Engine only | Atlas maps for seeds 1–3: continent, provinces, drainage-following rivers |
 | The initial biome ecosystem is implemented | Partial | 26 biomes with terrain and surface materials. No vegetation |
-| Large mountain ranges work | Engine only | Belts, massifs, stream-power erosion. Known issues: summits saturate at y943, and ranges read as uniform walls from afar |
+| Large mountain ranges work | Engine only | Belts, massifs, stream-power erosion. Highest summits y925–959 on seeds 1–3. Known issue: ranges read as uniform walls from afar |
 | Extreme valleys and ravines work | Engine only | The Great Rift, glacial troughs and river valleys |
 | Colossal trees and forests work | Not started | Work package WP4 |
 | Floating islands work | Engine only | Aetherreach islands and the Crown of Aether cluster. No island vegetation or waterfalls yet |
 | Extraordinary natural landmarks work | Partial | Great Rift, Crown of Aether, Cinder Throne and Crownspire massif. No four-tier landmark system yet (WP6) |
-| Rivers, lakes and waterfalls work | Partial | Rivers and lakes work. No waterfalls. 0.3–0.6 % of water blocks are unstable |
+| Rivers, lakes and waterfalls work | Partial | Rivers and lakes work, and no water spills over a bank (0 leaks on seeds 1–3). No waterfalls or rapids yet: 0.1–0.3 % of river water blocks stand beside lower water |
 | Biome transitions are visually convincing | Not verified | Needs in-game review |
 | Multiple world seeds have been evaluated | Engine only | Seeds 1, 2 and 3: atlas statistics, benchmarks, audits. No in-game visual review |
 | Shader integration works | Not verified | — |
@@ -98,10 +98,9 @@ and preview tool, not yet seen in Minecraft), **Partial**, **Not started** and *
 3. Fabric API version `0.153.0+26.3` is a placeholder. The Distant Horizons Maven coordinate is
    unverified.
 4. Biome sky and fog colours may have moved to environment attributes in 26.x. Not verified.
-5. 0.35 % (rivers) and 0.49 % (lakes) of water blocks have air beside or below them, measured on
-   seed 1 at production resolution. They will flow on the first block update.
-6. Every seed's highest ground is exactly y943. This is the soft ceiling
-   (`maxY − 200 + 120·tanh(...)`) saturating, so the highest summits are compressed.
+5. ~~0.35 % (rivers) and 0.49 % (lakes) of water blocks have air beside or below them.~~ Fixed in
+   session 2: no bank leaks remain. River "steps" (water beside lower water) remain for WP2b.
+6. ~~Every seed's highest ground is exactly y943 (soft ceiling saturating).~~ Fixed in session 2.
 7. The first LOD request that touches a neighbouring realm blocks for about 10 s while that realm
    is built. Neighbour realms need prewarming in the background.
 8. Aethercrown ranges look like uniform walls at distance. They need more silhouette variety.
@@ -110,6 +109,22 @@ and preview tool, not yet seen in Minecraft), **Partial**, **Not started** and *
 **Incomplete tests**
 - Everything in Minecraft: compile, datagen, world creation, save and reload, Distant Horizons,
   shaders, in-game performance, installer on Windows.
+
+### Session 2 (2026-11-03)
+
+**Completed (cloud)**
+- Summit ceiling: the old `tanh` ceiling flattened every seed's top summits at exactly y943. It is
+  replaced by a square-root knee at y760 and a guard above y940 (cap below y980), applied after
+  talus relaxation, with massif strength reduced. Highest ground is now y934, y959 and y925 on
+  seeds 1–3 with no pile-up at the cap.
+- Water containment (WP2a). Causes found with the extended audit: the sea-level rule replaced
+  river and lake water whose bed dipped below y64 near the coast (holes in the water), the river
+  bank rule was skipped near lakes, and the lake "calm" factor jumped at the lake zone edge. All
+  three are fixed in `TerrainSampler`, and `WaterContainment` raises any remaining dry column
+  that sits below a neighbour's water surface (7–13 of 18,432 river columns per seed). Bank leaks:
+  0 on seeds 1–3 (were 56–217 per seed).
+- `waterIsContained` replaces `unstableWaterStaysRare`: 0 bank leaks and 0 water above air are
+  required; steps are guarded below 1 %.
 
 **Next tasks**
 1. First device build and smoke test (WP1 in [CHAPTER_01_PLAN.md](CHAPTER_01_PLAN.md)).

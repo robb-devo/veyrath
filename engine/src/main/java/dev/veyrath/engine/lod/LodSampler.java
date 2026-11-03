@@ -8,6 +8,7 @@ import dev.veyrath.engine.math.MathUtil;
 import dev.veyrath.engine.surface.Material;
 import dev.veyrath.engine.terrain.ColumnInfo;
 import dev.veyrath.engine.terrain.TerrainSampler;
+import dev.veyrath.engine.terrain.WaterContainment;
 
 /**
  * Builds level-of-detail columns straight from the engine, for Distant Horizons or any other
@@ -64,12 +65,18 @@ public final class LodSampler {
         final FloatingIslands.Hit island = new FloatingIslands.Hit();
         final int[] runStart = new int[2048], runEnd = new int[2048];
         final short[] runMat = new short[2048];
+        double[] slope = new double[0], lowest = new double[0], ground = new double[0];
 
         void ensure(int w, int height) {
             int g = (w + 2) * (w + 2);
             if (grid.length < g) {
                 grid = new ColumnInfo[g];
                 for (int i = 0; i < g; i++) grid[i] = new ColumnInfo();
+            }
+            if (slope.length < w * w) {
+                slope = new double[w * w];
+                lowest = new double[w * w];
+                ground = new double[w * w];
             }
             gridWidth = w + 2;
             if (paint == null || paint.length != height) paint = new short[height];
@@ -103,16 +110,29 @@ public final class LodSampler {
                 world.realmAt(x, z).terrain().sample(x, z, ctx.grid[(j + 1) * gw + (i + 1)], ctx.scratch);
             }
         }
+        // 2. Slopes, exposed ranges and water containment from the raw samples only, exactly as
+        //    ChunkComposer does, so that block-detail LOD equals the generated chunks.
+        for (int j = 0; j < width; j++) {
+            for (int i = 0; i < width; i++) {
+                int k = j * width + i;
+                ColumnInfo c = ctx.grid[(j + 1) * gw + (i + 1)];
+                ColumnInfo w = ctx.grid[(j + 1) * gw + i], e = ctx.grid[(j + 1) * gw + i + 2];
+                ColumnInfo n = ctx.grid[j * gw + i + 1], s = ctx.grid[(j + 2) * gw + i + 1];
+                double gx = (e.ground - w.ground) / (2.0 * step), gz = (s.ground - n.ground) / (2.0 * step);
+                ctx.slope[k] = Math.sqrt(gx * gx + gz * gz);
+                ctx.lowest[k] = Math.min(Math.min(w.ground, e.ground), Math.min(n.ground, s.ground));
+                ctx.ground[k] = WaterContainment.containedGround(c, w, e, n, s);
+            }
+        }
+        for (int j = 0; j < width; j++) for (int i = 0; i < width; i++) ctx.grid[(j + 1) * gw + (i + 1)].ground = ctx.ground[j * width + i];
+
         short air = (short) Material.AIR.ordinal();
         for (int j = 0; j < width; j++) {
             for (int i = 0; i < width; i++) {
                 Column col = out[j * width + i];
                 col.count = 0;
                 ColumnInfo c = ctx.grid[(j + 1) * gw + (i + 1)];
-                ColumnInfo w = ctx.grid[(j + 1) * gw + i], e = ctx.grid[(j + 1) * gw + i + 2];
-                ColumnInfo n = ctx.grid[j * gw + i + 1], s = ctx.grid[(j + 2) * gw + i + 1];
-                double gx = (e.ground - w.ground) / (2.0 * step), gz = (s.ground - n.ground) / (2.0 * step);
-                double slope = Math.sqrt(gx * gx + gz * gz);
+                double slope = ctx.slope[j * width + i];
                 VeyrathWorld.Realm realm = world.realmAt(c.x, c.z);
                 VBiome biome = realm.biomes().select(c, slope);
                 col.biome = biome.ordinal();
@@ -124,7 +144,7 @@ public final class LodSampler {
                 else if (c.wet()) fluidTop = Math.max(fluidTop, Math.min(MathUtil.floor(c.water) - 1, maxY));
 
                 // Lowest neighbouring ground: below it, the column's sides are hidden.
-                double lowest = Math.min(Math.min(w.ground, e.ground), Math.min(n.ground, s.ground));
+                double lowest = ctx.lowest[j * width + i];
                 int exposed = MathUtil.clamp(MathUtil.floor(Math.min(lowest, c.ground)) - 2, minY + 1, groundY);
 
                 // 2. Hidden rock below the exposed range: one run.

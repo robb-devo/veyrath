@@ -74,14 +74,21 @@ river reaches, lakes and sea.
 "Unstable" water has air beside it (side-air) or below it (below-air), so it flows on the first
 block update in Minecraft.
 
-| Seed | River water: side-air | Lake water: side-air | Below-air (all) | Lava leaks |
-|---|---|---|---|---|
-| 1 | 144 / 41,164 (0.35 %) | 201 / 40,745 (0.49 %) | 0 | 0 |
-| 2 | 165 / 45,914 (0.36 %) | 0 / 42,549 (0 %) | 0 | 0 |
-| 3 | 199 / 41,654 (0.48 %) | 84 / 74,588 (0.11 %) | 0 | 0 |
+The audit splits side-air water by cause: a **bank** leak has dry land below the water surface
+beside it (a bug), a **step** has lower water beside it (a sloped river, for rapids and
+waterfalls in WP2b). Measured 2026-11-03 after the containment fix:
 
-Engine test world (atlas resolution 256): 123 of 19,963 river water blocks (0.62 %) are
-unstable. `unstableWaterStaysRare` fails above 1 % as a regression guard. Target after WP2: 0.
+| Seed | River water: bank / step | Lake water: bank / step | Below-air (all) | Lava leaks | Columns raised by containment |
+|---|---|---|---|---|---|
+| 1 | 0 / 58 of 42,039 (0.14 %) | 0 / 0 of 52,624 | 0 | 0 | 7 of 18,432 river columns |
+| 2 | 0 / 57 of 47,179 (0.12 %) | 0 / 0 of 51,079 | 0 | 0 | 10 |
+| 3 | 0 / 141 of 47,120 (0.30 %) | 0 / 0 of 95,789 | 0 | 0 | 13 |
+
+Before the fix (2026-11-02): 56–146 bank leaks in river water and 0–217 in lake water per seed.
+
+Engine test world (atlas resolution 256): 0 bank leaks and 73 steps in 21,487 river water blocks
+(0.34 %). `waterIsContained` requires 0 bank leaks and 0 water above air, and keeps steps below
+1 %.
 
 Ground ranges sampled per archetype are in [BIOME_CATALOG.md](BIOME_CATALOG.md).
 

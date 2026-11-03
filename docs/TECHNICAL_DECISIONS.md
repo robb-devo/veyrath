@@ -124,7 +124,7 @@ y −256 to 1023. Sea level is 64.
 
 **Why.**
 - Monumental relief needs room. On test seeds 1–3:
-  - The highest atlas ground is y943.
+  - The highest ground is y925–959 (the summit ceiling caps it below y980).
   - Vesperfall plateaus reach y510–590.
   - The Great Rift floor descends from about y191 inland to sea level.
   - Floating islands sit 110–480 blocks above the ground beneath them. The Crown of Aether
