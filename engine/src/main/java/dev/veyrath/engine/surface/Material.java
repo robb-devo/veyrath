@@ -19,7 +19,12 @@ public enum Material {
     // Cold
     SNOW, PACKED_ICE, BLUE_ICE, ICE,
     // Arcane geology (Prismmere)
-    AMETHYST, CRYSTAL_STONE;
+    AMETHYST, CRYSTAL_STONE,
+    // Vegetation: wood with bark on every face, leaves that never decay
+    ELDER_WOOD, ELDER_LEAVES, BROADLEAF_WOOD, BROADLEAF_LEAVES, CONIFER_WOOD, CONIFER_LEAVES,
+    PALE_WOOD, BLOOM_LEAVES, EMBER_WOOD, EMBER_LEAVES, FEN_WOOD, FEN_LEAVES, CHAR_WOOD,
+    // Ground plants, one block tall, placed on soil
+    GRASS_TUFT, FERN, FLOWER_YELLOW, FLOWER_RED, FLOWER_BLUE, FLOWER_WHITE, FLOWER_VIOLET, DRY_SHRUB, MOSS_CARPET;
 
     private static final Material[] VALUES = values();
 
@@ -32,6 +37,26 @@ public enum Material {
     }
 
     public boolean isSolid() {
-        return this != AIR && !isFluid();
+        return this != AIR && !isFluid() && !isPlant();
+    }
+
+    /** Small plants: no collision, no support for other blocks. */
+    public boolean isPlant() {
+        return ordinal() >= GRASS_TUFT.ordinal();
+    }
+
+    public boolean isLeaves() {
+        return switch (this) {
+            case ELDER_LEAVES, BROADLEAF_LEAVES, CONIFER_LEAVES, BLOOM_LEAVES, EMBER_LEAVES, FEN_LEAVES -> true;
+            default -> false;
+        };
+    }
+
+    /** Soil that small plants can grow on in Minecraft (the dirt block tag). */
+    public boolean isSoil() {
+        return switch (this) {
+            case DIRT, COARSE_DIRT, ROOTED_DIRT, GRASS, PODZOL, MOSS, MUD -> true;
+            default -> false;
+        };
     }
 }

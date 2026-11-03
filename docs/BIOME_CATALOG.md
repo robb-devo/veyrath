@@ -3,9 +3,11 @@
 Last updated: 2026-11-02. Source of truth in code: `engine/.../biome/VBiome.java` (the list and
 its colours) and `BiomeSelector.java` (the rules). Surface materials come from `SurfacePainter`.
 
-**What is implemented:** terrain, selection rules, surface and rock materials, and biome
-colours (sky, fog, water, grass, foliage) for all 26 biomes. **Vegetation, ambient particles
-and sounds are not implemented.** The vegetation column below is design intent for WP4.
+**What is implemented:** terrain, selection rules, surface and rock materials, biome colours
+(sky, fog, water, grass, foliage) and phase A vegetation (trees and one-block plants, see
+[WORLD_GENERATION_DESIGN.md](WORLD_GENERATION_DESIGN.md#vegetation-implemented-phase-a-of-wp4))
+for all 26 biomes. **Ambient particles and sounds are not implemented.** The vegetation column
+below is the full design; hanging vines, reeds, crystal and fungal flora are still to come.
 
 **Elevation ranges** are ground heights measured by `preview audit` in chunks around province
 centres on seeds 1–3. They are samples, not hard limits.

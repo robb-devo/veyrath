@@ -250,17 +250,36 @@ Each volume has a bounding box, so a chunk evaluates only the volumes that overl
 columns stay correct because a column can carry several runs. Openings in arches and overhangs
 become air runs, and caves, which are invisible from afar, are skipped below the exposed range.
 
-## Vegetation (planned, WP4)
+## Vegetation (implemented, phase A of WP4)
 
-- **Ordinary plants and trees** come from VEYRATH placement rules, not vanilla features. Density
-  follows biome, slope, altitude (tree line), moisture and `BiomeSelector.patch`. Clearings and
-  groves come from patch noise, not randomness per block.
-- **Colossal trees** are designed procedurally as architectures: trunk, buttress roots, branch
-  skeleton and canopy masses. They are not scaled-up vanilla trees. A tree can span many chunks,
-  so each one is planned once per region cell from the seed, and every chunk it touches draws
-  only its own part. The tree is the same whichever chunk is generated first.
-- **LOD.** Canopies are added to LOD columns as leaf runs at coarse detail, so a forest
-  silhouette and colossal crowns are visible from afar.
+Code: `engine/.../vegetation/` (`Vegetation`, `Tree`, `TreeKind`). No vanilla features are used.
+
+- **Placement.** Three jittered grids: giants (64-block cells), trees (8) and sparse trees (24).
+  A cell holds at most one candidate. Whether it grows, and as what, depends on the biome, slope
+  (measured over 2 blocks), water, volcanoes and the tree line at the candidate's own column.
+  Alpine highlands have a tree line 150 blocks below the snow line; elsewhere only snow stops
+  trees. Groves and clearings come from patch noise. Smaller trees keep clear of giant trunks.
+- **Kinds.** Elderbough giants (72–128 blocks, buttress roots, curved great limbs, layered leaf
+  clusters), elders, broadleaf, bloom (tinted foliage), storm pines (wind-leaning), pines,
+  emberleaf (flat crowns), charred trunks and fen trees on stilt roots. Leaf colour comes from
+  the biome foliage colour, so the same leaves read red on Vesperfall ledges and violet in
+  Prismmere.
+- **Seams.** A tree is built from primitives (tapered wood segments, leaf ellipsoids) whose
+  tests depend only on world position. Every chunk it reaches draws its own part, and
+  `VegetationTest` checks that all those chunks find the same trees.
+- **Plants.** Grass, ferns, flowers in drifts, moss carpets and dry shrubs, one block tall, only
+  on ground Minecraft accepts for them.
+- **LOD.** Exact trees at 1–2 blocks per column, exact giants up to 16, and a canopy estimate
+  (leaf runs at the species' crown height) further out.
+- **Cost.** 1.0 ms per chunk in the Elderwood giant forest and 1.27 ms around spawn on the cloud
+  machine (was 0.99 ms there without vegetation).
+
+![Elderwood giants, block-level engine render](media/seed1_voxel_elderwood_giants.jpg)
+
+*Engine render of generated chunks (`preview voxel`), not an in-game screenshot.*
+
+Not yet: island vegetation, hanging vines and roots, tall grass and reeds, crystal and fungal
+flora, custom textures (phase B).
 
 ## Landmark tiers (planned, WP6)
 

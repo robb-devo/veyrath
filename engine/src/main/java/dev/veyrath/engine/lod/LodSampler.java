@@ -9,6 +9,7 @@ import dev.veyrath.engine.surface.Material;
 import dev.veyrath.engine.terrain.ColumnInfo;
 import dev.veyrath.engine.terrain.TerrainSampler;
 import dev.veyrath.engine.terrain.WaterContainment;
+import dev.veyrath.engine.vegetation.Vegetation;
 
 /**
  * Builds level-of-detail columns straight from the engine, for Distant Horizons or any other
@@ -27,6 +28,8 @@ import dev.veyrath.engine.terrain.WaterContainment;
 public final class LodSampler {
     /** Upper bound on runs per column; beyond it the shortest runs are merged. */
     public static final int MAX_RUNS = 48;
+    /** Runs reserved for trees above the surface. */
+    private static final int VEG_RUNS = 8;
 
     private final WorldSpec spec;
 
@@ -66,6 +69,8 @@ public final class LodSampler {
         final int[] runStart = new int[2048], runEnd = new int[2048];
         final short[] runMat = new short[2048];
         double[] slope = new double[0], lowest = new double[0], ground = new double[0];
+        final Vegetation.Context vegetation = new Vegetation.Context();
+        short[] trees;
 
         void ensure(int w, int height) {
             int g = (w + 2) * (w + 2);
@@ -80,6 +85,7 @@ public final class LodSampler {
             }
             gridWidth = w + 2;
             if (paint == null || paint.length != height) paint = new short[height];
+            if (trees == null || trees.length != height) trees = new short[height];
         }
     }
 
@@ -126,6 +132,11 @@ public final class LodSampler {
         }
         for (int j = 0; j < width; j++) for (int i = 0; i < width; i++) ctx.grid[(j + 1) * gw + (i + 1)].ground = ctx.ground[j * width + i];
 
+        // Trees reaching into this section (exact at fine detail, giants at medium detail).
+        VeyrathWorld.Realm centre = world.realmAt(x0 + width * step * 0.5, z0 + width * step * 0.5);
+        centre.vegetation().collectForLod(MathUtil.floor(x0), MathUtil.floor(z0),
+                MathUtil.floor(x0) + width * step - 1, MathUtil.floor(z0) + width * step - 1, step, ctx.vegetation);
+
         short air = (short) Material.AIR.ordinal();
         for (int j = 0; j < width; j++) {
             for (int i = 0; i < width; i++) {
@@ -162,11 +173,29 @@ public final class LodSampler {
                         runs++;
                     }
                 }
-                runs = mergeShortRuns(ctx, runs, MAX_RUNS - 6);
+                runs = mergeShortRuns(ctx, runs, MAX_RUNS - 16);
                 for (int r = 0; r < runs; r++) col.add(ctx.runStart[r], ctx.runEnd[r], ctx.runMat[r]);
                 int filled = fluidTop + 1;
 
-                // 4. Floating island over this column, if any.
+                // 4. Trees above the surface (at most VEG_RUNS runs, gaps included).
+                int treeTop = centre.vegetation().lodColumn(c.x, c.z, fluidTop, biome, step, ctx.vegetation, ctx.trees);
+                if (treeTop >= filled) {
+                    int added = 0;
+                    int y = filled;
+                    while (y <= treeTop) {
+                        short m = ctx.trees[y - minY];
+                        int e = y + 1;
+                        while (e <= treeTop && ctx.trees[e - minY] == m) e++;
+                        if (added == VEG_RUNS - 1) e = treeTop + 1; // budget spent: one last run to the top
+                        col.add(y, e, m);
+                        added++;
+                        y = e;
+                    }
+                    java.util.Arrays.fill(ctx.trees, filled - minY, treeTop - minY + 1, (short) 0);
+                    filled = treeTop + 1;
+                }
+
+                // 5. Floating island over this column, if any.
                 realm.islands().column(c.x, c.z, ctx.island);
                 if (ctx.island.island != null) {
                     int b = Math.max(MathUtil.floor(ctx.island.bottom), filled + 1);
@@ -182,7 +211,7 @@ public final class LodSampler {
                         filled = soilTop + 1;
                     }
                 }
-                // 5. Air to the top of the world.
+                // 6. Air to the top of the world.
                 col.add(filled, maxY + 1, air);
             }
         }

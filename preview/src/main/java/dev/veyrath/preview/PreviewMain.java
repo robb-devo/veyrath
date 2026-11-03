@@ -21,6 +21,7 @@ import java.util.Map;
  *   view   [--seed S] [--out DIR] [--width W]   perspective renders of landmark viewpoints
  *   bench  [--seed S]                           engine benchmark (realm build, chunk composition)
  *   audit  [--seed S] [--per N]                 world-quality audit (unstable water/lava, ranges)
+ *   voxel  [--seed S] [--biome B] [--size N]    block-level render of composed chunks (trees, water)
  * </pre>
  */
 public final class PreviewMain {
@@ -38,6 +39,9 @@ public final class PreviewMain {
         switch (cmd) {
             case "atlas" -> atlas(spec, out);
             case "view" -> Views.render(spec, out, Integer.parseInt(opt(args, "--width", "1600")));
+            case "voxel" -> VoxelView.render(spec, out, opt(args, "--biome", "elderwood"), Integer.parseInt(opt(args, "--size", "256")),
+                    Integer.parseInt(opt(args, "--width", "1280")),
+                    Double.parseDouble(opt(args, "--dist", "0.42")), Double.parseDouble(opt(args, "--elev", "0.32")));
             case "bench" -> {
                 try { Bench.run(spec); } catch (Exception e) { throw new RuntimeException(e); }
             }

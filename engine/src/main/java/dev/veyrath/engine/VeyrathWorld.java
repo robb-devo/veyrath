@@ -10,6 +10,7 @@ import dev.veyrath.engine.math.MathUtil;
 import dev.veyrath.engine.surface.SurfacePainter;
 import dev.veyrath.engine.terrain.ColumnInfo;
 import dev.veyrath.engine.terrain.TerrainSampler;
+import dev.veyrath.engine.vegetation.Vegetation;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class VeyrathWorld {
     /** Everything needed to generate inside one realm. Immutable and thread-safe. */
     public record Realm(RealmAtlas atlas, TerrainSampler terrain, BiomeSelector biomes, SurfacePainter painter,
-                        FloatingIslands islands, ChunkComposer composer) {}
+                        FloatingIslands islands, Vegetation vegetation, ChunkComposer composer) {}
 
     private final WorldSpec spec;
     private final BiomeSelector biomes;
@@ -172,7 +173,8 @@ public final class VeyrathWorld {
         RealmAtlas atlas = AtlasBuilder.build(spec, rx, rz, progress);
         TerrainSampler terrain = new TerrainSampler(atlas);
         FloatingIslands islands = new FloatingIslands(atlas);
-        ChunkComposer composer = new ChunkComposer(spec, terrain, biomes, painter, islands);
-        return new Realm(atlas, terrain, biomes, painter, islands, composer);
+        Vegetation vegetation = new Vegetation(spec, terrain, biomes);
+        ChunkComposer composer = new ChunkComposer(spec, terrain, biomes, painter, islands, vegetation);
+        return new Realm(atlas, terrain, biomes, painter, islands, vegetation, composer);
     }
 }

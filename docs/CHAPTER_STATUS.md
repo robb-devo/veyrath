@@ -52,10 +52,10 @@ and preview tool, not yet seen in Minecraft), **Partial**, **Not started** and *
 | The selected modloader and dependencies work together | Not verified | Mod not compiled yet |
 | The custom Overworld generates successfully | Engine only | 8 engine tests pass; preview renders in `docs/media/` |
 | The world is geographically coherent | Engine only | Atlas maps for seeds 1–3: continent, provinces, drainage-following rivers |
-| The initial biome ecosystem is implemented | Partial | 26 biomes with terrain and surface materials. No vegetation |
+| The initial biome ecosystem is implemented | Partial | 26 biomes with terrain, surface materials, trees and ground plants. No ambient particles or sounds |
 | Large mountain ranges work | Engine only | Belts, massifs, stream-power erosion. Highest summits y925–959 on seeds 1–3. Known issue: ranges read as uniform walls from afar |
 | Extreme valleys and ravines work | Engine only | The Great Rift, glacial troughs and river valleys |
-| Colossal trees and forests work | Not started | Work package WP4 |
+| Colossal trees and forests work | Engine only | Elderbough giants and eight other tree kinds, in chunks and in Distant Horizons LOD. Not yet seen in game |
 | Floating islands work | Engine only | Aetherreach islands and the Crown of Aether cluster. No island vegetation or waterfalls yet |
 | Extraordinary natural landmarks work | Partial | Great Rift, Crown of Aether, Cinder Throne and Crownspire massif. No four-tier landmark system yet (WP6) |
 | Rivers, lakes and waterfalls work | Partial | Rivers and lakes work, and no water spills over a bank (0 leaks on seeds 1–3). No waterfalls or rapids yet: 0.1–0.3 % of river water blocks stand beside lower water |

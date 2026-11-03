@@ -11,12 +11,14 @@ import dev.veyrath.engine.surface.SurfacePainter;
 import dev.veyrath.engine.terrain.ColumnInfo;
 import dev.veyrath.engine.terrain.TerrainSampler;
 import dev.veyrath.engine.terrain.WaterContainment;
+import dev.veyrath.engine.vegetation.Vegetation;
 
 /**
  * Produces the full material column data of one chunk from the engine.
  *
  * <p>Order: 18 x 18 column samples (1-block border, for slopes) -> slopes and water containment
- * from the raw samples -> biome per column -> surface painting -> floating islands. Each call
+ * from the raw samples -> biome per column -> surface painting -> floating islands -> trees and
+ * plants. Each call
  * touches only its own chunk, so any number of chunks can be composed in parallel (required for
  * C2ME and for Distant Horizons' generator threads).
  */
@@ -26,6 +28,7 @@ public final class ChunkComposer {
     private final BiomeSelector biomes;
     private final SurfacePainter painter;
     private final FloatingIslands islands;
+    private final Vegetation vegetation;
 
     /** Per-thread working state. */
     public static final class Context {
@@ -33,6 +36,7 @@ public final class ChunkComposer {
         final TerrainSampler.Scratch scratch = new TerrainSampler.Scratch();
         final FloatingIslands.Hit island = new FloatingIslands.Hit();
         final double[] slope = new double[256], ground = new double[256];
+        final Vegetation.Context vegetation = new Vegetation.Context();
 
         public Context() {
             for (int i = 0; i < cols.length; i++) cols[i] = new ColumnInfo();
@@ -44,12 +48,14 @@ public final class ChunkComposer {
         }
     }
 
-    public ChunkComposer(WorldSpec spec, TerrainSampler terrain, BiomeSelector biomes, SurfacePainter painter, FloatingIslands islands) {
+    public ChunkComposer(WorldSpec spec, TerrainSampler terrain, BiomeSelector biomes, SurfacePainter painter, FloatingIslands islands,
+                         Vegetation vegetation) {
         this.spec = spec;
         this.terrain = terrain;
         this.biomes = biomes;
         this.painter = painter;
         this.islands = islands;
+        this.vegetation = vegetation;
     }
 
     public void compose(int chunkX, int chunkZ, ChunkBuffer out, Context ctx) {
@@ -114,6 +120,7 @@ public final class ChunkComposer {
                 out.topSolid[col] = (short) topSolid;
             }
         }
+        if (vegetation != null) vegetation.decorate(out, ctx.vegetation);
     }
 
     private void paintIsland(ChunkBuffer out, int col, int bottom, int top, FloatingIslands.Hit hit, int x, int z, ColumnInfo c) {
