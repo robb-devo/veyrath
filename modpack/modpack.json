@@ -12,7 +12,8 @@
     { "slug": "lithium", "pin": null, "role": "game logic and chunk performance" },
     { "slug": "ferrite-core", "pin": null, "role": "memory use" },
     { "slug": "c2me-fabric", "pin": null, "role": "parallel chunk generation and I/O", "optionalFlag": "SkipC2ME" },
-    { "slug": "modmenu", "pin": null, "role": "in-game mod list and config access" }
+    { "slug": "modmenu", "pin": null, "role": "in-game mod list and config access" },
+    { "slug": "placeholder-api", "pin": null, "role": "required library of Mod Menu 21" }
   ],
   "shaders": [
     { "slug": "complementary-unbound", "pin": null, "active": true, "role": "default shader for Chapter 01 screenshots" },
