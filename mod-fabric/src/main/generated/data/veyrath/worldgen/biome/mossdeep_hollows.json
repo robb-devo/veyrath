@@ -7,6 +7,14 @@
       },
       "modifier": "overlay"
     },
+    "minecraft:visual/ambient_particles": [
+      {
+        "particle": {
+          "type": "minecraft:spore_blossom_air"
+        },
+        "probability": 0.008
+      }
+    ],
     "minecraft:visual/fog_color": "#9ab8a2",
     "minecraft:visual/sky_color": "#88b0de",
     "minecraft:visual/water_fog_color": "#123e40"

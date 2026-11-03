@@ -7,6 +7,14 @@
       },
       "modifier": "overlay"
     },
+    "minecraft:visual/ambient_particles": [
+      {
+        "particle": {
+          "type": "minecraft:end_rod"
+        },
+        "probability": 8.0E-4
+      }
+    ],
     "minecraft:visual/fog_color": "#ddebf6",
     "minecraft:visual/sky_color": "#8ac4fa",
     "minecraft:visual/water_fog_color": "#10506a"

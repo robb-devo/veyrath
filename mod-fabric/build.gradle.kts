@@ -19,6 +19,12 @@ description = "VEYRATH Fabric mod (Minecraft ${libs.versions.minecraft.get()})"
 
 val withDh = providers.gradleProperty("veyrath.dh").getOrElse("true") != "false"
 val devMods = providers.gradleProperty("veyrath.devMods").getOrElse("false") == "true"
+// -Pveyrath.fullPack=true: the dev client loads every mod jar the installer put in the VEYRATH
+// profile (modpack/modpack.json, same files and versions), except VEYRATH itself and Fabric API,
+// which come from this build. Folder override: -Pveyrath.packMods=<path to mods folder>.
+val fullPack = providers.gradleProperty("veyrath.fullPack").getOrElse("false") == "true"
+val packMods = providers.gradleProperty("veyrath.packMods")
+    .getOrElse(System.getenv("APPDATA") + "/.minecraft/instances/veyrath/mods")
 
 base {
     archivesName.set("veyrath")
@@ -65,13 +71,17 @@ fabricApi {
         enableGameTests = false
         enableClientGameTests = true
         eula = false
+        // Keep run/clientGameTest between runs so a shader pack and iris.properties placed there
+        // (shader tour) survive; the test always creates fresh worlds.
+        clearRunDirectory = false
     }
 }
 
 // Seed tour options: -Pveyrath.tourSeeds=1,2,3; the screenshot setup tag follows -Pveyrath.devMods.
 loom.runs.matching { it.name == "clientGameTest" }.configureEach {
     property("veyrath.tourSeeds", providers.gradleProperty("veyrath.tourSeeds").getOrElse("1,2,3"))
-    property("veyrath.tourSetup", if (devMods) "devmods" else "vanilla")
+    property("veyrath.tourSetup", providers.gradleProperty("veyrath.tourSetup")
+        .getOrElse(if (fullPack) "fullpack" else if (devMods) "devmods" else "vanilla"))
 }
 
 sourceSets.main {
@@ -105,6 +115,14 @@ dependencies {
             "maven.modrinth:iris:1.11.7+26.3-fabric",
             "maven.modrinth:distanthorizons:3.3.4-26.3",
         )) add("localRuntime", dep)
+    }
+    if (fullPack) {
+        val jars = fileTree(packMods) {
+            include("*.jar")
+            exclude("veyrath-*.jar", "fabric-api-*.jar")
+        }
+        if (jars.isEmpty) throw GradleException("-Pveyrath.fullPack: no mod jars in $packMods (run tools/install first)")
+        add("localRuntime", jars)
     }
 }
 
