@@ -91,6 +91,15 @@ public final class VeyrathChunkGenerator extends ChunkGenerator {
         ChunkBuffer buf = buffer(world.spec());
         world.composeWorldChunk(chunk.getPos().x(), chunk.getPos().z(), buf, CONTEXT.get());
         writeChunk(buf, chunk);
+        // River steps: let Minecraft tick these water blocks once the chunk is complete, so they
+        // flow down to the lower water as rapids.
+        int bx = chunk.getPos().x() << 4, bz = chunk.getPos().z() << 4;
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        for (int i = 0; i < buf.flowCount; i++) {
+            int p = buf.flow[i];
+            pos.set(bx + (p & 15), (p >>> 8) + buf.minY, bz + ((p >> 4) & 15));
+            chunk.markPosForPostprocessing(pos);
+        }
         Heightmap.primeHeightmaps(chunk, EnumSet.of(Heightmap.Types.OCEAN_FLOOR_WG, Heightmap.Types.WORLD_SURFACE_WG));
         return CompletableFuture.completedFuture(chunk);
     }

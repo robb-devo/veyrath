@@ -121,6 +121,52 @@ public final class ChunkComposer {
             }
         }
         if (vegetation != null) vegetation.decorate(out, ctx.vegetation);
+        markSteps(out, g);
+    }
+
+    /**
+     * Finds water blocks with air beside them. Banks are already contained, so what remains are
+     * steps down to lower water on sloped rivers; they are handed to Minecraft to flow. Columns
+     * outside the chunk are judged from the border samples.
+     */
+    private void markSteps(ChunkBuffer out, ColumnInfo[] g) {
+        out.flowCount = 0;
+        short water = (short) Material.WATER.ordinal(), air = (short) Material.AIR.ordinal();
+        int[] dx = {1, -1, 0, 0}, dz = {0, 0, 1, -1};
+        for (int z = 0; z < 16; z++) {
+            for (int x = 0; x < 16; x++) {
+                int col = (z << 4) | x;
+                int top = out.fluidTop[col];
+                if (top <= out.ground[col] || !Double.isNaN(g[(z + 1) * 18 + x + 1].lava)) continue;
+                // Lowest neighbouring surface: below it no side of this column is open.
+                int low = Integer.MAX_VALUE;
+                for (int k = 0; k < 4; k++) {
+                    int nx = x + dx[k], nz = z + dz[k];
+                    int surface;
+                    if (nx >= 0 && nx < 16 && nz >= 0 && nz < 16) {
+                        int n = (nz << 4) | nx;
+                        surface = Math.max(out.ground[n], out.fluidTop[n]);
+                    } else {
+                        ColumnInfo c = g[(nz + 1) * 18 + nx + 1];
+                        surface = Math.max(MathUtil.floor(c.ground), WaterContainment.fluidTop(c));
+                    }
+                    low = Math.min(low, surface);
+                }
+                for (int y = Math.max(low + 1, out.ground[col] + 1); y <= top; y++) {
+                    if (out.get(x, y, z) != water) continue;
+                    boolean open = false;
+                    for (int k = 0; k < 4 && !open; k++) {
+                        int nx = x + dx[k], nz = z + dz[k];
+                        if (nx >= 0 && nx < 16 && nz >= 0 && nz < 16) open = out.get(nx, y, nz) == air;
+                        else {
+                            ColumnInfo c = g[(nz + 1) * 18 + nx + 1];
+                            open = y > Math.max(MathUtil.floor(c.ground), WaterContainment.fluidTop(c));
+                        }
+                    }
+                    if (open) out.addFlow(x, y, z);
+                }
+            }
+        }
     }
 
     private void paintIsland(ChunkBuffer out, int col, int bottom, int top, FloatingIslands.Hit hit, int x, int z, ColumnInfo c) {

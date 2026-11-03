@@ -40,6 +40,8 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   across chunks and appear in Distant Horizons LOD. 22 new materials, mapped to vanilla wood,
   persistent leaves and plants in `MaterialPalette`.
 - **Preview** `voxel` command: block-level render of composed chunks with sun shadows.
+- **Rapids**: water blocks at river steps are marked for a fluid update (`ChunkBuffer.flow`), so
+  Minecraft makes them flow down to the lower water instead of leaving a vertical water face.
 
 ### Fixed
 - The highest summits no longer flatten at y943: new summit ceiling (square-root knee at y760,

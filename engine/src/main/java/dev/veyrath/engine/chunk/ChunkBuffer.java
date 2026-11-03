@@ -27,6 +27,18 @@ public final class ChunkBuffer {
     public int chunkX, chunkZ;
     /** Columns whose ground was raised to hold a neighbour's water or lava (diagnostics). */
     public int containedColumns;
+    /**
+     * Water blocks with air beside them at a river step, packed as {@code (y - minY) << 8 | z << 4 | x}.
+     * The adapter schedules a fluid update for each, so Minecraft turns the step into flowing
+     * water (a rapid) instead of leaving a vertical water face.
+     */
+    public int[] flow = new int[256];
+    public int flowCount;
+
+    void addFlow(int x, int y, int z) {
+        if (flowCount == flow.length) flow = java.util.Arrays.copyOf(flow, flow.length * 2);
+        flow[flowCount++] = ((y - minY) << 8) | (z << 4) | x;
+    }
 
     public ChunkBuffer(WorldSpec spec) {
         this.minY = spec.minY();

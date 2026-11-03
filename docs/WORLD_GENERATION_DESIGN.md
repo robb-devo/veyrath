@@ -135,8 +135,10 @@ in order:
    keeps its own surface where its bed dips below sea level near the coast.
 9. **Containment** (in `ChunkComposer` and `LodSampler`, from the raw samples): a dry column whose
    ground lies below a neighbour's top water or lava block is raised level with it, so no fluid
-   has open air beside it. Water beside lower water (a step on a sloped river) is left for
-   rapids and waterfalls.
+   has open air beside it.
+10. **Rapids.** Water beside lower water (a step on a sloped river, 0.1–0.3 % of river water) is
+   listed in `ChunkBuffer.flow`; the adapter marks those blocks for post-processing, so
+   Minecraft ticks them once and they flow down as small rapids. Tall waterfalls are WP2b.
 
 ## Formations
 
