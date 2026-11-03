@@ -87,3 +87,6 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   one per realm (72 blocks tall at y742 on seed 1), so the sky shows through the mountain. In
   chunks and Distant Horizons LOD. `/veyrath tp window` stands below one mouth; the seed tour
   visits it. Preview `voxel` takes `-Dveyrath.lo=Y` for high features.
+- **Crystal fault lines** in the Prismmere: winding fissures with an amethyst or quartz vein
+  and rows of crystal outcrops and spires (11 faults with 991 crystals on seed 1). Trees keep
+  off them. `/veyrath tp fault` stands beside the nearest; the seed tour visits it.

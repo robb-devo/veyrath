@@ -47,6 +47,8 @@ public final class ColumnInfo {
     public double crystal = Double.NaN;
     /** The crystal is white quartz rather than amethyst. */
     public boolean quartz;
+    /** Within 12 blocks of a crystal fault line: trees keep off it. */
+    public boolean nearFault;
 
     public enum WaterKind { NONE, SEA, LAKE, RIVER }
 

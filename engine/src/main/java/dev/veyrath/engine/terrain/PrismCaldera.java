@@ -26,6 +26,15 @@ public record PrismCaldera(double x, double z, double radius, double level, doub
      */
     public record Crystal(double x, double z, double radius, double angle, double base, double height, double tip,
                           boolean quartz) {
+        /** Top of the crystal over (px, pz), or NaN when the column misses it. */
+        public double topAt(double px, double pz) {
+            double ex = px - x, ez = pz - z, rr = radius * 1.155;
+            if (ex * ex + ez * ez > rr * rr) return Double.NaN;
+            double ca = Math.cos(angle), sa = Math.sin(angle);
+            double u = Math.abs(ex * ca + ez * sa), v = Math.abs(ez * ca - ex * sa);
+            double hd = Math.max(0.8660254 * u + 0.5 * v, v) / radius;
+            return hd >= 1 ? Double.NaN : base + height + tip * (1 - hd);
+        }
     }
 
     /** Searches the realm for a site; null when the realm has no suitable Prismmere ground. */

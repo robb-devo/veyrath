@@ -67,6 +67,8 @@ public final class TerrainSampler {
     private final float[] lakeHalo;
     /** Set at the end of construction; null while the site search samples the plain terrain. */
     private PrismCaldera caldera;
+    /** Set at the end of construction, after the caldera; null while it is being built. */
+    private CrystalFaults faults;
 
     /** Per-thread scratch state; create one per worker thread. */
     public static final class Scratch {
@@ -98,6 +100,12 @@ public final class TerrainSampler {
         PrismCaldera site = PrismCaldera.find(this);
         caldera = site;
         if (site != null) caldera = site.withCrystals(this);
+        faults = CrystalFaults.build(this);
+    }
+
+    /** The realm's crystal fault lines (never null once constructed). */
+    public CrystalFaults faults() {
+        return faults;
     }
 
     /** The realm's Prism Caldera, or null when it has none. */
@@ -325,6 +333,7 @@ public final class TerrainSampler {
         // --- the Prism Caldera: crater lake, terraced inner wall, outer flank and crystal spires
         out.crystal = Double.NaN;
         out.quartz = false;
+        out.nearFault = false;
         boolean calderaNear = false;
         double calderaLake = Double.NaN;
         PrismCaldera cal = caldera;
@@ -361,13 +370,7 @@ public final class TerrainSampler {
                 calderaNear = r < 1.15;
                 if (r < 1.3) {
                     for (PrismCaldera.Crystal k : cal.crystals()) {
-                        double ex = x - k.x(), ez = z - k.z(), rr = k.radius() * 1.155;
-                        if (ex * ex + ez * ez > rr * rr) continue;
-                        double ca = Math.cos(k.angle()), sa = Math.sin(k.angle());
-                        double u = Math.abs(ex * ca + ez * sa), v = Math.abs(ez * ca - ex * sa);
-                        double hd = Math.max(0.8660254 * u + 0.5 * v, v) / k.radius();
-                        if (hd >= 1) continue;
-                        double top = k.base() + k.height() + k.tip() * (1 - hd);
+                        double top = k.topAt(x, z);
                         if (top > h) {
                             if (Double.isNaN(out.crystal)) out.crystal = Math.floor(h) - 1;
                             h = top;
@@ -377,6 +380,12 @@ public final class TerrainSampler {
                 }
                 if (r < 1 && h < cal.level()) calderaLake = cal.level();
             }
+        }
+
+        // --- crystal fault lines (Prismmere): veins and outcrops on dry ground away from water
+        if (faults != null && kind == ColumnInfo.WaterKind.NONE && Double.isNaN(lakeLevel) && !calderaNear
+                && Double.isNaN(out.crystal) && out.riverDistance > out.riverHalfWidth + 8 && h > sea + 6) {
+            h = faults.apply(x, z, h, out);
         }
 
         // --- water

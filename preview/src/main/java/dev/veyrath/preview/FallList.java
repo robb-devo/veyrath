@@ -64,5 +64,31 @@ final class FallList {
                     win.x() - world.originX(), win.centreY(), win.z() - world.originZ(),
                     win.x() - world.originX(), win.z() - world.originZ());
         }
+        var faults = world.realm(0, 0).terrain().faults().all();
+        int nc = 0;
+        double total = 0;
+        for (var f : faults) {
+            nc += f.crystals().size();
+            total += f.length();
+        }
+        System.out.printf(Locale.ROOT, "crystal faults: %d, %.0f blocks of line, %d crystals%n", faults.size(), total, nc);
+        for (int i = 0; i < Math.min(3, faults.size()); i++) {
+            var f = faults.get(i);
+            int m = f.xs().length / 2;
+            double dx = f.xs()[m + 1] - f.xs()[m], dz = f.zs()[m + 1] - f.zs()[m], l = Math.hypot(dx, dz);
+            // Camera low beside the line, looking along it.
+            double cx = f.xs()[m] - dz / l * 40 - dx / l * 70, cz = f.zs()[m] + dx / l * 40 - dz / l * 70;
+            double lx = f.xs()[m] + dx / l * 50, lz = f.zs()[m] + dz / l * 50;
+            var col = new dev.veyrath.engine.terrain.ColumnInfo();
+            var scr = new dev.veyrath.engine.terrain.TerrainSampler.Scratch();
+            var ter = world.realm(0, 0).terrain();
+            ter.sample(cx, cz, col, scr);
+            double cy = col.ground + 30;
+            ter.sample(lx, lz, col, scr);
+            System.out.printf(Locale.ROOT, "  fault %.0f long, %d crystals: -Dveyrath.cam=%.0f,%.0f,%.0f -Dveyrath.look=%.0f,%.0f,%.0f --at %.0f,%.0f%n",
+                    f.length(), f.crystals().size(), cx - world.originX(), cy, cz - world.originZ(),
+                    lx - world.originX(), col.ground + 6, lz - world.originZ(),
+                    f.xs()[m] - world.originX(), f.zs()[m] - world.originZ());
+        }
     }
 }

@@ -188,7 +188,7 @@ public final class Vegetation {
         int bz = j * cell + 1 + (int) (Hash.unit(Hash.mix(h + 2)) * (cell - 2));
         ColumnInfo c = ctx.c;
         terrain.sample(bx + 0.5, bz + 0.5, c, ctx.scratch);
-        if (c.wet() || !Double.isNaN(c.lava) || !Double.isNaN(c.crystal) || c.volcano > 0.3 || c.ground < spec.seaLevel() + 1) return null;
+        if (c.wet() || !Double.isNaN(c.lava) || !Double.isNaN(c.crystal) || c.nearFault || c.volcano > 0.3 || c.ground < spec.seaLevel() + 1) return null;
         if (c.riverDistance < c.riverHalfWidth + 3) return null;
         // No tree on or right beside a cave mouth, where the ground may be open.
         if (caves != null && caves.entrance(c, dev.veyrath.engine.cave.Caves.NEAR_ENTRANCE)) return null;

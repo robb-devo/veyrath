@@ -30,7 +30,7 @@ public final class Locator {
 
     /** Target names accepted by {@link #find}. */
     public static List<String> targets() {
-        List<String> t = new ArrayList<>(List.of("spawn", "rift", "rift_rim", "crown", "throne", "summit", "waterfall", "elder_tree", "arch", "caldera", "window"));
+        List<String> t = new ArrayList<>(List.of("spawn", "rift", "rift_rim", "crown", "throne", "summit", "waterfall", "elder_tree", "arch", "caldera", "window", "fault"));
         for (Archetype a : Archetype.values()) t.add(archetypeTarget(a));
         return t;
     }
@@ -117,6 +117,24 @@ public final class Locator {
                 realm.islands().column(crown.x(), crown.z(), hit);
                 double top = hit.island != null ? hit.top : crown.y() + crown.dome();
                 return new Place(t, crown.x(), Math.floor(top) + 1, crown.z(), "Crown of Aether (radius " + (int) crown.radius() + ")");
+            }
+            case "fault" -> {
+                // The nearest crystal fault: stand 30 blocks beside the middle of its line.
+                dev.veyrath.engine.terrain.CrystalFaults.Fault best = null;
+                double bd = Double.MAX_VALUE;
+                for (var f : terrain.faults().all()) {
+                    int m = f.xs().length / 2;
+                    double d = Math.hypot(f.xs()[m] - fromX, f.zs()[m] - fromZ);
+                    if (d < bd) {
+                        bd = d;
+                        best = f;
+                    }
+                }
+                if (best == null) return null;
+                int m = best.xs().length / 2;
+                double dx = best.xs()[m + 1] - best.xs()[m], dz = best.zs()[m + 1] - best.zs()[m], l = Math.hypot(dx, dz);
+                return stand(terrain, c, s, t, best.xs()[m] - dz / l * 30, best.zs()[m] + dx / l * 30, String.format(Locale.ROOT,
+                        "Crystal fault, %.0f blocks long, %d crystals, %s vein", best.length(), best.crystals().size(), best.quartz() ? "quartz" : "amethyst"));
             }
             case "window" -> {
                 var w = realm.window().window();
