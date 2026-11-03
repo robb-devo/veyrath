@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Installs the VEYRATH development profile for the official Minecraft Launcher, in its own game
     folder, without changing existing profiles, worlds or game folders.
@@ -9,7 +9,7 @@
       2. Backs up launcher_profiles.json (launcher_profiles.json.veyrath-backup-<time>).
       3. Installs the Fabric Loader version (versions\fabric-loader-<loader>-<mc>) from Fabric's
          official meta server, the same files Fabric's own installer writes.
-      4. Creates the VEYRATH game folder (default %APPDATA%\.minecraft-veyrath) with mods,
+      4. Creates the VEYRATH game folder (default %APPDATA%\.minecraft\instances\veyrath) with mods,
          shaderpacks and config.
       5. Downloads the mods and shader packs listed in modpack\modpack.json from Modrinth's API
          and verifies each file's SHA-512.
@@ -26,7 +26,7 @@
     Launcher data folder (contains launcher_profiles.json and versions). Default: %APPDATA%\.minecraft
 
 .PARAMETER GameDir
-    VEYRATH game folder (saves, mods, config, shaderpacks). Default: %APPDATA%\.minecraft-veyrath
+    VEYRATH game folder (saves, mods, config, shaderpacks). Default: <MinecraftDir>\instances\veyrath
 
 .PARAMETER VeyrathJar
     Path to the built VEYRATH mod jar. Default: the newest mod-fabric\build\libs\veyrath-*.jar of
@@ -91,7 +91,10 @@ $Manifest = Get-Content -Raw -Path (Join-Path $RepoRoot 'modpack\modpack.json') 
 $InstallRecordName = 'veyrath-install.json'
 
 if (-not $MinecraftDir) { $MinecraftDir = Join-Path $env:APPDATA '.minecraft' }
-if (-not $GameDir) { $GameDir = Join-Path $env:APPDATA '.minecraft-veyrath' }
+# Inside the launcher folder on purpose: the Microsoft Store launcher (a packaged app) does not
+# see game folders elsewhere in %APPDATA% that it did not create itself. A profile pointing at
+# %APPDATA%\.minecraft-veyrath started with an empty mods folder (Fabric loaded 4 built-ins).
+if (-not $GameDir) { $GameDir = Join-Path $MinecraftDir 'instances\veyrath' }
 
 # Windows PowerShell 5.1 defaults to old TLS versions; Modrinth and Fabric need TLS 1.2+.
 try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12 } catch { }

@@ -104,7 +104,7 @@ Expected:
   check for each.
 - `%APPDATA%\.minecraft\launcher_profiles.json.veyrath-backup-<time>` exists.
 - `%APPDATA%\.minecraft\versions\fabric-loader-0.19.5-26.3\` exists.
-- `%APPDATA%\.minecraft-veyrath\` contains `mods\`, `shaderpacks\`, `config\iris.properties`,
+- `%APPDATA%\.minecraft\instances\veyrath\` contains `mods\`, `shaderpacks\`, `config\iris.properties`,
   `options.txt` and `veyrath-install.json`.
 - The launcher shows a **VEYRATH** profile with the VEYRATH icon. Every other profile is
   unchanged: compare `launcher_profiles.json` with the backup, where only the `veyrath` entry
