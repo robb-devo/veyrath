@@ -46,8 +46,11 @@ public final class CombatGameTest implements FabricClientGameTest {
     @Override
     public void runTest(ClientGameTestContext context) {
         if (!GameTests.selected("combat")) return;
+        // A real 1920x1080 window, so the GUI is laid out for the screenshot size.
+        context.getInput().resizeWindow(1920, 1080);
         try (TestSingleplayerContext sp = context.worldBuilder().create()) {
             var server = sp.getServer();
+            server.runCommand("gamerule send_command_feedback false");
             server.runCommand("difficulty normal");
             server.runCommand("time set noon");
             server.runCommand("effect give @p minecraft:saturation infinite 1 true");
@@ -110,9 +113,10 @@ public final class CombatGameTest implements FabricClientGameTest {
     /** Jab, cross, launcher, jump (rise with the target), three air hits. Logs the target's peak height. */
     private void launcherJuggle(ClientGameTestContext context, TestSingleplayerContext sp, int y) {
         var server = sp.getServer();
-        server.runCommand(summon("husk", PX, y, PZ + 1.4, "{Tags:[\"vt_air\"],PersistenceRequired:1b,Rotation:[180f,0f]}"));
         server.runCommand(String.format(Locale.ROOT, "tp @p %.1f %d %.1f 0 12", PX, y, PZ));
-        context.waitTicks(20);
+        context.waitTicks(10);
+        server.runCommand(summon("husk", PX, y, PZ + 1.4, "{Tags:[\"vt_air\"],PersistenceRequired:1b,Rotation:[180f,0f]}"));
+        context.waitTicks(2);
         float before = health(sp, "vt_air");
         double peak = 0;
         tap(context, ATTACK, 3);
@@ -169,15 +173,17 @@ public final class CombatGameTest implements FabricClientGameTest {
     private void abilities(ClientGameTestContext context, TestSingleplayerContext sp, int y) {
         var server = sp.getServer();
         server.runCommand(String.format(Locale.ROOT, "tp @p %.1f %d %.1f 0 12", PX, y, PZ));
-        String tag = "{Tags:[\"vt_group\"],PersistenceRequired:1b,Rotation:[180f,0f],attributes:[{id:\"minecraft:max_health\",base:60}],Health:60f}";
-        for (double dx : new double[]{-1.2, 0, 1.2}) server.runCommand(summon("husk", PX + dx, y, PZ + 3.2, tag));
-        context.waitTicks(10);
-        server.runCommand("execute as @p run veyrath combat refill");
-        context.waitTicks(2);
+        for (int g = 0; g < GROUP_DX.length; g++) {
+            String tag = "{Tags:[\"vt_group\",\"vt_g" + g + "\"],PersistenceRequired:1b,Rotation:[180f,0f],"
+                    + "attributes:[{id:\"minecraft:max_health\",base:60}],Health:60f}";
+            server.runCommand(summon("husk", PX + GROUP_DX[g], y, PZ + 3.2, tag));
+        }
         String[] names = {"c08_gale_step", "c09_skybreaker", "c10_quake_palm"};
+        double[] distance = {3.2, 1.5, 3.0};
         int[] impact = {8, 5, 7};
         for (int i = 0; i < 3; i++) {
             final int k = i;
+            readyGroup(context, sp, y, distance[i]);
             logFighter(context, "before " + names[i]);
             tap(context, o -> o.keyHotbarSlots[k], 1);
             logFighter(context, "1 tick after " + names[i]);
@@ -185,11 +191,8 @@ public final class CombatGameTest implements FabricClientGameTest {
             shot(context, names[i], true);
             context.waitTicks(30);
             LOG.info("{}: group health {}", names[i], groupHealth(sp));
-            server.runCommand(String.format(Locale.ROOT, "tp @p %.1f %d %.1f 0 12", PX, y, PZ));
-            context.waitTicks(5);
         }
-        server.runCommand("execute as @p run veyrath combat refill");
-        context.waitTicks(2);
+        readyGroup(context, sp, y, 2.0);
         logFighter(context, "before ultimate");
         tap(context, o -> o.keyHotbarSlots[3], 1);
         logFighter(context, "1 tick after ultimate");
@@ -200,6 +203,19 @@ public final class CombatGameTest implements FabricClientGameTest {
         context.waitTicks(60);
         LOG.info("ultimate: group health {}", groupHealth(sp));
         server.runCommand("kill @e[tag=vt_group]");
+    }
+
+    private static final double[] GROUP_DX = {-1.2, 0, 1.2};
+
+    /** Refill, put the player back at the mark and the group the given distance in front, then press at once. */
+    private static void readyGroup(ClientGameTestContext context, TestSingleplayerContext sp, int y, double distance) {
+        var server = sp.getServer();
+        server.runCommand("execute as @p run veyrath combat refill");
+        server.runCommand(String.format(Locale.ROOT, "tp @p %.1f %d %.1f 0 12", PX, y, PZ));
+        for (int g = 0; g < GROUP_DX.length; g++) {
+            server.runCommand(String.format(Locale.ROOT, "tp @e[tag=vt_g%d,limit=1] %.2f %d %.2f 180 0", g, PX + GROUP_DX[g], y, PZ + distance));
+        }
+        context.waitTicks(2);
     }
 
     // ------------------------------------------------------------------ helpers
@@ -295,8 +311,12 @@ public final class CombatGameTest implements FabricClientGameTest {
     }
 
     private static void shot(ClientGameTestContext context, String name, boolean hud) {
-        if (!hud) context.runOnClient(mc -> GameTests.setHudHidden(mc, true));
-        LOG.info("screenshot {}", context.takeScreenshot(TestScreenshotOptions.of("combat_" + name).withSize(1920, 1080)));
+        context.runOnClient(mc -> {
+            mc.gui.hud.getChat().clearMessages(false);
+            mc.gui.toastManager().clear();
+            if (!hud) GameTests.setHudHidden(mc, true);
+        });
+        LOG.info("screenshot {}", context.takeScreenshot(TestScreenshotOptions.of("combat_" + name)));
         if (!hud) context.runOnClient(mc -> GameTests.setHudHidden(mc, false));
     }
 }
