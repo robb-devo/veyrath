@@ -1,28 +1,50 @@
 # Chapter status
 
-Last updated: 2026-11-03 · Branch `ch01-world` · Version `0.1.0-ch01`
+Last updated: 2026-11-03 · Branch `ch02-combat` · Version `0.2.0-ch02`
 
-Authorized scope: **Chapter 00** (Technical Research & Foundation) and **Chapter 01** (The World).
-Chapter 02 and later must not start without the owner's explicit approval.
+Authorized scope: **Chapter 00**, **Chapter 01** (The World) and, since 2026-11-03, **Chapter 02**
+(Player Controller & Combat Engine). Chapter 03 and later must not start without the owner's
+explicit approval.
 
 ## Continuation summary
 
-Read this first when resuming.
+Read this first when resuming. A ready-to-paste prompt for a new session is in
+[../HANDOFF.md](../HANDOFF.md).
 
-- **Where we are.** Chapter 00 is done. Chapter 01 is built: every landform and landmark planned
-  in WP2 to WP6, the Distant Horizons generator and the installer. It was toured in game on the
-  owner's PC (`robbs-strix`) with the full 92-mod pack, seeds 1 and 2, shaders off and on. The
-  acceptance report is the Claude Doc "VEYRATH Chapter 01 acceptance report"; the owner tests
-  last, then decides on Chapter 02.
-- **Open.** The owner's own launcher start; pale far terrain with shaders; Photon and Bliss
-  render wrong; neighbouring realms built on first touch (prewarm near realm edges since
-  `b0d0e06`). Not built: VEYRATH blocks and textures (WP9), lake-outlet falls and
-  hanging valleys, a DH answer that never waits for a realm build. See Known limitations below.
+- **Where we are.** Chapter 01 was delivered for the owner's test (acceptance report: the Claude
+  Doc "VEYRATH Chapter 01 acceptance report"). Chapter 02 is in progress on `ch02-combat`: the
+  combat core, the Minecraft adapter and the in-game combat test are done and pass on the owner's
+  PC with and without the full pack; the Proving Grounds (WP9) are written and being compiled and
+  tested on the PC. Plan: [CHAPTER_02_PLAN.md](CHAPTER_02_PLAN.md).
+- **Open (Chapter 02).** WP9 in-game verification, WP7 polish, WP10 performance numbers, WP11
+  report. The owner's launcher profile still holds the Chapter 01 build.
+- **Open (Chapter 01).** The owner's own launcher start; pale far terrain with shaders; Photon and
+  Bliss render wrong; not built: VEYRATH blocks and textures, lake-outlet falls and hanging valleys,
+  a DH answer that never waits for a realm build. See Known limitations below.
 - **Build constraints.** The cloud machine cannot reach the Fabric, Mojang or Modrinth servers,
-  so it builds and tests only `engine/` and `preview/` (`-Pveyrath.skipMod=true`). The mod is
-  compiled and run on the owner's PC.
+  so it builds and tests only `engine/`, `combat/` and `preview/` (`-Pveyrath.skipMod=true`). The
+  mod is compiled and run on the owner's PC.
 - **Source of truth.** This file, [TECHNICAL_DECISIONS.md](TECHNICAL_DECISIONS.md) and
   [DEPENDENCIES.md](DEPENDENCIES.md). Conversation history is not needed.
+
+## Chapter 02 work packages
+
+States: **Done** (implemented and verified in game), **Tested headless** (passes the cloud tests,
+not yet in game), **Written** (not yet compiled or run), **Open**.
+
+| WP | What | State |
+|---|---|---|
+| 1 Combat core | `combat/`: fighter, input buffer, moves, hit shapes, block, parry, dodge, reactions, resources, sim | Done. 43 JUnit tests |
+| 2 Animation runtime and clips | Clips, layers, crossfades, root motion; pose contact sheets from the `preview` tool (`poses`, not in game) | Done |
+| 3 Device bring-up | Stance key Z, payloads, server fighters, damage type, reactions on vanilla mobs | Done. Combat game test: ground strings kill a husk, 0 rejected inputs |
+| 4 Animation in game | Render-state hook and pose applier for players and humanoid mobs | Done (screenshots `docs/media/combat/`) |
+| 5 Action camera | Orbit camera, collision, lock-on, camera-relative movement | Done in the flat test world; VEYRATH mountains not yet checked in a test |
+| 6 Movement | Dodge, dash, sprint, air jump, air dash, step-up | Done in the test world |
+| 7 Feel and effects | Hit-stop, slow motion, shake, impact particles, shockwaves, HUD, damage numbers | Done except damage numbers (written) and polish |
+| 8 Abilities and ultimate | Gale Step, Skybreaker, Quake Palm, Unbound Fist | Done on husk groups; on the Duelist: written |
+| 9 Proving Grounds | Arena dimension, training dummy (damage, DPS), Duelist rounds | Written; Duelist mind tested headless (`DuelistTest`) |
+| 10 Tests and performance | Game tests, FPS and tick time in the arena | Combat test done; arena test written; numbers open |
+| 11 Acceptance | Report | Open |
 
 ## Chapter 00 deliverables
 

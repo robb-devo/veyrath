@@ -255,3 +255,64 @@ example a published modpack, needs a licence review per component first.
 **Why.** The cloud machine's network policy blocks the Fabric, Mojang and Modrinth servers. The
 split keeps most engine work independent of the PC, and keeps the claims in these documents
 honest about what was verified where.
+
+## TD-020 — Own animation runtime for combat poses
+
+**Status:** Accepted · 2026-11-03 (Chapter 02)
+
+**Decision.** Combat poses come from our own clip runtime in `combat/anim`, applied after vanilla's
+`HumanoidModel.setupAnim` by a mixin, for players, the Duelist and vanilla humanoid mobs alike.
+
+**Why.** The server needs the same skeleton pose as the client to place hit shapes on fists and
+feet, and the cloud tests and previews must use the exact poses the game shows. Player Animation
+Library is client-only, players-only and a beta for 26.3; GeckoLib is not needed for vanilla-shaped
+humanoids. Cost: no elbow or knee bends yet.
+
+## TD-021 — Client prediction, server authority
+
+**Status:** Accepted · 2026-11-03
+
+**Decision.** The client runs the player's fighter and starts moves on the tick of the press. Each
+accepted input goes to the server, whose follower copy accepts it when legal (waiting up to
+`RETRY_TICKS = 3` for itself to catch up) or rejects it, which rolls the client back. Only the
+server detects strikes that deal damage, resolves blocks, parries and dodges and applies reactions;
+clients get hit events for effects. In singleplayer a rejection is a bug, so the game tests fail on
+any.
+
+## TD-022 — Reaction grace and ground contact
+
+**Status:** Accepted · 2026-11-03
+
+**Decision.** After a flinch or stagger ends, a player has 12 ticks in which further light hits
+still deal damage but do not interrupt again (`Rules.reactionGrace`), so a crowd of weak mobs
+cannot stun-lock them (found in game with husks). Attack lunges and dashes stop 1.15 blocks in
+front of their target instead of carrying past it (`Controller.STOP_AT`). Grounded bodies keep
+vanilla's resting downward speed every tick (`GROUND_PRESS`): at zero speed, for example during
+hit-stop, vanilla reports a standing body as airborne and the client's fighter ran air ticks the
+server copy did not.
+
+## TD-023 — The Duelist fights with the player's own tools
+
+**Status:** Accepted · 2026-11-03
+
+**Decision.** The sparring Duelist uses the player's moveset and rules (more stamina, no poise)
+and a `DuelistBrain` that only presses inputs. It perceives with a reaction delay (8, 6 or 4 ticks
+by style), shows a tell (glint and chime) a fixed number of ticks before every attack from neutral,
+and defends only against what it has seen. Its hits deal a style-dependent fraction of the damage.
+Difficulty comes from reaction time, tell length and decision quality, never from hidden bonuses.
+
+**Why.** Everything it does can then be read and answered, and the headless tests can check that
+it cannot react faster than its reaction time, telegraphs every opener, can be beaten by a masher
+on the easiest style and outplays one on the hardest (`DuelistTest`).
+
+## TD-024 — Proving Grounds in their own dimension
+
+**Status:** Accepted · 2026-11-03
+
+**Decision.** Training happens in `veyrath:proving_grounds`, a void dimension from the mod's data
+(flat generator, `the_void` biome), with a floating arena built by code on first entry. Nobody dies
+there: a lethal hit ends the round, a fall is caught. The return point is stored on the player
+(persistent attachment), so `/veyrath arena leave` works after a restart.
+
+**Why.** Training must never change the player's own world, and a separate dimension needs no
+world-type choice when the world is created.
