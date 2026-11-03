@@ -243,3 +243,37 @@ Falling water 32 at the seed 1 waterfall. No Ashen Wastes cell within 6 km of se
 - None of the Cinderwake waterfall views frames the fall itself.
 - Mossdeep spores and Cinderwake ash are faint white dots; ash could read as light snow at a
   glance.
+
+### Device session 3 (2026-11-03, `robbs-strix`, build 5b92c58 plus the tour changes)
+
+Mod compiled with no fixes (glow lichen materials, lit overhangs in the LOD generator,
+Cinderwake `minecraft:ash` at 0.012). Datagen changed only the cache hashes of the four Cinderwake
+biomes. Engine tests pass. The seed tour now includes `basalt` and a Crown study (Veil from
+160 blocks out, plunge pool looking up, underside from the ground at noon and at midnight, and
+from 600 blocks). It also takes `-Pveyrath.tourTargets=a,b` (or `none`).
+
+**Seen in game (seeds 1 and 2)**
+- Veil: one straight curtain about 20 blocks wide falls from a notch in the Crown rim, y430 to
+  ground y96 (seed 1, 334 blocks) and y434 to y87 (seed 2, 347 blocks)
+  (`seed1_crown_falls_veil_*.png`, `seed1_crown_falls_pool_up_*.png`).
+- Crown underside: no longer black. Hanging roots and glow-berry vines up close, with a faint glow
+  at midnight. Under the Crown (64x64 columns): glow lichen 1227 / 1285, cave vines
+  1208 / 1256, hanging roots 172 / 159 (seed 1 / 2). Seen far away through DH, the underside
+  shows its shape but looks pale and partly see-through with shaders on.
+- Spires: banded hoodoo columns with pale caps on a mound (`seed1_spires_e_*.png`).
+- Basalt: a dark basalt stack with a large basalt arch beside it and blocky column rubble
+  (`seed1_basalt_e_*.png`).
+- Cinderwake: dark ash flecks, no white snow-like dots.
+
+**FPS** (10 s averages, full pack, 24 chunks, 1920x1080 window)
+- Shaders off: 225–238 at all stops of seeds 1 and 2, except seed 1 basalt at 72 (53–136).
+- Complementary Unbound r5.9.3, default settings: seed 1 72–207 (Elderbough 72, elder_tree
+  114, crown 134), seed 2 99–221.
+
+**Pale far terrain with shaders.** Complementary options found: `ATM_FOG_MULT` (default 0.95),
+`ATM_FOG_DISTANCE` (100), `ATM_FOG_ALTITUDE` (63), `BORDER_FOG`. DH fog in
+`DistantHorizons.toml`: `enableDhFog = true`, `farFogStart 0.4`, `farFogDensity 2.5`,
+`EXPONENTIAL_SQUARED`, colour from world fog. Tried `ATM_FOG_MULT=0.50` with
+`ATM_FOG_DISTANCE=300`, then that plus `enableDhFog=false`. Neither made far mountains clearly
+more readable (`seed1_aethercrown_e_shaders*.png`), so no new defaults were shipped. The cause is
+still open.
