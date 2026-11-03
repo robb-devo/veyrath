@@ -63,6 +63,7 @@ public final class ArenaGameTest implements FabricClientGameTest {
 
             dummy(context, sp);
             duel(context, sp);
+            performance(context, sp);
 
             String stats = server.computeOnServer(s -> CombatServer.stats());
             LOG.info("{}", stats);
@@ -168,6 +169,42 @@ public final class ArenaGameTest implements FabricClientGameTest {
         LOG.info("next round: {}, Duelist health {}", next, hp);
         check(next.startsWith("round 2"), "the next round starts (" + next + ")");
         check(hp >= 0.99f, "the Duelist is back at full health (" + hp + ")");
+    }
+
+    /**
+     * The next round with ten husks around the arena: FPS (client) and server tick time sampled for
+     * ten seconds while the Duelist and the husks fight the standing player. Measured, logged, not
+     * judged here (the numbers go to PERFORMANCE_BENCHMARKS.md).
+     */
+    private void performance(ClientGameTestContext context, TestSingleplayerContext sp) {
+        var server = sp.getServer();
+        for (int i = 0; i < 10; i++) {
+            double a = Math.PI * 2 * i / 10;
+            server.runCommand(String.format(java.util.Locale.ROOT,
+                    "execute in veyrath:proving_grounds run summon minecraft:husk %.1f 100 %.1f {PersistenceRequired:1b}",
+                    Math.cos(a) * 12, Math.sin(a) * 12));
+        }
+        for (int t = 0; t < 300 && !server.<String, RuntimeException>computeOnServer(s -> ProvingGrounds.roundInfo()).contains("FIGHT"); t += 10) context.waitTicks(10);
+        server.runOnServer(s -> CombatServer.takeCombatMicrosPerTick());
+        long nanos0 = server.<Long, RuntimeException>computeOnServer(s -> s.getAverageTickTimeNanos());
+        int sum = 0, min = Integer.MAX_VALUE, max = 0, n = 0;
+        double serverMs = 0;
+        for (int i = 0; i < 20; i++) {
+            context.waitTicks(10);
+            int fps = context.computeOnClient(mc -> mc.getFps());
+            sum += fps;
+            min = Math.min(min, fps);
+            max = Math.max(max, fps);
+            n++;
+            serverMs = Math.max(serverMs, server.<Long, RuntimeException>computeOnServer(s -> s.getAverageTickTimeNanos()) / 1e6);
+            if (i == 10) shot(context, "a06_ten_husks", true);
+        }
+        double combatUs = server.<Double, RuntimeException>computeOnServer(s -> CombatServer.takeCombatMicrosPerTick());
+        LOG.info("performance: Duelist + 10 husks, {} FPS avg {} min {} max {} over 10 s; server tick average (vanilla 100-tick mean) peak {} ms, before {} ms; combat code {} us per tick",
+                n, sum / n, min, max, String.format(java.util.Locale.ROOT, "%.2f", serverMs),
+                String.format(java.util.Locale.ROOT, "%.2f", nanos0 / 1e6), String.format(java.util.Locale.ROOT, "%.1f", combatUs));
+        LOG.info("{}", server.<String, RuntimeException>computeOnServer(s -> CombatServer.duelistStats()));
+        server.runCommand("kill @e[type=minecraft:husk]");
     }
 
     private static ServerPlayer player(MinecraftServer s) { return s.getPlayerList().getPlayers().getFirst(); }

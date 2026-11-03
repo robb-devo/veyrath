@@ -254,9 +254,22 @@ public final class CombatServer {
     /** Start of the server tick: Duelists think, tick their fighters and set their bodies moving. */
     public static void startTick(MinecraftServer server) {
         if (ENTRIES.isEmpty()) return;
+        long t0 = System.nanoTime();
         for (Entry e : new ArrayList<>(ENTRIES.values())) {
             if (e.mind != null && !e.entity.isRemoved() && e.entity.isAlive()) drive(e);
         }
+        combatNanos += System.nanoTime() - t0;
+    }
+
+    // Own cost of combat on the server thread (start and end of tick), for the performance numbers.
+    private static long combatNanos, combatTicks;
+
+    /** Average server-thread time of combat per tick since the last call, in microseconds. */
+    public static double takeCombatMicrosPerTick() {
+        double us = combatTicks == 0 ? 0 : combatNanos / 1000.0 / combatTicks;
+        combatNanos = 0;
+        combatTicks = 0;
+        return us;
     }
 
     private static void drive(Entry e) {
@@ -521,6 +534,16 @@ public final class CombatServer {
     // ------------------------------------------------------------------ tick
 
     public static void tick(MinecraftServer server) {
+        long t0 = System.nanoTime();
+        try {
+            tickInner(server);
+        } finally {
+            combatNanos += System.nanoTime() - t0;
+            combatTicks++;
+        }
+    }
+
+    private static void tickInner(MinecraftServer server) {
         SlowMotion.tick(server);
         if (!AFTER_TICK.isEmpty()) {
             List<Runnable> run = new ArrayList<>(AFTER_TICK);
