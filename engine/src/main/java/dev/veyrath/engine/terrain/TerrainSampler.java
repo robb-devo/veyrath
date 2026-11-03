@@ -58,7 +58,7 @@ public final class TerrainSampler {
 
     private final RealmAtlas atlas;
     private final WorldSpec spec;
-    private final Fractal ridged, erosive, rough, grain, strataStep, mesa, riftJag;
+    private final Fractal ridged, erosive, rough, grain, strataStep, mesa, riftJag, massif;
     private final dev.veyrath.engine.math.GullyNoise gully1, gully2, gully3, riftChute;
     private final DomainWarp detailWarp;
     private final RiverNetwork riftNet;
@@ -90,6 +90,7 @@ public final class TerrainSampler {
         strataStep = new Fractal(Hash.derive(s, "strata"), 900, 2, 2.0, 0.5);
         mesa = new Fractal(Hash.derive(s, "mesa"), 220, 3, 2.0, 0.5);
         riftJag = new Fractal(Hash.derive(s, "rift-jag"), 110, 3, 2.1, 0.5);
+        massif = new Fractal(Hash.derive(s, "massif"), 2200, 2, 2.0, 0.5);
         riftChute = new dev.veyrath.engine.math.GullyNoise(Hash.derive(s, "rift-chute"), 90, 26);
         detailWarp = new DomainWarp(Hash.derive(s, "detail-warp"), 500, 2, 90);
         gully1 = new dev.veyrath.engine.math.GullyNoise(Hash.derive(s, "gully1"), 150, 84);
@@ -203,9 +204,30 @@ public final class TerrainSampler {
         double hills = erosive.erosive(wx, wz, 0.9, s.deriv);
         double ampHills = (3 + 12 * rug * (0.3 + 0.7 * elev)) * calm * coastCalm;
         h += hills * ampHills;
+        // Range silhouettes (Aethercrown): a low-frequency field lifts a few massifs well above
+        // their neighbours and drops passes and saddles between them, so a range has a skyline
+        // instead of a row of equal teeth. On the massifs the crags sharpen into needle clusters;
+        // at the passes they soften. The change scales the height above the nearest river, so
+        // valley floors, channels and banks stay put; it is off on lake halos (shores stay put)
+        // and fades towards the summit ceiling.
+        atlas.rivers.nearest(x, z, s.river);
+        double lakeFree = 1 - MathUtil.smoothstep(0, 0.5, atlas.sampleLinear(lakeHalo, x, z));
+        double alpine = w[Archetype.AETHERCROWN_HIGHLANDS.ordinal()] * MathUtil.smoothstep(300, 560, e) * rug * lakeFree;
+        double head = 1 - MathUtil.smoothstep(740, 930, h);
+        double m = 0;
+        if (alpine > 0.01) {
+            m = MathUtil.clamp(1.6 * massif.fbm(x, z), -1, 1);
+            double floorRef = s.river.reach >= 0 ? Math.min(s.river.level, h) : h - 150;
+            h += (h - floorRef) * (m > 0 ? 0.45 * head : 0.35) * m * alpine;
+        }
         // Alpine crags only on the highest ground.
-        double crag = MathUtil.smoothstep(380, 640, e) * rug;
+        double crag = MathUtil.smoothstep(380, 640, e) * rug * (1 + alpine * (0.6 * MathUtil.smoothstep(-0.5, 0.5, m) - 0.4));
         if (crag > 0.01) h += (ridged.ridged(wx, wz, 2.0) - 0.4) * 46 * crag * calm;
+        double needles = MathUtil.smoothstep(0.2, 0.65, m) * alpine * head;
+        if (needles > 0.01) {
+            double nr = Math.max(0, ridged.ridged(x * 2.6 + 517, z * 2.6 - 291, 2.0) - 0.5);
+            h += nr * nr * 300 * needles;
+        }
         h += rough.fbm(x, z) * (0.6 + 1.8 * rug + 2.0 * sl) * calm;
         // Fine grain on gentle ground breaks the long, map-like contour steps of smooth slopes
         // into short irregular ones. Fades out on steep ground, where it is not needed.
@@ -227,7 +249,6 @@ public final class TerrainSampler {
         // --- rivers
         double water = Double.NaN;
         ColumnInfo.WaterKind kind = ColumnInfo.WaterKind.NONE;
-        atlas.rivers.nearest(x, z, s.river);
         out.riverDistance = s.river.distance;
         out.riverHalfWidth = s.river.reach >= 0 ? s.river.width * 0.5 : 0;
         if (s.river.reach >= 0) {

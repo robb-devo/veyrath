@@ -60,6 +60,11 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   beds and patches, and grey ash and tuff fields.
 - Gentle slopes get fine grain, so grass shows short irregular steps instead of long contour
   lines.
+- Aethercrown ranges vary along their length: a low-frequency field raises some massifs and
+  lowers passes between them by scaling the height above the nearest river, so valleys, banks
+  and lake shores stay put, and needle clusters stand on the massifs. Crest heights along the
+  main belt of seed 1 now vary 50–100 blocks more within the Aethercrown
+  (`docs/media/seed1_crest_profile_massifs.png`); the summit ceiling is untouched (max y936).
 - Preview `voxel` takes `--at x,z` (in-game coordinates), a locator target (`--at rift`) or a
   waterfall (`--at fall:N`), and shows marked water flowing down. The audit counts levee lips,
   rock-topped banks and fall lips; `falls` lists waterfalls and `riftprobe` finds water hanging
