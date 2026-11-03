@@ -29,7 +29,12 @@ public final class CombatEffects {
             case "impact_heavy" -> {
                 burst(level, r, ParticleTypes.CRIT, x, y, z, 14, 0.6);
                 level.addParticle(ParticleTypes.SWEEP_ATTACK, x, y, z, 0, 0, 0);
-                burst(level, r, ParticleTypes.POOF, x, y, z, 4, 0.08);
+                burst(level, r, ParticleTypes.POOF, x, y, z, 2, 0.06);
+            }
+            case "impact_gale" -> {
+                // A cutting gust, not a dust cloud: it often lands on several targets at once.
+                burst(level, r, ParticleTypes.CRIT, x, y, z, 10, 0.55);
+                level.addParticle(ParticleTypes.SMALL_GUST, x, y, z, 0, 0, 0);
             }
             case "impact_charged" -> {
                 level.addParticle(ParticleTypes.EXPLOSION, x, y, z, 0, 0, 0);

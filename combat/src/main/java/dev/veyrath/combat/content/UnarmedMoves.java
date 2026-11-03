@@ -181,7 +181,7 @@ public final class UnarmedMoves {
         // ------------------------------------------------ abilities
         s.add(Move.builder("gale_step", Kind.ABILITY, 16).cost(0, 25, 0).cooldown(70).iframes(0, 7)
                 .hit(7, 8, HitSpec.of(4.5).reaction(Reaction.STAGGER).stun(16, 8).push(0.4).hitstop(4).shake(0.35)
-                        .guard(24).poise(30).gauge(4).fx("impact_heavy", "gale").build(),
+                        .guard(24).poise(30).gauge(4).fx("impact_gale", "gale").build(),
                         rightFist(), HitShape.sphere(0, 1.2, 1.0, 0.9))
                 .motion(new Motion(16).dash(1, 6, 1.4, 0.9).plant(8, 12))
                 .dodgeFrom(11).abilityFrom(10).freeFrom(14)
