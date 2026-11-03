@@ -41,5 +41,17 @@ final class FallList {
                     a.midX() - world.originX(), a.base() + 0.45 * a.rise(), a.midZ() - world.originZ(),
                     a.midX() + nx * 0.6 * len - world.originX(), a.midZ() + nz * 0.6 * len - world.originZ());
         }
+        var cal = world.realm(0, 0).terrain().caldera();
+        if (cal == null) {
+            System.out.println("prism caldera: none");
+        } else {
+            // Camera high over the rim opposite the island, looking across the lake at it.
+            double a = Math.atan2(cal.islandZ() - cal.z(), cal.islandX() - cal.x()) + Math.PI, r = cal.radius();
+            System.out.printf(Locale.ROOT, "prism caldera: lake radius %.0f, surface y%.0f, crest y%.0f, %d crystals: -Dveyrath.cam=%.0f,%.0f,%.0f -Dveyrath.look=%.0f,%.0f,%.0f --at %.0f,%.0f%n",
+                    r, cal.level(), cal.crest(), cal.crystals().size(),
+                    cal.x() + Math.cos(a) * 1.45 * r - world.originX(), cal.crest() + 70, cal.z() + Math.sin(a) * 1.45 * r - world.originZ(),
+                    cal.islandX() - world.originX(), cal.level() + 30, cal.islandZ() - world.originZ(),
+                    cal.x() - world.originX(), cal.z() - world.originZ());
+        }
     }
 }

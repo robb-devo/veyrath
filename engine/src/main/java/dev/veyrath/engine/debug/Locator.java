@@ -9,6 +9,7 @@ import dev.veyrath.engine.formation.FloatingIslands;
 import dev.veyrath.engine.region.Archetype;
 import dev.veyrath.engine.hydro.RiverNetwork;
 import dev.veyrath.engine.terrain.ColumnInfo;
+import dev.veyrath.engine.terrain.PrismCaldera;
 import dev.veyrath.engine.terrain.TerrainSampler;
 
 import java.util.ArrayList;
@@ -29,7 +30,7 @@ public final class Locator {
 
     /** Target names accepted by {@link #find}. */
     public static List<String> targets() {
-        List<String> t = new ArrayList<>(List.of("spawn", "rift", "rift_rim", "crown", "throne", "summit", "waterfall", "elder_tree", "arch"));
+        List<String> t = new ArrayList<>(List.of("spawn", "rift", "rift_rim", "crown", "throne", "summit", "waterfall", "elder_tree", "arch", "caldera"));
         for (Archetype a : Archetype.values()) t.add(archetypeTarget(a));
         return t;
     }
@@ -116,6 +117,15 @@ public final class Locator {
                 realm.islands().column(crown.x(), crown.z(), hit);
                 double top = hit.island != null ? hit.top : crown.y() + crown.dome();
                 return new Place(t, crown.x(), Math.floor(top) + 1, crown.z(), "Crown of Aether (radius " + (int) crown.radius() + ")");
+            }
+            case "caldera" -> {
+                PrismCaldera cal = terrain.caldera();
+                if (cal == null) return null;
+                // Stand on the rim opposite the island, looking across the lake to it.
+                double a = Math.atan2(cal.islandZ() - cal.z(), cal.islandX() - cal.x()) + Math.PI;
+                double x = cal.x() + Math.cos(a) * cal.radius() * 1.12, z = cal.z() + Math.sin(a) * cal.radius() * 1.12;
+                return stand(terrain, c, s, t, x, z, String.format(Locale.ROOT, "Prism Caldera rim (lake radius %.0f, surface y%.0f, %d crystals)",
+                        cal.radius(), cal.level(), cal.crystals().size()));
             }
             case "throne" -> {
                 for (Volcano v : atlas.volcanoes) {

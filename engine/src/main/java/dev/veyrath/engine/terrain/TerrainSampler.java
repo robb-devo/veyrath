@@ -65,6 +65,8 @@ public final class TerrainSampler {
     private final double sea;
     /** 1 on atlas cells within one cell of a lake cell, else 0 (bilinear: smooth lake proximity). */
     private final float[] lakeHalo;
+    /** Set at the end of construction; null while the site search samples the plain terrain. */
+    private PrismCaldera caldera;
 
     /** Per-thread scratch state; create one per worker thread. */
     public static final class Scratch {
@@ -93,6 +95,14 @@ public final class TerrainSampler {
         gully3 = new dev.veyrath.engine.math.GullyNoise(Hash.derive(s, "gully3"), 28, 14);
         riftNet = buildRiftNetwork(atlas);
         lakeHalo = buildLakeHalo(atlas);
+        PrismCaldera site = PrismCaldera.find(this);
+        caldera = site;
+        if (site != null) caldera = site.withCrystals(this);
+    }
+
+    /** The realm's Prism Caldera, or null when it has none. */
+    public PrismCaldera caldera() {
+        return caldera;
     }
 
     private static float[] buildLakeHalo(RealmAtlas atlas) {
@@ -312,8 +322,69 @@ public final class TerrainSampler {
             }
         }
 
+        // --- the Prism Caldera: crater lake, terraced inner wall, outer flank and crystal spires
+        out.crystal = Double.NaN;
+        out.quartz = false;
+        boolean calderaNear = false;
+        double calderaLake = Double.NaN;
+        PrismCaldera cal = caldera;
+        if (cal != null) {
+            double dx = x - cal.x(), dz = z - cal.z(), dc = Math.sqrt(dx * dx + dz * dz), rad = cal.radius();
+            if (dc < rad * PrismCaldera.FLANK + 30) {
+                // The rim line wanders; the ring between lake and flank stays at least 15 blocks wide.
+                double r = (dc + 20 * riftJag.fbm(x * 1.3, z * 1.3)) / rad;
+                if (r < 1) {
+                    double bowl = cal.level() - 2 - cal.depth() * Math.sqrt(1 - r * r);
+                    double di = Math.hypot(x - cal.islandX(), z - cal.islandZ()) / cal.islandRadius();
+                    // A flat-topped island with a steep shore, broad enough to show round its crystals.
+                    if (di < 1) bowl = Math.max(bowl, cal.level() - 2 - cal.depth()
+                            + (cal.depth() + 9 + 5 * (1 - di * di)) * MathUtil.smoothstep(1, 0.8, di));
+                    h = bowl + 1.2 * rough.fbm(x, z);
+                } else {
+                    double crestY = cal.crest() + 18 * mesa.fbm(x * 2, z * 2);
+                    double wall;
+                    if (r < PrismCaldera.WALL) {
+                        // Terraced inner cliff: at least one block above the lake everywhere.
+                        double rise = (crestY - cal.level() - 1) * Math.pow((r - 1) / (PrismCaldera.WALL - 1), 0.7);
+                        double step = 11 + 4 * strataStep.fbm(x * 3, z * 3);
+                        double q = rise / step, k = Math.floor(q), f = q - k;
+                        wall = cal.level() + 1 + Math.max(0.5 * rise, (k + MathUtil.smoothstep(0.3, 0.8, f)) * step);
+                    } else {
+                        // Outer flank: falls to the surrounding ground, cut by radial gullies.
+                        double t = MathUtil.smoothstep(PrismCaldera.WALL, PrismCaldera.FLANK, r);
+                        double gul = shapeGully(gully2.sample(x, z, dx / dc, dz / dc)) * 14
+                                * MathUtil.smoothstep(PrismCaldera.WALL, PrismCaldera.WALL + 0.2, r);
+                        wall = crestY + (h - crestY) * t + gul * (1 - t);
+                    }
+                    if (wall > h) h = wall;
+                }
+                calderaNear = r < 1.15;
+                if (r < 1.3) {
+                    for (PrismCaldera.Crystal k : cal.crystals()) {
+                        double ex = x - k.x(), ez = z - k.z(), rr = k.radius() * 1.155;
+                        if (ex * ex + ez * ez > rr * rr) continue;
+                        double ca = Math.cos(k.angle()), sa = Math.sin(k.angle());
+                        double u = Math.abs(ex * ca + ez * sa), v = Math.abs(ez * ca - ex * sa);
+                        double hd = Math.max(0.8660254 * u + 0.5 * v, v) / k.radius();
+                        if (hd >= 1) continue;
+                        double top = k.base() + k.height() + k.tip() * (1 - hd);
+                        if (top > h) {
+                            if (Double.isNaN(out.crystal)) out.crystal = Math.floor(h) - 1;
+                            h = top;
+                            out.quartz = k.quartz();
+                        }
+                    }
+                }
+                if (r < 1 && h < cal.level()) calderaLake = cal.level();
+            }
+        }
+
         // --- water
-        out.nearLake = !Double.isNaN(lakeLevel);
+        out.nearLake = !Double.isNaN(lakeLevel) || calderaNear;
+        if (!Double.isNaN(calderaLake) && kind == ColumnInfo.WaterKind.NONE) {
+            water = calderaLake;
+            kind = ColumnInfo.WaterKind.LAKE;
+        }
         if (!Double.isNaN(lakeLevel) && h < lakeLevel && riftCut && lakeLevel > h + 2.5) {
             out.fall = true; // a lake the Rift cuts into spills over the lip instead
         } else if (!Double.isNaN(lakeLevel) && h < lakeLevel) {

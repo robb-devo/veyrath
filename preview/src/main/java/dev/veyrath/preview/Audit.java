@@ -104,6 +104,21 @@ final class Audit {
                 }
             }
         }
+        // The Prism Caldera: its shoreline and inner wall, and the crystals that rise from the water.
+        Stats caldera = new Stats();
+        var cal = realm.terrain().caldera();
+        if (cal != null) {
+            for (int k = 0; k < 24; k++) {
+                double a = k * Math.PI / 12, rr = cal.radius() * (0.97 + 0.04 * (k % 3));
+                composeAround(realm, cal.x() + Math.cos(a) * rr, cal.z() + Math.sin(a) * rr, grid, ctx);
+                audit(spec, grid, caldera);
+            }
+            for (var k : cal.crystals()) {
+                if (k.base() + 6 > cal.level()) continue;
+                composeAround(realm, k.x(), k.z(), grid, ctx);
+                audit(spec, grid, caldera);
+            }
+        }
         System.out.printf(Locale.ROOT, "%-24s %6s %8s %9s %10s %10s %8s %9s %s%n", "archetype", "chunks", "wet%",
                 "water", "side-air", "below-air", "lava", "lavaLeak", "ground range");
         Stats total = new Stats();
@@ -137,9 +152,10 @@ final class Audit {
         print("rivers", rivers);
         print("lakes", lakes);
         print("sea", sea);
+        print("caldera", caldera);
         System.out.println("side-air water by cause (bank = dry neighbour below the water, step = lower water beside it);");
         System.out.println("bank deficit = blocks between the water block and the neighbour's ground: 1 / 2 / 3-5 / 6+");
-        for (var e : new Object[][]{{"provinces", total}, {"rivers", rivers}, {"lakes", lakes}, {"sea", sea}}) {
+        for (var e : new Object[][]{{"provinces", total}, {"rivers", rivers}, {"lakes", lakes}, {"sea", sea}, {"caldera", caldera}}) {
             Stats s = (Stats) e[1];
             System.out.printf(Locale.ROOT, "  %-10s bank %6d  step %6d  deficit %d / %d / %d / %d  raised to contain water: %d of %d columns, flow marks %d, levee lips %d, rock-topped banks %d of %d, fall lips %d, caves %.2f%%, mouths %d%n",
                     e[0], s.sideAirBank, s.sideAirStep, s.bankDeficit[0], s.bankDeficit[1], s.bankDeficit[2], s.bankDeficit[3],
@@ -162,6 +178,13 @@ final class Audit {
     /** Audits the centre chunk of a 3 x 3 grid of composed chunks. */
     private static void audit(WorldSpec spec, ChunkBuffer[] g, Stats s) {
         ChunkBuffer c = g[4];
+        if (Boolean.getBoolean("veyrath.auditTrace") && (c.flowCount > 0 || c.containedColumns > 0)) {
+            for (int i = 0; i < c.flowCount; i++) {
+                int f = c.flow[i];
+                System.out.printf(Locale.ROOT, "  trace: flow mark at engine %d %d y%d (chunk %d %d, raised %d)%n", c.chunkX * 16 + (f & 15),
+                        c.chunkZ * 16 + ((f >> 4) & 15), (f >> 8) + spec.minY(), c.chunkX, c.chunkZ, c.containedColumns);
+            }
+        }
         s.contained += c.containedColumns;
         s.flow += c.flowCount;
         short air = (short) Material.AIR.ordinal(), water = (short) Material.WATER.ordinal(), lava = (short) Material.LAVA.ordinal();

@@ -78,3 +78,8 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   in the Cinderwake and the Aethercrown (27 on seed 1). In chunks and Distant Horizons LOD.
   `/veyrath tp arch` stands beside the nearest one; the seed tour visits it. Preview `falls`
   lists them with camera settings.
+- **The Prism Caldera**: one crystal crater lake per realm in the Prismmere Wilds, about 900
+  blocks across with its flank. Terraced white cliffs about 80 blocks high ring the lake, and
+  some 60 amethyst and quartz crystals stand on the rim, rise from the water and crown an
+  island, the largest about 100 blocks tall. `/veyrath tp caldera` stands on the rim; the seed
+  tour visits it; the audit checks its shoreline.

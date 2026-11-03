@@ -56,19 +56,22 @@ public final class SurfacePainter {
         double snowLine = biomes.snowLine(c);
         boolean snowy = c.ground > snowLine + soilN * 25 && slope < 1.55;
         boolean underwater = c.wet();
-        Material surface = surfaceFor(c, biome, slope, steep, underwater, soilN, mix);
+        boolean crystal = !Double.isNaN(c.crystal);
+        Material crystalMat = c.quartz ? Material.CRYSTAL_STONE : Material.AMETHYST;
+        Material surface = crystal ? crystalMat : surfaceFor(c, biome, slope, steep, underwater, soilN, mix);
         Material sub = subsurfaceFor(biome, underwater);
 
         for (int y = minY; y <= top; y++) {
             Material m;
             int depth = top - y;
             if (y <= bedrock) m = Material.BEDROCK;
+            else if (crystal && y >= c.crystal) m = crystalMat;
             else if (depth == 0) m = surface;
             else if (depth < soilDepth) m = sub;
             else m = rockAt(c, y, mix);
             col[base + (y - minY)] = (short) m.ordinal();
         }
-        if (snowy && !underwater && surface != Material.SAND) {
+        if (snowy && !underwater && !crystal && surface != Material.SAND) {
             col[base + (top - minY)] = (short) (slope > 1.1 ? Material.SNOW : Material.SNOW).ordinal();
             if (top - 1 >= minY) col[base + (top - 1 - minY)] = (short) Material.SNOW.ordinal();
             if (c.ground > snowLine + 120 && slope < 0.7 && top - 2 >= minY) col[base + (top - 2 - minY)] = (short) Material.PACKED_ICE.ordinal();

@@ -43,6 +43,10 @@ public final class ColumnInfo {
      * and never raised to contain water, so the water pours over the lip as a waterfall.
      */
     public boolean fall;
+    /** Lowest block of crystal material in a crystal spire column (Prism Caldera), or NaN. */
+    public double crystal = Double.NaN;
+    /** The crystal is white quartz rather than amethyst. */
+    public boolean quartz;
 
     public enum WaterKind { NONE, SEA, LAKE, RIVER }
 
