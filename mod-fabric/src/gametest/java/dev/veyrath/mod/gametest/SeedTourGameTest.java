@@ -131,6 +131,11 @@ public final class SeedTourGameTest implements FabricClientGameTest {
             shot(context, seed + "_" + target + "_" + names[i], setup);
         }
         averageFps(context, seed, target);
+        if (target.equals("basalt")) {
+            // Second sample a minute later, to tell a passing realm build from a steady cost.
+            context.waitTicks(1200);
+            averageFps(context, seed, "basalt_after_60s");
+        }
         census(sp, seed, target);
         if (target.equals("spawn")) {
             // Stand still and look west again: does the LOD band between chunks and Distant
@@ -195,6 +200,16 @@ public final class SeedTourGameTest implements FabricClientGameTest {
         sp.getServer().runCommand("time set noon");
         look(context, sp, cx + 600, uy + 40, cz, cx, bottom, cz);
         shot(context, seed + "_crown_underside_far", setup);
+    }
+
+    private static void setHudHidden(net.minecraft.client.Minecraft mc, boolean hidden) {
+        try {
+            java.lang.reflect.Field f = net.minecraft.client.gui.Hud.class.getDeclaredField("isHidden");
+            f.setAccessible(true);
+            f.setBoolean(mc.gui.hud, hidden);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError("Cannot toggle the HUD", e);
+        }
     }
 
     /** First y below {@code fromY} whose block is not air: the ground or water surface under an island. */
@@ -266,6 +281,7 @@ public final class SeedTourGameTest implements FabricClientGameTest {
 
     /** Samples the client's frames-per-second counter once a second for 10 s, facing south. */
     private static void averageFps(ClientGameTestContext context, String seed, String target) {
+        LOG.info("seed {}: {} fps sample start", seed, target);
         int sum = 0, min = Integer.MAX_VALUE, max = 0;
         for (int i = 0; i < FPS_SAMPLES; i++) {
             context.waitTicks(20);
@@ -278,7 +294,14 @@ public final class SeedTourGameTest implements FabricClientGameTest {
     }
 
     private static void shot(ClientGameTestContext context, String name, String setup) {
+        // Hide HUD and chat (F1 state; the 26.3 Hud keeps it in a private field) for the capture.
+        context.runOnClient(mc -> {
+            mc.gui.hud.getChat().clearMessages(false);
+            setHudHidden(mc, true);
+        });
+        context.waitTicks(2);
         LOG.info("screenshot {}", context.takeScreenshot(
                 TestScreenshotOptions.of("seed" + name + "_" + setup).withSize(1920, 1080)));
+        context.runOnClient(mc -> setHudHidden(mc, false));
     }
 }

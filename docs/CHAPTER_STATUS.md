@@ -298,3 +298,54 @@ from 600 blocks). It also takes `-Pveyrath.tourTargets=a,b` (or `none`).
 `ATM_FOG_DISTANCE=300`, then that plus `enableDhFog=false`. Neither made far mountains clearly
 more readable (`seed1_aethercrown_e_shaders*.png`), so no new defaults were shipped. The cause is
 still open.
+
+### Device session 4 (2026-11-03, `robbs-strix`)
+
+Builds: de595f5 (far LOD slope), then 15455c0 (realm prewarm b0d0e06, single flowers). The mod
+compiled with no fixes both times. Engine tests: 14 of 14 pass. Every run used new worlds (the dev
+save folder is wiped before each run, so there was no old DH cache). Screenshots now hide the HUD
+and chat.
+
+**Far LOD slope fix (de595f5).** With Complementary on, far Aethercrown ranges show somewhat more
+grey rock relief than in session 3, but they are still pale blue-white overall
+(`seed1_aethercrown_e_shaders_farfix.png` vs `seed1_aethercrown_e_shaders.png`). At the summit
+the far peaks are snow and haze in both (`seed1_summit_n_shaders_farfix.png`). Seed 1 spawn, shaders
+on: far mountains were already drawn 27 s after spawn was ready, and complete at 85 s
+(`seed1_spawn_w_shaders_farfix.png`, `seed1_spawn_w_still_shaders_farfix.png`).
+
+**FPS** (10 s averages, full pack, 24 chunks, 1920x1080 window)
+- de595f5, shaders off, seeds 1 / 2: 171–235 / 171–237 (lowest: seed 1 window 171, seed 2
+  spawn_still 171, elderbough 180).
+- de595f5, Complementary, seeds 1 / 2: 99–222 / 97–222 (elderbough 99 / 97, elder_tree
+  111 / 108, crown 127 / 136).
+- 15455c0, seed 1, shaders off: 215–238 at all 20 samples.
+- 15455c0, seed 1, Complementary: 71–220 (elderbough 71, elder_tree 111, crown 128, basalt 158
+  then 188 after 60 s).
+- 15455c0, seed 1, Photon v1.4: spawn 175–197, crown 182, aethercrown 201. Bliss 2.1.2: spawn
+  178–195, crown 181, aethercrown 221.
+
+**Realm builds** (log `Realm x,z built in N ms`, seed 1): realm 0,0 at world start 5320 / 5423 ms
+(off / Complementary), realm 0,-1 11454 / 11302 ms, built between the arch and caldera stops.
+Neither build overlapped the basalt samples (16:57:46–56 and 16:58:56–59:06 shaders off,
+17:15:02–12 and 17:16:12–22 with Complementary).
+
+**Flowers at spawn** (seed 1, 64x64 columns): 29–31 small flowers in every run on 15455c0. In the
+spawn screenshots, taken from 40 blocks above, they are not distinguishable.
+
+**Other shader packs**
+- Photon v1.4: black sky with white blocky patches (`seed1_crown_s_photon.png`).
+- Bliss 2.1.2: heavy white overexposure and glare (`seed1_aethercrown_e_bliss.png`).
+- Complementary Unbound stays the default.
+
+**Log errors with shaders on** (all three packs):
+- DH `RenderThreadTaskHandler` "Close the existing render pass before performing additional
+  commands" twice, while DH's chat warnings bake font glyphs.
+- Iris "Opaque + Translucent pass ran with shaders on" once at world start.
+- DH `stmt pointer is closed` when a world closes.
+- The game kept running in every case.
+
+**Final install** (15455c0): profile `veyrath` with gameDir
+`%APPDATA%\.minecraft\instances\veyrath`; 26 launcher profiles in total.
+`veyrath-0.1.0-ch01.jar` SHA-256 `DF7D275B6352C5D36C0D6BBE2EC248E89320630A6D4ED8C400A1FCB6379D943F`.
+An offline start in that folder with the launcher's Java runtime logged `Loading 91 mods` and
+`VEYRATH initialised`; I stopped it after 50 s at the title screen.
