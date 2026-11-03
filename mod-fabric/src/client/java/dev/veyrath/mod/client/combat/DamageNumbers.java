@@ -88,7 +88,7 @@ public final class DamageNumbers {
             NUMS.clear();
             return;
         }
-        Camera cam = mc.gameRenderer.getMainCamera();
+        Camera cam = mc.gameRenderer.mainCamera();
         net.minecraft.world.phys.Vec3 cp = cam.position();
         var f = cam.forwardVector();
         var u = cam.upVector();

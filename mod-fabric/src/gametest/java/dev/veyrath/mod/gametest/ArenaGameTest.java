@@ -113,8 +113,8 @@ public final class ArenaGameTest implements FabricClientGameTest {
         if (!spawned) return;
         shot(context, "a03_countdown", true);
         context.waitTicks(65);
-        LOG.info("after countdown: {}", server.computeOnServer(s -> ProvingGrounds.roundInfo()));
-        check(server.computeOnServer(s -> ProvingGrounds.roundInfo()).contains("FIGHT"), "the round starts after the countdown");
+        LOG.info("after countdown: {}", server.<String, RuntimeException>computeOnServer(s -> ProvingGrounds.roundInfo()));
+        check(server.<String, RuntimeException>computeOnServer(s -> ProvingGrounds.roundInfo()).contains("FIGHT"), "the round starts after the countdown");
 
         // Stand still for ten seconds: the Duelist must come to the player, tell and hit.
         float before = server.computeOnServer(s -> player(s).getHealth());
@@ -130,12 +130,12 @@ public final class ArenaGameTest implements FabricClientGameTest {
                 server.computeOnServer(s -> CombatServer.duelistStats()));
         check(tells > 0, "the Duelist telegraphs its attacks (" + tells + " tells)");
         check(landed > 0, "the Duelist closes in and lands hits on a standing player (" + landed + ")");
-        String round = server.computeOnServer(s -> ProvingGrounds.roundInfo());
+        String round = server.<String, RuntimeException>computeOnServer(s -> ProvingGrounds.roundInfo());
         LOG.info("round after the passive part: {}", round);
 
         // One health left: the Duelist is put right in front of the player, who jabs (faster than
         // its reaction time, so a jab lands unless its guard is already up) until the round is won.
-        for (int t = 0; t < 300 && !server.computeOnServer(s -> ProvingGrounds.roundInfo()).contains("FIGHT"); t += 10) context.waitTicks(10);
+        for (int t = 0; t < 300 && !server.<String, RuntimeException>computeOnServer(s -> ProvingGrounds.roundInfo()).contains("FIGHT"); t += 10) context.waitTicks(10);
         server.runOnServer(s -> {
             DuelistEntity d = duelist(s);
             if (d != null) d.setHealth(1);
@@ -153,14 +153,14 @@ public final class ArenaGameTest implements FabricClientGameTest {
             context.waitTicks(1);
             context.getInput().pressKey(ATTACK);
             context.waitTicks(8);
-            won = server.computeOnServer(s -> ProvingGrounds.roundInfo()).contains("1-");
+            won = server.<String, RuntimeException>computeOnServer(s -> ProvingGrounds.roundInfo()).contains("1-");
         }
-        LOG.info("after attacking: {}; {}", server.computeOnServer(s -> ProvingGrounds.roundInfo()),
+        LOG.info("after attacking: {}; {}", server.<String, RuntimeException>computeOnServer(s -> ProvingGrounds.roundInfo()),
                 server.computeOnServer(s -> CombatServer.duelistStats()));
         check(won, "the Duelist can be beaten (round won)");
         if (won) shot(context, "a05_victory", true);
         context.waitTicks(100);
-        String next = server.computeOnServer(s -> ProvingGrounds.roundInfo());
+        String next = server.<String, RuntimeException>computeOnServer(s -> ProvingGrounds.roundInfo());
         float hp = server.computeOnServer(s -> {
             DuelistEntity d = duelist(s);
             return d == null ? -1f : d.getHealth() / d.getMaxHealth();

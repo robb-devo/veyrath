@@ -142,7 +142,7 @@ public final class ProvingGrounds {
         arena.addFreshEntity(d);
         CombatServer.attachDuelist(d, style, arena.getRandom().nextLong());
         CombatServer.setDuelistActive(d, false);
-        ServerBossEvent bar = new ServerBossEvent(Component.translatable("veyrath.arena.bar", styleName(style)),
+        ServerBossEvent bar = new ServerBossEvent(java.util.UUID.randomUUID(), Component.translatable("veyrath.arena.bar", styleName(style)),
                 BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.NOTCHED_10);
         bar.addPlayer(p);
         round = new Round(p.getUUID(), d.getUUID(), style, bar);
