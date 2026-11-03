@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "veyrath-gametest",
+  "version": "${version}",
+  "name": "VEYRATH client game test",
+  "description": "Development-only seed tour: creates VEYRATH worlds, teleports to landmarks and takes screenshots. Not part of the mod jar.",
+  "license": "All-Rights-Reserved",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-client-gametest": ["dev.veyrath.mod.gametest.SeedTourGameTest"]
+  },
+  "depends": {
+    "veyrath": "*",
+    "fabric-client-gametest-api-v1": "*"
+  }
+}

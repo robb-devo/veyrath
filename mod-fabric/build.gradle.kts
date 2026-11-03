@@ -57,6 +57,15 @@ fabricApi {
     configureDataGeneration {
         client = true
     }
+    // Client game test (seed tour, src/gametest): its own source set and mod, never in the mod jar.
+    // Runs singleplayer only, so no server EULA is needed or accepted.
+    configureTests {
+        createSourceSet = true
+        modId = "veyrath-gametest"
+        enableGameTests = false
+        enableClientGameTests = true
+        eula = false
+    }
 }
 
 sourceSets.main {
