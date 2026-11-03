@@ -47,10 +47,15 @@ public final class CombatClient {
         ClientPlayNetworking.registerGlobalReceiver(CombatNet.RejectS2C.TYPE, (msg, ctx) -> LocalCombat.rejected(msg.seq()));
 
         HudElementRegistry.attachElementAfter(VanillaHudElements.HOTBAR, VeyrathMod.id("combat"), CombatHud::extract);
-        // The crosshair means nothing with a free camera: the character attacks where it faces.
-        HudElementRegistry.replaceElement(VanillaHudElements.CROSSHAIR, vanilla -> (g, delta) -> {
-            if (!LocalCombat.active()) vanilla.extractRenderState(g, delta);
-        });
+        // In stance the ability slots take the hotbar's place (keys 1-4 are abilities there, and the
+        // held item is hidden); the crosshair means nothing with a free camera. Hearts, armour, food
+        // and air stay.
+        for (var id : java.util.List.of(VanillaHudElements.CROSSHAIR, VanillaHudElements.HOTBAR, VanillaHudElements.INFO_BAR,
+                VanillaHudElements.EXPERIENCE_LEVEL, VanillaHudElements.HELD_ITEM_TOOLTIP)) {
+            HudElementRegistry.replaceElement(id, vanilla -> (g, delta) -> {
+                if (!LocalCombat.active()) vanilla.extractRenderState(g, delta);
+            });
+        }
     }
 
     private static void onHit(Minecraft mc, CombatNet.HitS2C h) {
