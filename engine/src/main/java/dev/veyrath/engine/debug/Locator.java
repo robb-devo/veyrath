@@ -30,7 +30,7 @@ public final class Locator {
 
     /** Target names accepted by {@link #find}. */
     public static List<String> targets() {
-        List<String> t = new ArrayList<>(List.of("spawn", "rift", "rift_rim", "crown", "throne", "summit", "waterfall", "elder_tree", "arch", "caldera", "window", "fault"));
+        List<String> t = new ArrayList<>(List.of("spawn", "rift", "rift_rim", "crown", "throne", "summit", "waterfall", "elder_tree", "arch", "caldera", "window", "fault", "crown_falls"));
         for (Archetype a : Archetype.values()) t.add(archetypeTarget(a));
         return t;
     }
@@ -117,6 +117,17 @@ public final class Locator {
                 realm.islands().column(crown.x(), crown.z(), hit);
                 double top = hit.island != null ? hit.top : crown.y() + crown.dome();
                 return new Place(t, crown.x(), Math.floor(top) + 1, crown.z(), "Crown of Aether (radius " + (int) crown.radius() + ")");
+            }
+            case "crown_falls" -> {
+                // On the ground 160 blocks out from the Veil, the Crown's widest waterfall.
+                FloatingIslands.Island crown = realm.islands().crown();
+                if (crown == null) return null;
+                var falls = realm.islands().falls(crown);
+                if (falls.isEmpty()) return null;
+                FloatingIslands.Fall f = falls.get(Math.min(5, falls.size() - 1));
+                int dx = f.fallX() - f.lipX(), dz = f.fallZ() - f.lipZ();
+                return stand(terrain, c, s, t, f.fallX() + 0.5 + 160 * dx, f.fallZ() + 0.5 + 160 * dz,
+                        "facing the Veil of the Crown, a waterfall from y" + f.sourceY());
             }
             case "fault" -> {
                 // The nearest crystal fault: stand 30 blocks beside the middle of its line.

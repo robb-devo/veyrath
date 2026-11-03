@@ -68,6 +68,7 @@ public final class LodSampler {
         final FloatingIslands.Hit island = new FloatingIslands.Hit();
         final dev.veyrath.engine.formation.Arches.Hit arch = new dev.veyrath.engine.formation.Arches.Hit();
         final double[] window = new double[2];
+        final java.util.List<FloatingIslands.Fall> falls = new java.util.ArrayList<>();
         final int[] runStart = new int[2048], runEnd = new int[2048];
         final short[] runMat = new short[2048];
         double[] slope = new double[0], lowest = new double[0], ground = new double[0];
@@ -138,6 +139,13 @@ public final class LodSampler {
         VeyrathWorld.Realm centre = world.realmAt(x0 + width * step * 0.5, z0 + width * step * 0.5);
         centre.vegetation().collectForLod(MathUtil.floor(x0), MathUtil.floor(z0),
                 MathUtil.floor(x0) + width * step - 1, MathUtil.floor(z0) + width * step - 1, step, ctx.vegetation);
+
+        // Island waterfalls show at fine detail; further out they are thinner than a column.
+        ctx.falls.clear();
+        if (step <= 4) {
+            centre.islands().fallsIn(MathUtil.floor(x0), MathUtil.floor(z0), MathUtil.floor(x0) + width * step - 1,
+                    MathUtil.floor(z0) + width * step - 1, ctx.falls);
+        }
 
         short air = (short) Material.AIR.ordinal();
         for (int j = 0; j < width; j++) {
@@ -251,6 +259,18 @@ public final class LodSampler {
                             java.util.Arrays.fill(ctx.trees, filled - minY, islandTreeTop - minY + 1, (short) 0);
                             filled = islandTreeTop + 1;
                         }
+                    }
+                }
+                // 5b. An island waterfall through this column, from the surface to its source.
+                if (!ctx.falls.isEmpty() && ctx.island.island == null) {
+                    int cx0 = MathUtil.floor(x0) + i * step, cz0 = MathUtil.floor(z0) + j * step;
+                    for (FloatingIslands.Fall f : ctx.falls) {
+                        if (f.fallX() < cx0 || f.fallX() >= cx0 + step || f.fallZ() < cz0 || f.fallZ() >= cz0 + step) continue;
+                        if (f.sourceY() >= filled && f.sourceY() < maxY) {
+                            col.add(filled, f.sourceY() + 1, Material.WATERFALL);
+                            filled = f.sourceY() + 1;
+                        }
+                        break;
                     }
                 }
                 // 6. Air to the top of the world.

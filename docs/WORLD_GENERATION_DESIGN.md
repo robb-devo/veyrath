@@ -183,7 +183,16 @@ in order:
 - Each island is column-separable (one solid interval per column), so it maps directly onto
   sections and DH column data.
 
-Not yet: vegetation on islands, waterfalls falling from islands, satellite clusters.
+- **Waterfalls**: about a third of islands with radius 45+ have one fall, as wide as radius / 40
+  blocks (plus or minus one); the Crown has four (11, 7, 5 and 5 wide). Each strip is a water
+  source in a notch at the island's outermost column in that row, held on every other side, and
+  a column of falling water beside it, outside every island, down to the first solid block or
+  water. The curtain's rows run across the fall's main axis, so it has no gaps.
+- **Undersides**: hanging roots (5 % of columns) and cave vines 2–10 blocks long (2.5 %), 30 % of
+  vine blocks with glow berries.
+- **Trees** on the grassy part of every island (see Vegetation).
+
+Not yet: satellite clusters.
 
 ## Biomes and surface (implemented)
 

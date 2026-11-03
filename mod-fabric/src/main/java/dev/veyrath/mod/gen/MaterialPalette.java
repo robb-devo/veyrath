@@ -4,7 +4,9 @@ import dev.veyrath.engine.surface.Material;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LeavesBlock;
+import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 /**
  * Maps engine materials to block states.
@@ -18,6 +20,8 @@ public final class MaterialPalette {
     static {
         put(Material.AIR, Blocks.AIR);
         put(Material.WATER, Blocks.WATER);
+        // Level 8 is Minecraft's falling water: a waterfall column that does not spread sideways.
+        put(Material.WATERFALL, Blocks.WATER.defaultBlockState().setValue(LiquidBlock.LEVEL, 8));
         put(Material.LAVA, Blocks.LAVA);
         put(Material.BEDROCK, Blocks.BEDROCK);
         put(Material.STONE, Blocks.STONE);
@@ -80,6 +84,10 @@ public final class MaterialPalette {
         put(Material.FLOWER_VIOLET, Blocks.ALLIUM);
         put(Material.DRY_SHRUB, Blocks.DEAD_BUSH);
         put(Material.MOSS_CARPET, Blocks.MOSS_CARPET);
+        put(Material.HANGING_ROOTS, Blocks.HANGING_ROOTS);
+        put(Material.HANGING_VINE, Blocks.CAVE_VINES_PLANT);
+        put(Material.HANGING_VINE_LIT, Blocks.CAVE_VINES_PLANT.defaultBlockState().setValue(BlockStateProperties.BERRIES, true));
+        put(Material.HANGING_VINE_TIP, Blocks.CAVE_VINES);
         for (Material m : Material.values()) {
             if (STATES[m.ordinal()] == null) throw new IllegalStateException("No block for material " + m);
         }
@@ -87,6 +95,10 @@ public final class MaterialPalette {
 
     private static void put(Material m, Block b) {
         STATES[m.ordinal()] = b.defaultBlockState();
+    }
+
+    private static void put(Material m, BlockState state) {
+        STATES[m.ordinal()] = state;
     }
 
     /** Leaves placed by the generator are persistent: they are not attached to vanilla log distances. */

@@ -10,6 +10,8 @@ package dev.veyrath.engine.surface;
  */
 public enum Material {
     AIR, WATER, LAVA, BEDROCK,
+    // Falling water: the column of a waterfall in mid-air (Minecraft's falling water state)
+    WATERFALL,
     // Base rocks
     STONE, DEEPSLATE, ANDESITE, DIORITE, GRANITE, TUFF, CALCITE, BASALT, BLACKSTONE, OBSIDIAN, MAGMA,
     // Strata (Vesperfall)
@@ -24,7 +26,9 @@ public enum Material {
     ELDER_WOOD, ELDER_LEAVES, BROADLEAF_WOOD, BROADLEAF_LEAVES, CONIFER_WOOD, CONIFER_LEAVES,
     PALE_WOOD, BLOOM_LEAVES, EMBER_WOOD, EMBER_LEAVES, FEN_WOOD, FEN_LEAVES, CHAR_WOOD,
     // Ground plants, one block tall, placed on soil
-    GRASS_TUFT, FERN, FLOWER_YELLOW, FLOWER_RED, FLOWER_BLUE, FLOWER_WHITE, FLOWER_VIOLET, DRY_SHRUB, MOSS_CARPET;
+    GRASS_TUFT, FERN, FLOWER_YELLOW, FLOWER_RED, FLOWER_BLUE, FLOWER_WHITE, FLOWER_VIOLET, DRY_SHRUB, MOSS_CARPET,
+    // Hanging plants under floating islands: roots, and vines (some with glowing berries) ending in a tip
+    HANGING_ROOTS, HANGING_VINE, HANGING_VINE_LIT, HANGING_VINE_TIP;
 
     private static final Material[] VALUES = values();
 
@@ -33,7 +37,7 @@ public enum Material {
     }
 
     public boolean isFluid() {
-        return this == WATER || this == LAVA;
+        return this == WATER || this == WATERFALL || this == LAVA;
     }
 
     public boolean isSolid() {
@@ -43,6 +47,11 @@ public enum Material {
     /** Small plants: no collision, no support for other blocks. */
     public boolean isPlant() {
         return ordinal() >= GRASS_TUFT.ordinal();
+    }
+
+    /** Plants that hang from the block above them instead of standing on the one below. */
+    public boolean isHanging() {
+        return ordinal() >= HANGING_ROOTS.ordinal();
     }
 
     public boolean isLeaves() {

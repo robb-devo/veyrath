@@ -43,6 +43,7 @@ public final class ChunkComposer {
         final dev.veyrath.engine.cave.Caves.Context caves = new dev.veyrath.engine.cave.Caves.Context();
         final double[] window = new double[2];
         final dev.veyrath.engine.formation.Arches.Hit arch = new dev.veyrath.engine.formation.Arches.Hit();
+        final java.util.List<FloatingIslands.Fall> falls = new java.util.ArrayList<>();
 
         public Context() {
             for (int i = 0; i < cols.length; i++) cols[i] = new ColumnInfo();
@@ -132,7 +133,7 @@ public final class ChunkComposer {
                         int b = Math.max(MathUtil.floor(ctx.island.bottom), groundY + 2);
                         int t = Math.min(MathUtil.floor(ctx.island.top), spec.maxY() - 2);
                         if (t > b) {
-                            paintIsland(out, col, b, t, ctx.island, bx + x, bz + z, c);
+                            paintIsland(out, col, b, t, ctx.island, bx + x, bz + z, c, groundY);
                             out.islandBottom[col] = (short) b;
                             out.islandTop[col] = (short) t;
                             topSolid = Math.max(topSolid, t);
@@ -163,6 +164,48 @@ public final class ChunkComposer {
         if (caves != null) caves.carve(out, g, ctx.caves);
         if (vegetation != null) vegetation.decorate(out, ctx.vegetation);
         markSteps(out, g);
+        islandFalls(out, ctx);
+    }
+
+    /**
+     * Island waterfalls: the source in its notch at the island's edge and the falling water
+     * beside it, down to the first solid block or water below, where Minecraft lets it splash
+     * and spread once the chunk is complete.
+     */
+    private void islandFalls(ChunkBuffer out, Context ctx) {
+        if (islands == null) return;
+        int bx = out.chunkX << 4, bz = out.chunkZ << 4;
+        ctx.falls.clear();
+        islands.fallsIn(bx, bz, bx + 15, bz + 15, ctx.falls);
+        if (ctx.falls.isEmpty()) return;
+        short water = (short) Material.WATER.ordinal(), fall = (short) Material.WATERFALL.ordinal(), air = (short) Material.AIR.ordinal();
+        for (FloatingIslands.Fall f : ctx.falls) {
+            int y = f.sourceY();
+            if (y >= out.minY + out.height - 1) continue;
+            int lx = f.lipX() - bx, lz = f.lipZ() - bz;
+            if (lx >= 0 && lx < 16 && lz >= 0 && lz < 16) {
+                int col = (lz << 4) | lx, base = col * out.height - out.minY;
+                if (out.islandTop[col] != Short.MIN_VALUE && y <= out.islandTop[col] && y > out.islandBottom[col] + 1) {
+                    out.mat[base + y] = water;
+                    for (int k = y + 1; k <= out.islandTop[col]; k++) out.mat[base + k] = air;
+                }
+            }
+            int fx = f.fallX() - bx, fz = f.fallZ() - bz;
+            if (fx >= 0 && fx < 16 && fz >= 0 && fz < 16) {
+                int col = (fz << 4) | fx, base = col * out.height - out.minY;
+                int k = y;
+                while (k > out.minY + 1) {
+                    Material m = Material.byId(out.mat[base + k]);
+                    if (m != Material.AIR && !m.isPlant()) break;
+                    out.mat[base + k] = fall;
+                    k--;
+                }
+                if (k < y) {
+                    out.fluidTop[col] = (short) Math.max(out.fluidTop[col], y);
+                    out.addFlow(fx, k + 1, fz);
+                }
+            }
+        }
     }
 
     /**
@@ -210,9 +253,26 @@ public final class ChunkComposer {
         }
     }
 
-    private void paintIsland(ChunkBuffer out, int col, int bottom, int top, FloatingIslands.Hit hit, int x, int z, ColumnInfo c) {
+    private void paintIsland(ChunkBuffer out, int col, int bottom, int top, FloatingIslands.Hit hit, int x, int z, ColumnInfo c,
+                             int groundY) {
         int base = col * out.height - spec.minY();
         long h = Hash.hash(hit.island.seed(), x, z);
+        // Hanging plants under the island: tufts of roots, and vines that end in a tip, some
+        // with glowing berries that light the underside. They keep well clear of the ground.
+        double hang = Hash.unit(Hash.mix(h + 77));
+        if (hit.rim < 0.92 && bottom - 1 > groundY + 4) {
+            short air = (short) Material.AIR.ordinal();
+            if (hang < 0.05) {
+                if (out.mat[base + bottom - 1] == air) out.mat[base + bottom - 1] = (short) Material.HANGING_ROOTS.ordinal();
+            } else if (hang < 0.075) {
+                int len = Math.min(2 + (int) (9 * Hash.unit(Hash.mix(h + 78))), bottom - 1 - (groundY + 4));
+                for (int k = 1; k <= len && out.mat[base + bottom - k] == air; k++) {
+                    Material m = k == len ? Material.HANGING_VINE_TIP
+                            : Hash.unit(Hash.mix(h + 79 + k)) < 0.3 ? Material.HANGING_VINE_LIT : Material.HANGING_VINE;
+                    out.mat[base + bottom - k] = (short) m.ordinal();
+                }
+            }
+        }
         boolean rocky = hit.rim > 0.9 || Hash.unit(h) < 0.04;
         for (int y = bottom; y <= top; y++) {
             int d = top - y;

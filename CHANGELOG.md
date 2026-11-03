@@ -98,3 +98,17 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
 - **Trees on floating islands**: broadleaf, bloom and pine groves on the grassy part of every
   island, elders on the Crown of Aether. In chunks and in Distant Horizons LOD, where they are
   added above the island, with a canopy estimate at coarse detail.
+- **Island waterfalls**: about a third of the larger islands pour a fall one to four blocks wide
+  from a spring in a notch at their edge (99 of 485 islands on seed 1). The Crown of Aether has
+  four broad falls, the widest (the Veil) 11 blocks across, falling about 365 blocks. The water
+  is Minecraft's falling-water state, so it does not spread in mid-air; where it lands,
+  Minecraft lets it splash once the chunk is complete. Falls show in Distant Horizons LOD at
+  fine detail. `/veyrath tp crown_falls` stands 160 blocks out from the Veil.
+- **Hanging roots and glow-berry vines** under the floating islands; the berries light the
+  undersides.
+- **Mountain rock**: the Aethercrown shows folded beds of stone, andesite, deepslate, tuff,
+  diorite and calcite instead of one grey stone; steep faces get crag relief (ribs and ledges a
+  few blocks deep) instead of an even staircase; snow clings to steep faces high up; scree
+  patches on steep Stormpine slopes.
+- **Snow line**: the Vesperfall and Cinderwake hold snow only on their highest ground, so red
+  and black rock stays bare.

@@ -89,6 +89,13 @@ class VegetationTest {
                     else if (m.name().endsWith("_WOOD")) wood++;
                     if (!m.isPlant()) continue;
                     plants++;
+                    if (m.isHanging()) {
+                        // Roots hang from rock; a vine from rock or from the vine above it.
+                        Material above = Material.byId(b.get(x, y + 1, z));
+                        boolean vineAbove = above == Material.HANGING_VINE || above == Material.HANGING_VINE_LIT;
+                        assertTrue(above.isSolid() || (m != Material.HANGING_ROOTS && vineAbove), m + " under " + above + " at " + x + "," + y + "," + z);
+                        continue;
+                    }
                     Material below = Material.byId(b.get(x, y - 1, z));
                     assertTrue(Vegetation.supports(below, m), m + " on " + below + " at " + x + "," + y + "," + z);
                 }
