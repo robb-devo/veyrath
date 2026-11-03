@@ -30,6 +30,7 @@ public final class ChunkComposer {
     private final FloatingIslands islands;
     private final Vegetation vegetation;
     private final dev.veyrath.engine.cave.Caves caves;
+    private final dev.veyrath.engine.formation.Arches arches;
 
     /** Per-thread working state. */
     public static final class Context {
@@ -39,6 +40,7 @@ public final class ChunkComposer {
         final double[] slope = new double[256], ground = new double[256];
         final Vegetation.Context vegetation = new Vegetation.Context();
         final dev.veyrath.engine.cave.Caves.Context caves = new dev.veyrath.engine.cave.Caves.Context();
+        final dev.veyrath.engine.formation.Arches.Hit arch = new dev.veyrath.engine.formation.Arches.Hit();
 
         public Context() {
             for (int i = 0; i < cols.length; i++) cols[i] = new ColumnInfo();
@@ -51,9 +53,10 @@ public final class ChunkComposer {
     }
 
     public ChunkComposer(WorldSpec spec, TerrainSampler terrain, BiomeSelector biomes, SurfacePainter painter, FloatingIslands islands,
-                         Vegetation vegetation, dev.veyrath.engine.cave.Caves caves) {
+                         Vegetation vegetation, dev.veyrath.engine.cave.Caves caves, dev.veyrath.engine.formation.Arches arches) {
         this.spec = spec;
         this.caves = caves;
+        this.arches = arches;
         this.terrain = terrain;
         this.biomes = biomes;
         this.painter = painter;
@@ -104,6 +107,17 @@ public final class ChunkComposer {
                 out.fluidTop[col] = (short) fluidTop;
                 out.fall[col] = c.fall;
                 int topSolid = groundY;
+
+                // Stone arches: rock from the arch's underside (or the ground, at a leg) to its top.
+                if (arches != null) {
+                    arches.column(bx + x + 0.5, bz + z + 0.5, ctx.arch);
+                    if (ctx.arch.arch != null) {
+                        int ab = Math.max(MathUtil.floor(ctx.arch.bottom), groundY + 1), at = Math.min(MathUtil.floor(ctx.arch.top), spec.maxY() - 2);
+                        int base = col * out.height - minY;
+                        for (int y = ab; y <= at; y++) out.mat[base + y] = (short) painter.rockAt(c, y, 0).ordinal();
+                        if (at >= ab) topSolid = Math.max(topSolid, at);
+                    }
+                }
 
                 // Floating islands
                 out.islandBottom[col] = Short.MIN_VALUE;

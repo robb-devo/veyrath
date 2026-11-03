@@ -66,6 +66,7 @@ public final class LodSampler {
         short[] paint;
         final TerrainSampler.Scratch scratch = new TerrainSampler.Scratch();
         final FloatingIslands.Hit island = new FloatingIslands.Hit();
+        final dev.veyrath.engine.formation.Arches.Hit arch = new dev.veyrath.engine.formation.Arches.Hit();
         final int[] runStart = new int[2048], runEnd = new int[2048];
         final short[] runMat = new short[2048];
         double[] slope = new double[0], lowest = new double[0], ground = new double[0];
@@ -193,6 +194,20 @@ public final class LodSampler {
                     }
                     java.util.Arrays.fill(ctx.trees, filled - minY, treeTop - minY + 1, (short) 0);
                     filled = treeTop + 1;
+                }
+
+                // 5a. Stone arch over this column, if any (legs start on the ground).
+                if (realm.arches() != null) {
+                    realm.arches().column(c.x, c.z, ctx.arch);
+                    if (ctx.arch.arch != null) {
+                        int b = Math.max(MathUtil.floor(ctx.arch.bottom), filled);
+                        int t = Math.min(MathUtil.floor(ctx.arch.top), maxY - 2);
+                        if (t >= b) {
+                            if (b > filled) col.add(filled, b, air);
+                            col.add(b, t + 1, realm.painter().rockAt(c, (b + t) / 2, 0));
+                            filled = t + 1;
+                        }
+                    }
                 }
 
                 // 5. Floating island over this column, if any.

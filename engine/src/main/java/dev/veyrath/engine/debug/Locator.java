@@ -29,7 +29,7 @@ public final class Locator {
 
     /** Target names accepted by {@link #find}. */
     public static List<String> targets() {
-        List<String> t = new ArrayList<>(List.of("spawn", "rift", "rift_rim", "crown", "throne", "summit", "waterfall", "elder_tree"));
+        List<String> t = new ArrayList<>(List.of("spawn", "rift", "rift_rim", "crown", "throne", "summit", "waterfall", "elder_tree", "arch"));
         for (Archetype a : Archetype.values()) t.add(archetypeTarget(a));
         return t;
     }
@@ -58,6 +58,19 @@ public final class Locator {
                     return stand(terrain, c, s, t, world.spawnEngineX(), world.spawnEngineZ(), "world spawn site");
                 }
                 return stand(terrain, c, s, t, atlas.spawnX, atlas.spawnZ, "realm spawn site (atlas cell)");
+            }
+            case "arch" -> {
+                // The nearest stone arch, seen square-on from 1.3 spans away.
+                var best = (dev.veyrath.engine.formation.Arches.Arch) null;
+                double bd = Double.MAX_VALUE;
+                for (var a : realm.arches().all()) {
+                    double d = Math.hypot(a.midX() - fromX, a.midZ() - fromZ);
+                    if (d < bd) { bd = d; best = a; }
+                }
+                if (best == null) return null;
+                double len = best.span(), nx = -(best.bz() - best.az()) / len, nz = (best.bx() - best.ax()) / len;
+                return stand(terrain, c, s, t, best.midX() + nx * 1.3 * len, best.midZ() + nz * 1.3 * len,
+                        String.format(Locale.ROOT, "facing a %.0f-block stone arch, apex y%.0f", len, best.base() + best.rise()));
             }
             case "elder_tree" -> {
                 // 450 blocks south of the trunk: looking north, the whole tree fits the view.

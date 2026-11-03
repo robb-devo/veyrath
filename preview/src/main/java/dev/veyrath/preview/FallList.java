@@ -30,5 +30,16 @@ final class FallList {
             }
         }
         System.out.printf(Locale.ROOT, "waterfalls: %d (under 10 blocks %d, 10-20 %d, 20-30 %d, 30+ %d)%n", count, bins[0], bins[1], bins[2], bins[3]);
+        var arches = world.realm(0, 0).arches().all();
+        System.out.printf(Locale.ROOT, "arches: %d%n", arches.size());
+        for (int i = 0; i < Math.min(6, arches.size()); i++) {
+            var a = arches.get(i);
+            double len = a.span(), nx = -(a.bz() - a.az()) / len, nz = (a.bx() - a.ax()) / len;
+            System.out.printf(Locale.ROOT, "  arch %s span %.0f apex y%.0f: -Dveyrath.cam=%.0f,%.0f,%.0f -Dveyrath.look=%.0f,%.0f,%.0f --at %.0f,%.0f%n",
+                    a.archetype().displayName, len, a.base() + a.rise(),
+                    a.midX() + nx * 1.4 * len - world.originX(), a.base() + 0.6 * a.rise(), a.midZ() + nz * 1.4 * len - world.originZ(),
+                    a.midX() - world.originX(), a.base() + 0.45 * a.rise(), a.midZ() - world.originZ(),
+                    a.midX() + nx * 0.6 * len - world.originX(), a.midZ() + nz * 0.6 * len - world.originZ());
+        }
     }
 }

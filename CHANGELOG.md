@@ -74,3 +74,7 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
 - **Waterfalls**: steep river reaches become pools and falls of up to 34 blocks (462 falls on
   seed 1, 101 of them 20+ blocks). Rivers and lakes that the Rift cuts no longer hang over it as
   water blocks; they pour over the lip.
+- **Giant arches**: free-standing stone arches of 70–170 blocks, mostly in the Vesperfall, also
+  in the Cinderwake and the Aethercrown (27 on seed 1). In chunks and Distant Horizons LOD.
+  `/veyrath tp arch` stands beside the nearest one; the seed tour visits it. Preview `falls`
+  lists them with camera settings.

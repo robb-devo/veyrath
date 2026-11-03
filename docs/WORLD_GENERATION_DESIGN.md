@@ -158,12 +158,13 @@ in order:
 | Volcanoes and the Cinder Throne | Implemented | Lava lakes. `/veyrath tp throne` |
 | Crownspire massif | Implemented | Highest summit group. `/veyrath tp summit` |
 | Floating islands | Implemented | See below |
-| Arches, rock bridges, overhangs | Planned (WP5) | Need 3D volumes |
+| Giant arches | In engine (`formation/Arches`) | One candidate per 900-block cell: Vesperfall 70 %, Cinderwake 30 %, Aethercrown 20 % (27 arches on seed 1). Span 70–170, rise 0.38–0.63 of the span above the higher foot, band 7–15 thick and 10–22 wide, legs flared, apex off-centre, thickness varying along the band. Both feet dry, 20+ blocks from rivers, similar ground. Rock and beds from `SurfacePainter.rockAt`. In chunks and LOD. `/veyrath tp arch` |
+| Rock bridges, overhangs | Planned (WP5) | Need 3D volumes |
 | Pillars and spires | Planned (WP5) | Column-separable, cheap |
 | The Elder Tree | In engine (`Vegetation.elderTree`) | One per realm: `TreeKind.ELDER_TREE` (290–330 tall, trunk 15–18, crown 95–112, 9–12 limbs) on the first Elderbough province site that is dry, level within 34 blocks and 70+ blocks from rivers. Giants keep 150 blocks away. Drawn into chunks like any giant and added to LOD columns at every detail level |
 | Caves and cave entrances | Phase A in engine (`cave/Caves`) | Winding tunnels (two 3D fields near zero) and caverns (a third field high) on a 4 x 8 x 4 lattice, within 160 blocks below the surface; lava below y −232. A 6-block crust under the lowest neighbouring ground (14 beside water) keeps every river, lake and sea sealed (audit: 0 leaks). Funnel-shaped mouths up to 40 deep open on hillsides away from water; trees keep off them. About 5–10 % air at 20–160 blocks deep. Not in LOD. Chunk cost +0.3 ms |
-| Waterfalls (river steps, lake outlets, island falls) | Planned (WP2) | — |
-| Colossal trees | Planned (WP4) | World- and regional-tier landmarks |
+| Waterfalls (river steps, lake outlets, island falls) | River steps and Rift lips in engine | See step 11. Lake outlets and island falls planned |
+| Colossal trees | Elderbough giants and the Elder Tree in engine | See `vegetation/` |
 
 ### Floating islands (implemented)
 
@@ -299,8 +300,8 @@ The directive's four levels of significance:
 
 | Tier | Frequency | Examples (implemented ✓, planned ○) |
 |---|---|---|
-| 4. World landmarks | One per realm | ✓ Great Rift, ✓ Crown of Aether, ✓ Cinder Throne, ✓ Crownspire. ○ Elder Tree (colossal tree in the Elderbough), ○ Prism Caldera |
-| 3. Regional landmarks | A few per archetype region | ○ Great waterfalls on river steps, ○ giant arches over rift branches, ○ hanging valleys |
+| 4. World landmarks | One per realm | ✓ Great Rift, ✓ Crown of Aether, ✓ Cinder Throne, ✓ Crownspire, ✓ Elder Tree (colossal tree in the Elderbough). ○ Prism Caldera |
+| 3. Regional landmarks | A few per archetype region | ✓ Waterfalls on river steps, ✓ giant arches, ○ hanging valleys |
 | 2. Local formations | Often | ○ Pillars, ○ small arches, ○ boulder fields, ○ crystal outcrops along faults |
 | 1. Ordinary beautiful terrain | Everywhere | ✓ Eroded relief, valleys and rivers |
 
