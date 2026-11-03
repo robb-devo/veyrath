@@ -7,6 +7,7 @@ import dev.veyrath.engine.atlas.RealmAtlas;
 import dev.veyrath.engine.atlas.Volcano;
 import dev.veyrath.engine.formation.FloatingIslands;
 import dev.veyrath.engine.region.Archetype;
+import dev.veyrath.engine.hydro.RiverNetwork;
 import dev.veyrath.engine.terrain.ColumnInfo;
 import dev.veyrath.engine.terrain.TerrainSampler;
 
@@ -28,7 +29,7 @@ public final class Locator {
 
     /** Target names accepted by {@link #find}. */
     public static List<String> targets() {
-        List<String> t = new ArrayList<>(List.of("spawn", "rift", "rift_rim", "crown", "throne", "summit"));
+        List<String> t = new ArrayList<>(List.of("spawn", "rift", "rift_rim", "crown", "throne", "summit", "waterfall"));
         for (Archetype a : Archetype.values()) t.add(archetypeTarget(a));
         return t;
     }
@@ -57,6 +58,28 @@ public final class Locator {
                     return stand(terrain, c, s, t, world.spawnEngineX(), world.spawnEngineZ(), "world spawn site");
                 }
                 return stand(terrain, c, s, t, atlas.spawnX, atlas.spawnZ, "realm spawn site (atlas cell)");
+            }
+            case "waterfall" -> {
+                // The nearest fall of 20+ blocks, seen from 40 blocks downstream on the river.
+                RiverNetwork.Reach best = null;
+                int bestK = -1;
+                double bd = Double.MAX_VALUE;
+                for (RiverNetwork.Reach r : atlas.rivers.reaches()) {
+                    for (int k = 0; k + 1 < r.size(); k++) {
+                        if (r.level()[k] - r.level()[k + 1] < 20) continue;
+                        double d = Math.hypot(r.xs()[k] - fromX, r.zs()[k] - fromZ);
+                        if (d < bd) { bd = d; best = r; bestK = k; }
+                    }
+                }
+                if (best == null) return null;
+                int j = bestK + 1;
+                double run = 0;
+                while (j + 1 < best.size() && run < 40) {
+                    run += Math.hypot(best.xs()[j + 1] - best.xs()[j], best.zs()[j + 1] - best.zs()[j]);
+                    j++;
+                }
+                double drop = best.level()[bestK] - best.level()[bestK + 1];
+                return stand(terrain, c, s, t, best.xs()[j], best.zs()[j], String.format(Locale.ROOT, "below a %.0f-block waterfall", drop));
             }
             case "rift", "rift_rim" -> {
                 Polyline rift = atlas.rift;
