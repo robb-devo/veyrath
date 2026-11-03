@@ -106,6 +106,9 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   fine detail. `/veyrath tp crown_falls` stands 160 blocks out from the Veil.
 - **Hanging roots and glow-berry vines** under the floating islands; the berries light the
   undersides.
+- **Rock spires and boulders**: banded hoodoos in the Vesperfall and basalt spires in the
+  Cinderwake, up to 75 blocks tall in groups of up to five (808 on seed 1), and boulder fields on
+  Aethercrown, Elderbough and Sunmantle slopes. `/veyrath tp spires` stands beside a tall one.
 - **More ground flora**: tall grass and large ferns, reeds at the water's edge, amethyst clusters
   and buds in the Prismmere, mushrooms on Elderwood podzol.
 - **Mountain rock**: the Aethercrown shows folded beds of stone, andesite, deepslate, tuff,

@@ -49,6 +49,8 @@ public final class ColumnInfo {
     public boolean quartz;
     /** Within 12 blocks of a crystal fault line: trees keep off it. */
     public boolean nearFault;
+    /** On or right beside a rock spire or boulder: trees keep off it. */
+    public boolean nearRock;
 
     public enum WaterKind { NONE, SEA, LAKE, RIVER }
 

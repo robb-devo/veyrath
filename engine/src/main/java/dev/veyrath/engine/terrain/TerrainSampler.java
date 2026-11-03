@@ -69,6 +69,7 @@ public final class TerrainSampler {
     private PrismCaldera caldera;
     /** Set at the end of construction, after the caldera; null while it is being built. */
     private CrystalFaults faults;
+    private RockSpires rocks;
 
     /** Per-thread scratch state; create one per worker thread. */
     public static final class Scratch {
@@ -103,6 +104,12 @@ public final class TerrainSampler {
         caldera = site;
         if (site != null) caldera = site.withCrystals(this);
         faults = CrystalFaults.build(this);
+        rocks = RockSpires.build(this);
+    }
+
+    /** The realm's rock spires and boulders (never null once constructed). */
+    public RockSpires rocks() {
+        return rocks;
     }
 
     /** The realm's crystal fault lines (never null once constructed). */
@@ -360,6 +367,7 @@ public final class TerrainSampler {
         out.crystal = Double.NaN;
         out.quartz = false;
         out.nearFault = false;
+        out.nearRock = false;
         boolean calderaNear = false;
         double calderaLake = Double.NaN;
         PrismCaldera cal = caldera;
@@ -412,6 +420,11 @@ public final class TerrainSampler {
         if (faults != null && kind == ColumnInfo.WaterKind.NONE && Double.isNaN(lakeLevel) && !calderaNear
                 && Double.isNaN(out.crystal) && out.riverDistance > out.riverHalfWidth + 8 && h > sea + 6) {
             h = faults.apply(x, z, h, out);
+        }
+        // --- rock spires and boulders on dry ground away from water
+        if (rocks != null && kind == ColumnInfo.WaterKind.NONE && Double.isNaN(lakeLevel) && !calderaNear
+                && Double.isNaN(out.crystal) && out.riverDistance > out.riverHalfWidth + 10 && h > sea + 4) {
+            h = rocks.apply(x, z, h, out);
         }
 
         // --- water

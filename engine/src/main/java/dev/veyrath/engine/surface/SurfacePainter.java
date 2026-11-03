@@ -52,7 +52,7 @@ public final class SurfacePainter {
         int bedrock = minY + 1 + Hash.below(h, 3);
         double mix = rockMix.fbm(c.x, c.z);
         double soilN = soil.fbm(c.x, c.z);
-        boolean steep = slope > 1.25 + 0.25 * soilN;
+        boolean steep = slope > 1.25 + 0.25 * soilN || c.nearRock; // spires and boulders are bare rock
         int soilDepth = steep ? 0 : (int) MathUtil.clamp(Math.round(3.5 - slope * 2.2 + soilN * 1.5), 1, 5);
         double snowLine = biomes.snowLine(c);
         // Snow lies on gentle ground above the snow line, and high up it clings to steep faces
