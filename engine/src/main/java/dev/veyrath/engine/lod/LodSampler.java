@@ -30,6 +30,8 @@ public final class LodSampler {
     public static final int MAX_RUNS = 48;
     /** Runs reserved for trees above the surface. */
     private static final int VEG_RUNS = 8;
+    /** From this many blocks per column, LOD slopes come from a 2-block difference at the sample point. */
+    private static final int FINE_SLOPE_STEP = 8;
 
     private final WorldSpec spec;
 
@@ -66,6 +68,7 @@ public final class LodSampler {
         short[] paint;
         final TerrainSampler.Scratch scratch = new TerrainSampler.Scratch();
         final FloatingIslands.Hit island = new FloatingIslands.Hit();
+        final ColumnInfo fineX = new ColumnInfo(), fineZ = new ColumnInfo();
         final double[] cap = new double[2];
         final dev.veyrath.engine.formation.Arches.Hit arch = new dev.veyrath.engine.formation.Arches.Hit();
         final double[] window = new double[2];
@@ -129,6 +132,19 @@ public final class LodSampler {
                 ColumnInfo w = ctx.grid[(j + 1) * gw + i], e = ctx.grid[(j + 1) * gw + i + 2];
                 ColumnInfo n = ctx.grid[j * gw + i + 1], s = ctx.grid[(j + 2) * gw + i + 1];
                 double gx = (e.surface() - w.surface()) / (2.0 * step), gz = (s.surface() - n.surface()) / (2.0 * step);
+                if (step >= FINE_SLOPE_STEP) {
+                    // Neighbours a whole step apart smooth away the gullies and crags that make
+                    // the ground steep up close, and far mountains would turn to grass or snow
+                    // where the chunks show bare rock (seed 1 Aethercrown: rock tops 69 % in
+                    // chunks, 7 % at 64 blocks per column). A 2-block difference at the sample
+                    // point measures the slope the chunk generator paints with, so the far
+                    // colours mix in the same proportions.
+                    double x = x0 + (i + 0.5) * step, z = z0 + (j + 0.5) * step;
+                    world.realmAt(x + 2, z).terrain().sample(x + 2, z, ctx.fineX, ctx.scratch);
+                    world.realmAt(x, z + 2).terrain().sample(x, z + 2, ctx.fineZ, ctx.scratch);
+                    gx = (ctx.fineX.surface() - c.surface()) / 2.0;
+                    gz = (ctx.fineZ.surface() - c.surface()) / 2.0;
+                }
                 ctx.slope[k] = Math.sqrt(gx * gx + gz * gz);
                 ctx.lowest[k] = Math.min(Math.min(w.ground, e.ground), Math.min(n.ground, s.ground));
                 ctx.ground[k] = WaterContainment.containedGround(c, w, e, n, s);

@@ -51,6 +51,10 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   Minecraft makes them flow down to the lower water instead of leaving a vertical water face.
 
 ### Fixed
+- Far LOD terrain painted with a 2-block slope at the sample point (from 8 blocks per column), so
+  distant mountains show the same mix of rock, grass and snow as the chunks; before, they turned
+  green or white (seed 1 Aethercrown: rock tops 69 % in chunks but 7 % at 64 blocks per column;
+  now 70 %).
 - The highest summits no longer flatten at y943: new summit ceiling (square-root knee at y760,
   cap below y980) applied after talus relaxation.
 - Rivers and lakes whose bed dips below sea level near the coast no longer drop to sea level
