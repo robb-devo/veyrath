@@ -104,6 +104,8 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   is Minecraft's falling-water state, so it does not spread in mid-air; where it lands,
   Minecraft lets it splash once the chunk is complete. Falls show in Distant Horizons LOD at
   fine detail. `/veyrath tp crown_falls` stands 160 blocks out from the Veil.
+- **Satellite islets** around large islands (431 around 178 islands on seed 1) and around the
+  Crown of Aether (11 on seed 1).
 - **Hanging roots and glow-berry vines** under the floating islands; the berries light the
   undersides.
 - **Small arches** (span 22–52) as a local tier beside the giant ones: 156 on seed 1, also in

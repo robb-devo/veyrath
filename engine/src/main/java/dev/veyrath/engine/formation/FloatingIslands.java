@@ -18,6 +18,9 @@ import dev.veyrath.engine.region.Archetype;
  * <p>Shape: a gently domed top surface with a soil cap; an inverted, ragged cone underneath
  * (the torn-away rock root of the island) with stalactite-like noise.
  *
+ * <p>Satellites: up to four small islets drift around each island of radius 60+, and ten to
+ * fifteen around the Crown, a little above or below their island and outside its rim.
+ *
  * <p>Waterfalls: about a third of the larger islands have a spring at their edge that pours
  * down to the ground, one to four blocks wide, and the Crown of Aether has four broad falls, the
  * widest (the Veil) eleven blocks across. A fall is a list of
@@ -44,6 +47,7 @@ public final class FloatingIslands {
     public record Fall(int lipX, int lipZ, int fallX, int fallZ, int sourceY) {}
 
     private final java.util.concurrent.ConcurrentHashMap<Long, java.util.List<Fall>> falls = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.concurrent.ConcurrentHashMap<Long, java.util.List<Island>> satellites = new java.util.concurrent.ConcurrentHashMap<>();
 
     /** One island's parameters (immutable). */
     public record Island(double x, double y, double z, double radius, double dome, double depth, long seed, boolean crown) {}
@@ -146,6 +150,52 @@ public final class FloatingIslands {
                 if (evaluate(is, x, z, hit)) return;
             }
         }
+        // Satellites lie outside their island's rim, so they are checked last.
+        if (crown != null && Math.abs(x - crown.x()) < crown.radius() * 2.2 && Math.abs(z - crown.z()) < crown.radius() * 2.2) {
+            for (Island sat : satellitesOf(crown)) if (evaluate(sat, x, z, hit)) return;
+        }
+        for (int dj = -1; dj <= 1; dj++) {
+            for (int di = -1; di <= 1; di++) {
+                Island is = islandOfCell(ci + di, cj + dj);
+                if (is == null || is.radius() < SATELLITE_HOST) continue;
+                if (crown != null && Math.hypot(is.x() - crown.x(), is.z() - crown.z()) < crown.radius() + is.radius() + 40) continue;
+                for (Island sat : satellitesOf(is)) if (evaluate(sat, x, z, hit)) return;
+            }
+        }
+    }
+
+    /** Islands of at least this radius have satellites. */
+    private static final double SATELLITE_HOST = 60;
+
+    /**
+     * Small islets drifting around a large island, a little above or below it: up to four
+     * around islands of radius 60+, ten to fifteen around the Crown. They have no waterfalls.
+     */
+    public java.util.List<Island> satellitesOf(Island is) {
+        if (!is.crown() && is.radius() < SATELLITE_HOST) return java.util.List.of();
+        return satellites.computeIfAbsent(is.seed(), k -> buildSatellites(is));
+    }
+
+    private java.util.List<Island> buildSatellites(Island is) {
+        long h = Hash.mix(is.seed() ^ 0x5A7E111E5L);
+        int n = is.crown() ? 10 + (int) (6 * Hash.unit(h)) : (int) (5 * Math.pow(Hash.unit(h), 0.7));
+        java.util.List<Island> out = new java.util.ArrayList<>();
+        for (int k = 0; k < n; k++) {
+            long hk = Hash.mix(h + 31L * (k + 1));
+            double r = is.crown() ? 10 + 22 * Hash.unit(hk) : 6 + 12 * Hash.unit(hk);
+            double ang = 2 * Math.PI * Hash.unit(Hash.mix(hk + 1));
+            double d = is.radius() * (1.24 + (is.crown() ? 0.35 : 0.5) * Hash.unit(Hash.mix(hk + 2))) + r * 1.25;
+            double x = is.x() + Math.cos(ang) * d, z = is.z() + Math.sin(ang) * d;
+            boolean clear = atlas.contains(x, z);
+            for (Island o : out) if (Math.hypot(o.x() - x, o.z() - z) < (o.radius() + r) * 1.3) clear = false;
+            if (!clear) continue;
+            double y = Math.min(is.y() - 45 + 70 * Hash.unit(Hash.mix(hk + 3)), atlas.spec.maxY() - 40);
+            double ground = Math.max(atlas.elevation(x, z), atlas.spec.seaLevel());
+            double depth = r * (0.9 + 0.8 * Hash.unit(Hash.mix(hk + 4)));
+            if (y - depth * 1.3 < ground + 30) continue; // would come too close to the terrain
+            out.add(new Island(x, y, z, r, 2 + r * 0.12, depth, Hash.mix(hk + 5), false));
+        }
+        return java.util.List.copyOf(out);
     }
 
     /** The island's waterfall cells (empty for most islands). Deterministic; cached per island. */
@@ -251,6 +301,7 @@ public final class FloatingIslands {
     private boolean evaluate(Island is, double x, double z, Hit hit) {
         double dx = x - is.x(), dz = z - is.z();
         double r = Math.sqrt(dx * dx + dz * dz);
+        if (r >= is.radius() * 1.25) return false; // beyond the widest rim (about 1.18 radii)
         double rim = is.radius() * (0.82 + 0.36 * (0.5 + 0.5 * edge.fbm(x + is.seed() % 1000, z)));
         if (r >= rim) return false;
         double t = r / rim;

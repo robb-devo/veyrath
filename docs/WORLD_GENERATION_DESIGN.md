@@ -194,7 +194,13 @@ in order:
   vine blocks with glow berries.
 - **Trees** on the grassy part of every island (see Vegetation).
 
-Not yet: satellite clusters.
+- **Satellites**: up to four islets (radius 6–18) around each island of radius 60+, and ten to
+  fifteen (radius 10–32) around the Crown, 45 blocks below to 25 above their island and outside
+  its rim (431 satellites around 178 islands on seed 1, 11 around the Crown).
+
+![Crown of Aether with its falls and satellites, engine render](media/seed1_voxel_crown_of_aether.jpg)
+
+*Engine render of generated chunks (`preview voxel`), not an in-game screenshot.*
 
 ## Biomes and surface (implemented)
 
