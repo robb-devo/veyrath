@@ -28,7 +28,7 @@ public final class VeyrathMod implements ModInitializer {
         Registry.register(BuiltInRegistries.BIOME_SOURCE, id("veyrath"), VeyrathBiomeSource.CODEC);
 
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
-            long seed = server.getWorldData().worldGenOptions().seed();
+            long seed = server.getWorldGenSettings().options().seed();
             VeyrathRuntime.start(seed);
         });
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> VeyrathRuntime.stop());

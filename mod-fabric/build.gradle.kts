@@ -60,8 +60,9 @@ fabricApi {
 }
 
 sourceSets.main {
-    // Generated biome JSON (gradlew :mod-fabric:runDatagen) is committed and packaged.
-    resources.srcDir("src/main/generated")
+    // Generated biome JSON (gradlew :mod-fabric:runDatagen) is committed and packaged. Loom 1.17
+    // already adds src/main/generated as a resource dir; only the datagen cache is excluded.
+    resources.exclude(".cache/**")
     if (!withDh) java.exclude("dev/veyrath/mod/dh/**")
 }
 
@@ -79,7 +80,7 @@ dependencies {
     // verified Modrinth version, whereas a separate DistantHorizonsApi 7.2.0 artifact is not
     // confirmed to exist. Fallback if this does not resolve:
     //   compileOnly("maven.modrinth:DistantHorizonsApi:${libs.versions.distanthorizons.api.get()}")
-    if (withDh) compileOnly("maven.modrinth:distanthorizons:${libs.versions.distanthorizons.get()}")
+    if (withDh) compileOnly("maven.modrinth:distanthorizons:${libs.versions.distanthorizons.asProvider().get()}")
 
     if (devMods) {
         // UNVERIFIED: configuration name (Loom's non-remapping counterpart of modLocalRuntime) and

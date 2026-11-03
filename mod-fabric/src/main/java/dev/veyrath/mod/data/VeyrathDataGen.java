@@ -3,7 +3,7 @@ package dev.veyrath.mod.data;
 import dev.veyrath.mod.gen.VeyrathBiomes;
 import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
-import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
+import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricDynamicRegistryProvider;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistrySetBuilder;
@@ -33,7 +33,7 @@ public final class VeyrathDataGen implements DataGeneratorEntrypoint {
     }
 
     private static final class BiomeProvider extends FabricDynamicRegistryProvider {
-        BiomeProvider(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> registries) {
+        BiomeProvider(FabricPackOutput output, CompletableFuture<HolderLookup.Provider> registries) {
             super(output, registries);
         }
 

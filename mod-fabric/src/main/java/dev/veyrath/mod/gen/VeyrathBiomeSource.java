@@ -13,6 +13,7 @@ import net.minecraft.core.HolderGetter;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.BiomeResolver;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.biome.Climate;
 
@@ -69,7 +70,11 @@ public final class VeyrathBiomeSource extends BiomeSource {
     }
 
     @Override
-    public Holder<Biome> getNoiseBiome(int qx, int qy, int qz, Climate.Sampler sampler) {
+    public BiomeResolver createResolver(Climate.Sampler sampler) {
+        return this::getNoiseBiome;
+    }
+
+    public Holder<Biome> getNoiseBiome(int qx, int qy, int qz) {
         Column c = CACHE_TL.get();
         int gen = VeyrathRuntime.generation();
         if (c.generation != gen) {

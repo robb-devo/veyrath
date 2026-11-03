@@ -30,11 +30,11 @@ public final class MaterialPalette {
         put(Material.BLACKSTONE, Blocks.BLACKSTONE);
         put(Material.OBSIDIAN, Blocks.OBSIDIAN);
         put(Material.MAGMA, Blocks.MAGMA_BLOCK);
-        put(Material.STRATA_RED, Blocks.RED_TERRACOTTA);
-        put(Material.STRATA_ORANGE, Blocks.ORANGE_TERRACOTTA);
-        put(Material.STRATA_OCHRE, Blocks.YELLOW_TERRACOTTA);
-        put(Material.STRATA_PALE, Blocks.WHITE_TERRACOTTA);
-        put(Material.STRATA_BROWN, Blocks.BROWN_TERRACOTTA);
+        put(Material.STRATA_RED, Blocks.DYED_TERRACOTTA.red());
+        put(Material.STRATA_ORANGE, Blocks.DYED_TERRACOTTA.orange());
+        put(Material.STRATA_OCHRE, Blocks.DYED_TERRACOTTA.yellow());
+        put(Material.STRATA_PALE, Blocks.DYED_TERRACOTTA.white());
+        put(Material.STRATA_BROWN, Blocks.DYED_TERRACOTTA.brown());
         put(Material.STRATA_UMBER, Blocks.TERRACOTTA);
         put(Material.SANDSTONE_RED, Blocks.RED_SANDSTONE);
         put(Material.DIRT, Blocks.DIRT);
