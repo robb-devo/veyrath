@@ -53,5 +53,16 @@ final class FallList {
                     cal.islandX() - world.originX(), cal.level() + 30, cal.islandZ() - world.originZ(),
                     cal.x() - world.originX(), cal.z() - world.originZ());
         }
+        var win = world.realm(0, 0).window().window();
+        if (win == null) {
+            System.out.println("mountain window: none");
+        } else {
+            double d = win.halfLength() + 170;
+            System.out.printf(Locale.ROOT, "mountain window: %.0f tall, %.0f wide, floor y%.0f, ridge y%.0f, %.0f through: -Dveyrath.cam=%.0f,%.0f,%.0f -Dveyrath.look=%.0f,%.0f,%.0f --at %.0f,%.0f%n",
+                    2 * win.halfHeight(), 2 * win.halfWidth(), win.floor(), win.crest(), 2 * win.halfLength(),
+                    win.x() - win.nx() * d - world.originX(), win.centreY() + 25, win.z() - win.nz() * d - world.originZ(),
+                    win.x() - world.originX(), win.centreY(), win.z() - world.originZ(),
+                    win.x() - world.originX(), win.z() - world.originZ());
+        }
     }
 }

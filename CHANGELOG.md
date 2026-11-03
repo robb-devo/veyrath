@@ -83,3 +83,7 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   some 60 amethyst and quartz crystals stand on the rim, rise from the water and crown an
   island, the largest about 100 blocks tall. `/veyrath tp caldera` stands on the rim; the seed
   tour visits it; the audit checks its shoreline.
+- **The mountain window**: a gate 60–84 blocks tall through a high ridge near the Crownspire,
+  one per realm (72 blocks tall at y742 on seed 1), so the sky shows through the mountain. In
+  chunks and Distant Horizons LOD. `/veyrath tp window` stands below one mouth; the seed tour
+  visits it. Preview `voxel` takes `-Dveyrath.lo=Y` for high features.

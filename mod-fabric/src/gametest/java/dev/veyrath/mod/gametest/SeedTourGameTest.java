@@ -27,7 +27,7 @@ public final class SeedTourGameTest implements FabricClientGameTest {
     private static final Logger LOG = LoggerFactory.getLogger("VEYRATH tour");
     private static final ResourceKey<net.minecraft.world.level.levelgen.presets.WorldPreset> PRESET =
             ResourceKey.create(Registries.WORLD_PRESET, Identifier.fromNamespaceAndPath("veyrath", "veyrath"));
-    private static final List<String> TARGETS = List.of("summit", "rift", "rift_rim", "crown", "throne", "aethercrown", "elderbough", "cinderwake", "waterfall", "elder_tree", "arch", "caldera");
+    private static final List<String> TARGETS = List.of("summit", "rift", "rift_rim", "crown", "throne", "aethercrown", "elderbough", "cinderwake", "waterfall", "elder_tree", "arch", "caldera", "window");
     /** Ticks to let chunks around a teleport target generate and render. */
     private static final int SETTLE_TICKS = 200;
     private static final int VIEW_TICKS = 60;

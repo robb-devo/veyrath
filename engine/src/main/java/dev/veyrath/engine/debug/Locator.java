@@ -30,7 +30,7 @@ public final class Locator {
 
     /** Target names accepted by {@link #find}. */
     public static List<String> targets() {
-        List<String> t = new ArrayList<>(List.of("spawn", "rift", "rift_rim", "crown", "throne", "summit", "waterfall", "elder_tree", "arch", "caldera"));
+        List<String> t = new ArrayList<>(List.of("spawn", "rift", "rift_rim", "crown", "throne", "summit", "waterfall", "elder_tree", "arch", "caldera", "window"));
         for (Archetype a : Archetype.values()) t.add(archetypeTarget(a));
         return t;
     }
@@ -117,6 +117,15 @@ public final class Locator {
                 realm.islands().column(crown.x(), crown.z(), hit);
                 double top = hit.island != null ? hit.top : crown.y() + crown.dome();
                 return new Place(t, crown.x(), Math.floor(top) + 1, crown.z(), "Crown of Aether (radius " + (int) crown.radius() + ")");
+            }
+            case "window" -> {
+                var w = realm.window().window();
+                if (w == null) return null;
+                // Stand below one mouth, looking up the axis through the mountain.
+                double d = w.halfLength() + 90;
+                return stand(terrain, c, s, t, w.x() - w.nx() * d, w.z() - w.nz() * d, String.format(Locale.ROOT,
+                        "Mountain window: opening %.0f tall and %.0f wide, floor y%.0f, ridge y%.0f, %.0f blocks through",
+                        2 * w.halfHeight(), 2 * w.halfWidth(), w.floor(), w.crest(), 2 * w.halfLength()));
             }
             case "caldera" -> {
                 PrismCaldera cal = terrain.caldera();

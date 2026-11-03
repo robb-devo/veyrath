@@ -67,6 +67,7 @@ public final class LodSampler {
         final TerrainSampler.Scratch scratch = new TerrainSampler.Scratch();
         final FloatingIslands.Hit island = new FloatingIslands.Hit();
         final dev.veyrath.engine.formation.Arches.Hit arch = new dev.veyrath.engine.formation.Arches.Hit();
+        final double[] window = new double[2];
         final int[] runStart = new int[2048], runEnd = new int[2048];
         final short[] runMat = new short[2048];
         double[] slope = new double[0], lowest = new double[0], ground = new double[0];
@@ -158,6 +159,16 @@ public final class LodSampler {
                 // Lowest neighbouring ground: below it, the column's sides are hidden.
                 double lowest = ctx.lowest[j * width + i];
                 int exposed = MathUtil.clamp(MathUtil.floor(Math.min(lowest, c.ground)) - 2, minY + 1, groundY);
+                // The mountain window: paint the opening as air and encode it with the exposed
+                // range; at a mouth the floor becomes the top.
+                if (realm.window() != null && realm.window().column(c.x, c.z, ctx.window)) {
+                    int wb = Math.max(MathUtil.floor(ctx.window[0]), minY + 8), wt = Math.min(MathUtil.floor(ctx.window[1]), groundY);
+                    if (wt >= wb) {
+                        java.util.Arrays.fill(ctx.paint, wb - minY, wt - minY + 1, air);
+                        exposed = Math.min(exposed, wb);
+                        if (wt == groundY && fluidTop == groundY) fluidTop = wb - 1;
+                    }
+                }
 
                 // 2. Hidden rock below the exposed range: one run.
                 col.add(minY, exposed, ctx.paint[exposed - 1 - minY]);

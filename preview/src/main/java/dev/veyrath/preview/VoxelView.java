@@ -129,6 +129,8 @@ final class VoxelView {
             hi = Math.max(hi, Math.max(b.topSolid[col], b.fluidTop[col]) + 1);
         }
         if (System.getProperty("veyrath.cut") != null) lo -= Integer.parseInt(System.getProperty("veyrath.cut")) + 48;
+        // veyrath.lo = Y starts the volume at Y, for high features in areas with deep valleys.
+        if (System.getProperty("veyrath.lo") != null) lo = Math.max(lo, Integer.parseInt(System.getProperty("veyrath.lo")));
         hi = Math.min(hi, lo + 420);
         final int y0 = lo, ny = hi - lo + 1;
         short[] vox = new short[size * size * ny];

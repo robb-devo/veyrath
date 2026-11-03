@@ -31,6 +31,7 @@ public final class ChunkComposer {
     private final Vegetation vegetation;
     private final dev.veyrath.engine.cave.Caves caves;
     private final dev.veyrath.engine.formation.Arches arches;
+    private final dev.veyrath.engine.formation.MountainWindow window;
 
     /** Per-thread working state. */
     public static final class Context {
@@ -40,6 +41,7 @@ public final class ChunkComposer {
         final double[] slope = new double[256], ground = new double[256];
         final Vegetation.Context vegetation = new Vegetation.Context();
         final dev.veyrath.engine.cave.Caves.Context caves = new dev.veyrath.engine.cave.Caves.Context();
+        final double[] window = new double[2];
         final dev.veyrath.engine.formation.Arches.Hit arch = new dev.veyrath.engine.formation.Arches.Hit();
 
         public Context() {
@@ -53,10 +55,12 @@ public final class ChunkComposer {
     }
 
     public ChunkComposer(WorldSpec spec, TerrainSampler terrain, BiomeSelector biomes, SurfacePainter painter, FloatingIslands islands,
-                         Vegetation vegetation, dev.veyrath.engine.cave.Caves caves, dev.veyrath.engine.formation.Arches arches) {
+                         Vegetation vegetation, dev.veyrath.engine.cave.Caves caves, dev.veyrath.engine.formation.Arches arches,
+                         dev.veyrath.engine.formation.MountainWindow window) {
         this.spec = spec;
         this.caves = caves;
         this.arches = arches;
+        this.window = window;
         this.terrain = terrain;
         this.biomes = biomes;
         this.painter = painter;
@@ -136,6 +140,24 @@ public final class ChunkComposer {
                     }
                 }
                 out.topSolid[col] = (short) topSolid;
+            }
+        }
+        // The mountain window: open the tunnel through the ridge; at the mouths, where the opening
+        // reaches the surface, the floor becomes the new ground.
+        if (window != null && window.window() != null) {
+            for (int z = 0; z < 16; z++) {
+                for (int x = 0; x < 16; x++) {
+                    if (!window.column(bx + x + 0.5, bz + z + 0.5, ctx.window)) continue;
+                    int col = z * 16 + x, gy = out.ground[col];
+                    int b = Math.max(MathUtil.floor(ctx.window[0]), minY + 8), t = Math.min(MathUtil.floor(ctx.window[1]), gy);
+                    if (t < b) continue;
+                    int base = col * out.height - minY;
+                    for (int y = b; y <= t; y++) out.mat[base + y] = (short) Material.AIR.ordinal();
+                    if (t == gy) {
+                        out.ground[col] = (short) (b - 1);
+                        if (out.topSolid[col] == gy) out.topSolid[col] = (short) (b - 1);
+                    }
+                }
             }
         }
         if (caves != null) caves.carve(out, g, ctx.caves);
