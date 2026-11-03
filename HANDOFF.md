@@ -1,6 +1,6 @@
 # VEYRATH: handoff for the next session
 
-Last updated: 2026-11-03 23:30 UTC, branch `ch02-combat`. Kept current after every work package.
+Last updated: 2026-11-03 23:55 UTC, branch `ch02-combat`. Kept current after every work package.
 
 **How to use this file.** Open a new Claude Code chat in `C:\Users\Robbi\IdeaProjects\veyrath`
 (on the laptop) or in a cloud session with the repository, then paste everything in the box below
@@ -62,27 +62,30 @@ Done and verified:
   vanilla-only and with the full pack (`-Pveyrath.fullPack=true`): ground strings kill a husk,
   launcher lifts it ~4 blocks, block stops husk attacks, all three abilities and the ultimate hit
   a group, 0 rejected inputs. 12 screenshots in `docs/media/combat/` (commit 93e42a7).
-- 98290e9: frozen bodies keep a resting downward speed so hit-stop no longer makes the client
-  think it is airborne (found by the per-tick trace in ae4e782). **Needs one re-run of the combat
-  game test on the laptop.**
+- Grounded bodies keep vanilla's resting downward speed every tick (98290e9, then 2f6de35), so
+  hit-stop no longer makes the client think it is airborne (found by the per-tick trace in
+  ae4e782). The first half was verified in game; the second half needs one combat test re-run.
+- **Proving Grounds (WP9) written and compiling** (2f6de35, device fixes 777dcb0):
+  `/veyrath arena [leave | duelist <apprentice|adept|master> | dummy | reset]`. Arena dimension
+  `veyrath:proving_grounds` (floating stone arena built on first entry), rounds with countdown,
+  VICTORY/DEFEAT, no deaths there; `DuelistEntity` driven by `DuelistBrain` through
+  `CombatServer.drive` (START_SERVER_TICK); `TrainingDummyEntity` with damage/DPS name; damage
+  numbers on the HUD (`DamageNumbers`); original textures (`tools/textures/paint_arena_textures.py`).
+  Test: `gradlew :mod-fabric:runClientGameTest -Pveyrath.tests=arena` (`ArenaGameTest`, includes
+  a performance phase with ten husks). **Its first in-game run was in progress at this update.**
 
 Not done yet (Chapter 02 plan, docs/CHAPTER_02_PLAN.md work packages):
 
-1. **WP9 Proving Grounds** (`/veyrath arena`): separate arena dimension, training dummy with damage
-   numbers and DPS, the Duelist as an in-game NPC driven by `DuelistBrain` with visible tells.
-   Design notes: dimension JSON `data/veyrath/dimension/proving_grounds.json` (type
-   `minecraft:overworld`, flat generator, biome `minecraft:the_void`, features off); arena built
-   by code on first entry; Duelist = `PathfinderMob` without goals whose fighter is ticked at
-   START_SERVER_TICK (think, fighter tick, apply intent like `LocalCombat.applyIntent`) and whose
-   hits use the existing `CombatServer.detectHits`; damage scaled by `Style.damageScale`;
-   `ServerLivingEntityEvents.ALLOW_DEATH` turns defeats into round resets; textures painted from
-   scratch (record them in ASSET_LICENSES as original).
-2. **WP7 polish**: lighter Gale Step dust cloud, damage numbers, slow motion and camera polish.
-3. **WP10**: FPS and server tick time in the arena during combat, with shaders, measured on the
-   laptop (docs/PERFORMANCE_BENCHMARKS.md). Never estimate.
-4. **Docs**: CHAPTER_STATUS (still describes Chapter 01), TECHNICAL_DECISIONS (TD-020 own
-   animation runtime, reaction grace, stop-at-target, Duelist design), DEPENDENCIES, TESTING_GUIDE,
-   CHANGELOG.
+1. **WP9 in game**: run the arena test (vanilla and `-Pveyrath.fullPack=true`), look at the
+   screenshots `arena_a01..a06`, fix what is wrong, commit the screenshots to `docs/media/arena/`.
+   Then play-feel checks the test cannot judge: Duelist readability (tells), fairness per style.
+2. **WP7 polish**: Gale Step now uses a lighter gust (0e5a568, not yet seen in game); slow motion
+   and camera polish.
+3. **WP10**: FPS and server tick time in the arena during combat, with and without shaders, from
+   the arena test's performance line, into docs/PERFORMANCE_BENCHMARKS.md. Never estimate.
+4. **Docs**: CHAPTER_STATUS has the Chapter 02 table (update states as WPs finish);
+   TECHNICAL_DECISIONS has TD-020 to TD-024; still to do: TESTING_GUIDE (arena test),
+   DEPENDENCIES (no new dependencies so far), CHANGELOG.
 5. **WP11 acceptance report** (a Claude Doc like the Chapter 01 one:
    https://claude.ai/artifact/Ets2zLsvDUvLGv16qBpxRC), then stop and present.
 6. The owner's launcher profile still holds the Chapter 01 build. Install the Chapter 02 build with
