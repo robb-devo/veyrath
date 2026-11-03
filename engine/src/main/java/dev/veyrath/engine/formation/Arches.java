@@ -11,15 +11,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Natural stone arches: free-standing spans of 70 to 170 blocks, most common in the Vesperfall,
- * rarer in the Cinderwake and the Aethercrown. Each arch is a rounded curve in a vertical plane
+ * Natural stone arches: giant free-standing spans of 70 to 170 blocks, most common in the
+ * Vesperfall, rarer in the Cinderwake and the Aethercrown, and small arches of 22 to 52 blocks,
+ * a few per region, also in the Sunmantle. Each arch is a rounded curve in a vertical plane
  * between two feet, with an elliptical cross-section that thickens towards the legs. A column
  * meets an arch in at most one interval, so arches map onto chunks and LOD like floating
  * islands. Sites (one candidate per grid cell) need dry, similar ground at both feet and no river
  * under a leg; everything depends only on the seed and position.
  */
 public final class Arches {
-    private static final int CELL = 900, BUCKET = 512;
+    private static final int CELL = 900, SMALL_CELL = 320, BUCKET = 512;
     private static final double LEG = 0.12;
 
     /** One arch: feet A and B, base height, apex rise, width across the plane, apex thickness. */
@@ -59,23 +60,38 @@ public final class Arches {
         originZ = atlas.originZ;
         nb = size / BUCKET + 1;
         for (int i = 0; i < nb * nb; i++) buckets.add(new ArrayList<>());
+        // Giant arches, then small arches (a few per region, the local tier).
+        place(terrain, seed, CELL, 70, 100, 10, 12, 7, 8, 18, new double[] {0.7, 0.3, 0.2, 0});
+        place(terrain, Hash.derive(seed, "small"), SMALL_CELL, 22, 30, 5, 5, 4, 3, 8, new double[] {0.35, 0.15, 0.12, 0.05});
+    }
+
+    /**
+     * Places arches on a grid of {@code cell}-block cells. {@code chance} is the probability per
+     * cell in the Vesperfall, Cinderwake, Aethercrown and Sunmantle; the apex must stand
+     * {@code clearance} blocks over the ground under the middle of the span.
+     */
+    private void place(TerrainSampler terrain, long seed, int cell, double span0, double spanRange, double width0, double widthRange,
+                       double thick0, double thickRange, double clearance, double[] chance) {
+        var atlas = terrain.atlas();
+        int size = atlas.spec.realmSize();
         ColumnInfo c = new ColumnInfo(), a = new ColumnInfo(), b = new ColumnInfo();
         TerrainSampler.Scratch s = new TerrainSampler.Scratch();
-        int cells = size / CELL;
+        int cells = size / cell;
         for (int j = 0; j < cells; j++) {
             for (int i = 0; i < cells; i++) {
                 long h = Hash.hash(seed, i, j);
-                double cx = originX + (i + 0.15 + 0.7 * Hash.unit(Hash.mix(h + 1))) * CELL;
-                double cz = originZ + (j + 0.15 + 0.7 * Hash.unit(Hash.mix(h + 2))) * CELL;
+                double cx = originX + (i + 0.15 + 0.7 * Hash.unit(Hash.mix(h + 1))) * cell;
+                double cz = originZ + (j + 0.15 + 0.7 * Hash.unit(Hash.mix(h + 2))) * cell;
                 terrain.sample(cx, cz, c, s);
-                double chance = switch (c.archetype) {
-                    case VESPERFALL_RIFTLANDS -> 0.7;
-                    case CINDERWAKE_DOMINION -> 0.3;
-                    case AETHERCROWN_HIGHLANDS -> 0.2;
+                double p = switch (c.archetype) {
+                    case VESPERFALL_RIFTLANDS -> chance[0];
+                    case CINDERWAKE_DOMINION -> chance[1];
+                    case AETHERCROWN_HIGHLANDS -> chance[2];
+                    case SUNMANTLE_VALES -> chance[3];
                     default -> 0;
                 };
-                if (Hash.unit(h) >= chance) continue;
-                double span = 70 + 100 * Hash.unit(Hash.mix(h + 3));
+                if (Hash.unit(h) >= p) continue;
+                double span = span0 + spanRange * Hash.unit(Hash.mix(h + 3));
                 double ang = Math.PI * Hash.unit(Hash.mix(h + 4));
                 double ax = cx - Math.cos(ang) * span / 2, az = cz - Math.sin(ang) * span / 2;
                 double bx = cx + Math.cos(ang) * span / 2, bz = cz + Math.sin(ang) * span / 2;
@@ -86,15 +102,15 @@ public final class Arches {
                 double base = Math.min(a.ground, b.ground) - 6;
                 double rise = Math.max(a.ground, b.ground) - base + span * (0.38 + 0.25 * Hash.unit(Hash.mix(h + 5)));
                 // The apex must clear the ground under the middle of the span.
-                if (base + rise < c.ground + 18) continue;
-                Arch arch = new Arch(ax, az, bx, bz, base, rise, 10 + 12 * Hash.unit(Hash.mix(h + 6)),
-                        7 + 8 * Hash.unit(Hash.mix(h + 7)), 0.8 + 0.45 * Hash.unit(Hash.mix(h + 8)), c.archetype);
+                if (base + rise < c.ground + clearance) continue;
+                Arch arch = new Arch(ax, az, bx, bz, base, rise, width0 + widthRange * Hash.unit(Hash.mix(h + 6)),
+                        thick0 + thickRange * Hash.unit(Hash.mix(h + 7)), 0.8 + 0.45 * Hash.unit(Hash.mix(h + 8)), c.archetype);
                 arches.add(arch);
                 double r = span / 2 + arch.width();
                 int x0 = MathUtil.floor((arch.midX() - r - originX) / BUCKET), x1 = MathUtil.floor((arch.midX() + r - originX) / BUCKET);
                 int z0 = MathUtil.floor((arch.midZ() - r - originZ) / BUCKET), z1 = MathUtil.floor((arch.midZ() + r - originZ) / BUCKET);
                 for (int q = Math.max(0, z0); q <= Math.min(nb - 1, z1); q++)
-                    for (int p = Math.max(0, x0); p <= Math.min(nb - 1, x1); p++) buckets.get(q * nb + p).add(arch);
+                    for (int pp = Math.max(0, x0); pp <= Math.min(nb - 1, x1); pp++) buckets.get(q * nb + pp).add(arch);
             }
         }
     }

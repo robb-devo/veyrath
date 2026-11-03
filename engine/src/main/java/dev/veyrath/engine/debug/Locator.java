@@ -62,10 +62,11 @@ public final class Locator {
                 return stand(terrain, c, s, t, atlas.spawnX, atlas.spawnZ, "realm spawn site (atlas cell)");
             }
             case "arch" -> {
-                // The nearest stone arch, seen square-on from 1.3 spans away.
+                // The nearest giant stone arch (70+ blocks), seen square-on from 1.3 spans away.
                 var best = (dev.veyrath.engine.formation.Arches.Arch) null;
                 double bd = Double.MAX_VALUE;
                 for (var a : realm.arches().all()) {
+                    if (a.span() < 70) continue;
                     double d = Math.hypot(a.midX() - fromX, a.midZ() - fromZ);
                     if (d < bd) { bd = d; best = a; }
                 }

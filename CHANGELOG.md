@@ -106,6 +106,8 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   fine detail. `/veyrath tp crown_falls` stands 160 blocks out from the Veil.
 - **Hanging roots and glow-berry vines** under the floating islands; the berries light the
   undersides.
+- **Small arches** (span 22–52) as a local tier beside the giant ones: 156 on seed 1, also in
+  the Sunmantle. `/veyrath tp arch` still picks the nearest giant arch.
 - **Rock spires and boulders**: banded hoodoos in the Vesperfall and basalt spires in the
   Cinderwake, up to 75 blocks tall in groups of up to five (808 on seed 1), and boulder fields on
   Aethercrown, Elderbough and Sunmantle slopes. `/veyrath tp spires` stands beside a tall one.

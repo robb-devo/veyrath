@@ -160,6 +160,7 @@ in order:
 | Floating islands | Implemented | See below |
 | Giant arches | In engine (`formation/Arches`) | One candidate per 900-block cell: Vesperfall 70 %, Cinderwake 30 %, Aethercrown 20 % (27 arches on seed 1). Span 70–170, rise 0.38–0.63 of the span above the higher foot, band 7–15 thick and 10–22 wide, legs flared, apex off-centre, thickness varying along the band. Both feet dry, 20+ blocks from rivers, similar ground. Rock and beds from `SurfacePainter.rockAt`. In chunks and LOD. `/veyrath tp arch` |
 | Rock bridges, overhangs | Planned (WP5) | Need 3D volumes |
+| Small arches | In engine (`formation/Arches`) | One candidate per 320-block cell: Vesperfall 35 %, Cinderwake 15 %, Aethercrown 12 %, Sunmantle 5 %. Span 22–52, band 5–10 wide and 4–7 thick, apex 8+ blocks over the ground (156 on seed 1, beside 28 giant arches) |
 | Pillars and spires | In engine (`terrain/RockSpires`) | One candidate per 176-block cell: Vesperfall 45 %, Cinderwake 30 %, on dry, gentle ground 30+ blocks from rivers and 90 from the Rift. Groups of one to five fluted, tapering columns, radius 3–9, 18–75 tall: banded hoodoos in the Vesperfall, basalt in the Cinderwake (808 spires on seed 1, 255 of them 50+ tall). `/veyrath tp spires` |
 | Boulder fields | In engine (`terrain/RockSpires`) | One candidate per 56-block cell: Aethercrown 30 %, Elderbough 12 %, Sunmantle 10 %. One to six rounded boulders 2–4 high (13,147 on seed 1) |
 | Crystal fault lines | In engine (`terrain/CrystalFaults`) | One candidate per 1400-block cell of dry Prismmere ground (80 %): a gently winding line of 500–1200 blocks that stops where it leaves the Prismmere or meets water (11 faults, 8.3 km, 991 crystals on seed 1). A fissure up to 4 blocks deep and 10 wide with a 2-block amethyst or quartz vein on its floor, and crystal clusters every 14–32 blocks, a fifth of them spires of 30–55 blocks. Trees keep 12 blocks off. Only dry ground 8+ blocks from rivers, outside lake halos and 6+ blocks above sea level. `/veyrath tp fault` |
@@ -320,7 +321,7 @@ The directive's four levels of significance:
 |---|---|---|
 | 4. World landmarks | One per realm | ✓ Great Rift, ✓ Crown of Aether, ✓ Cinder Throne, ✓ Crownspire, ✓ Elder Tree (colossal tree in the Elderbough), ✓ Prism Caldera (crystal crater lake) |
 | 3. Regional landmarks | A few per archetype region | ✓ Waterfalls on river steps, ✓ giant arches, ○ hanging valleys |
-| 2. Local formations | Often | ✓ Crystal outcrops along faults, ✓ cave mouths, ✓ rock spires, ✓ boulder fields, ○ small arches |
+| 2. Local formations | Often | ✓ Crystal outcrops along faults, ✓ cave mouths, ✓ rock spires, ✓ boulder fields, ✓ small arches |
 | 1. Ordinary beautiful terrain | Everywhere | ✓ Eroded relief, valleys and rivers |
 
 Placement uses atlas knowledge, for example "a waterfall where a river drops more than 40 blocks
