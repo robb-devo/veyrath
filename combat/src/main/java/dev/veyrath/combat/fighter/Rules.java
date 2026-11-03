@@ -26,12 +26,26 @@ public final class Rules {
     public int knockdownTicks = 14, getupTicks = 10;
     /** Charged heavy: damage multiplier at full charge. */
     public double chargeBonus = 1.2;
+    /**
+     * Ticks after a reaction ends during which light hits (flinch and stagger) still deal damage
+     * but do not interrupt again, so a crowd of weak mobs cannot stun-lock the fighter. 0 = off.
+     */
+    public int reactionGrace = 0;
 
-    public static Rules player() { return new Rules(); }
+    public static Rules player() {
+        Rules r = new Rules();
+        r.reactionGrace = 12;
+        return r;
+    }
 
+    /**
+     * The sparring Duelist: no poise, so the player's combos work on it once it is opened up; its
+     * defence comes from its mind (dev.veyrath.combat.ai), not from armour. More stamina, so a
+     * guard break takes two blocked strings.
+     */
     public static Rules duelist() {
         Rules r = new Rules();
-        r.poiseMax = 35;
+        r.poiseMax = 0;
         r.staminaMax = 120;
         return r;
     }

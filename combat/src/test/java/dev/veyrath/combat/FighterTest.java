@@ -319,4 +319,32 @@ class FighterTest {
         client.cancelMove(); // a reaction is not rolled back
         assertEquals(Fighter.Phase.REACTION, client.phase());
     }
+
+    @Test
+    void reactionGraceStopsAStunLock() {
+        Fighter f = new Fighter(1, SET, Rules.player());
+        InputBuffer in = new InputBuffer();
+        Controls c = new Controls();
+        HitSpec jab = HitSpec.of(3).stun(8, 6).build();
+        Vec3 dir = new Vec3(0, 0, -1); // the blow travels toward -Z; the fighter faces +Z (yaw 0)
+        assertEquals(Outcome.Result.HIT, f.receive(null, jab, 0, dir).result());
+        int ticks = 0;
+        while (f.phase() == Fighter.Phase.REACTION && ticks++ < 60) f.tick(c, in, true);
+        assertEquals(Fighter.Phase.IDLE, f.phase(), "recovered");
+        for (int i = 0; i < 5; i++) f.tick(c, in, true);
+        Outcome graced = f.receive(null, jab, 0, dir);
+        assertEquals(Outcome.Result.ARMORED, graced.result(), "a light hit right after recovering does not interrupt");
+        assertEquals(3, graced.damage(), 1e-9, "it still deals its damage");
+        assertFalse(f.phase() == Fighter.Phase.REACTION);
+        for (int i = 0; i < Rules.player().reactionGrace + 2; i++) f.tick(c, in, true);
+        assertEquals(Outcome.Result.HIT, f.receive(null, jab, 0, dir).result(), "after the grace, hits interrupt again");
+        assertEquals(Fighter.Phase.REACTION, f.phase());
+        // Heavier reactions are never graced.
+        Fighter g = new Fighter(2, SET, Rules.player());
+        g.receive(null, jab, 0, dir);
+        while (g.phase() == Fighter.Phase.REACTION) g.tick(c, in, true);
+        HitSpec launcher = HitSpec.of(3).reaction(Reaction.LAUNCH).lift(0.6).build();
+        assertEquals(Outcome.Result.HIT, g.receive(null, launcher, 0, dir).result());
+        assertEquals(Reaction.LAUNCH, g.reaction());
+    }
 }

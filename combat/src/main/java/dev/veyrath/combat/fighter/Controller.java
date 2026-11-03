@@ -26,6 +26,11 @@ public final class Controller {
      * target's feet (fists level with the target's chest).
      */
     public static final double AIR_HOME_GAIN = 0.5, AIR_HOME_SPEED = 0.8, AIR_HOME_REACH = 4.0, AIR_HOME_OFFSET = -0.2;
+    /**
+     * Attack lunges and dashes stop this far (feet to feet, along the facing) in front of their
+     * target instead of carrying the attacker past it, so a gap closer started up close still lands.
+     */
+    public static final double STOP_AT = 1.15;
 
     /**
      * Body intent. NaN components leave the physics alone. {@code inputScale} scales the player's
@@ -77,6 +82,13 @@ public final class Controller {
                 }
                 double fwd = mo.forward(t);
                 Vec3 dir = mo.isAlongInput() ? f.dodgeDirection() : Angles.forward(yaw);
+                if (attack && fwd > 0 && !mo.isAlongInput()) {
+                    Vec3 tgt = lockTarget != null ? lockTarget : (softTarget != null && inReach(feet, softTarget, yaw) ? softTarget : null);
+                    if (tgt != null && Math.abs(tgt.y() - feet.y()) < 2.5) {
+                        double ahead = tgt.sub(feet).horizontal().dot(dir);
+                        if (ahead > -0.5) fwd = Math.min(fwd, Math.max(0, ahead - STOP_AT));
+                    }
+                }
                 if (!Double.isNaN(fwd)) {
                     Vec3 v = dir.scale(fwd);
                     if (input != null && mo.steer() > 0) v = v.add(input.scale(WALK * mo.steer()));

@@ -55,6 +55,7 @@ public final class Fighter {
 
     private long lastBlockPress = -1000, parryUntil = -1;
     private int stun;
+    private long reactionEnded = -1000;
     private Reaction reaction;
     private int juggle;
     private boolean bounced;
@@ -241,7 +242,7 @@ public final class Fighter {
 
     private void tickReaction() {
         if (move.kind == Kind.GETUP) {
-            if (t >= move.duration) toIdle();
+            if (t >= move.duration) recover();
             return;
         }
         if (move.id.equals(set.knockdown)) {
@@ -252,8 +253,19 @@ public final class Fighter {
         boolean airborneReaction = reaction == Reaction.LAUNCH || reaction == Reaction.SPIKE || reaction == Reaction.KNOCKBACK;
         if (stun <= 0 && (!airborneReaction || grounded)) {
             if (airborneReaction && grounded && reaction != Reaction.KNOCKBACK) knockdown();
-            else toIdle();
+            else recover();
         }
+    }
+
+    /** Leaves a reaction; the reaction grace starts now. */
+    private void recover() {
+        toIdle();
+        reactionEnded = clock;
+    }
+
+    /** True during the reaction grace: light hits do not interrupt (see {@link Rules#reactionGrace}). */
+    public boolean inReactionGrace() {
+        return rules.reactionGrace > 0 && phase != Phase.REACTION && clock - reactionEnded <= rules.reactionGrace;
     }
 
     private void knockdown() {
@@ -594,6 +606,14 @@ public final class Fighter {
         if (poiseBreak && (r == Reaction.FLINCH)) r = Reaction.STAGGER;
         boolean airborne = !grounded || (phase == Phase.REACTION && reaction == Reaction.LAUNCH);
         if (airborne && r != Reaction.SPIKE && r != Reaction.KNOCKBACK) r = Reaction.LAUNCH;
+
+        if ((r == Reaction.FLINCH || r == Reaction.STAGGER) && inReactionGrace()) {
+            Outcome o = new Outcome(Outcome.Result.ARMORED, damage, null, 0, Math.max(1, stop - 1), null, null,
+                    counter, false, false, spec.shake() * 0.7, spec.vfx(), spec.sfx());
+            hitstop = o.hitstop();
+            events.struck(this, o);
+            return o;
+        }
 
         double push = spec.push() * (1 + 0.5 * attackerCharge);
         double vy;

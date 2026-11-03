@@ -151,4 +151,15 @@ class HitTest {
         assertEquals(Reaction.PARRIED, a.fighter.reaction());
         assertEquals("parry", d.fighter.move().id);
     }
+
+    @Test
+    void gapCloserStopsAtItsTargetInsteadOfPassingIt() {
+        // Gale Step dashes about 7 blocks; started 3.2 blocks away it must stop in front and land.
+        SimWorld w = duel(3.2, Action.ABILITY_1);
+        SimBody a = w.bodies.get(0), t = w.bodies.get(1);
+        w.run(20);
+        assertTrue(w.log.stream().anyMatch(h -> h.move().equals("gale_step") && h.outcome().result() == Outcome.Result.HIT),
+                "gale step lands: " + w.log.stream().map(SimWorld.Hit::move).toList());
+        assertTrue(a.pos.z() < t.pos.z(), "attacker stayed in front of the target: " + a.pos + " vs " + t.pos);
+    }
 }
