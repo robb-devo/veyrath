@@ -76,7 +76,7 @@ public final class Vegetation {
         profile(VBiome.AETHERCROWN_CRAGS, 0, 0, NONE, 0.05, picks(TreeKind.PINE, 1), 0.04, G, 1);
         // Vesperfall Riftlands
         profile(VBiome.VESPER_MESAS, 0, 0, NONE, 0.1, picks(TreeKind.EMBERLEAF, 1), 0.08, G, 2, D, 1);
-        profile(VBiome.EMBERLEAF_LEDGES, 0, 0.24, picks(TreeKind.EMBERLEAF, 1), 0, NONE, 0.05, G, 1, D, 1);
+        profile(VBiome.EMBERLEAF_LEDGES, 0, 0.10, picks(TreeKind.EMBERLEAF, 1), 0, NONE, 0.05, G, 1, D, 1);
         profile(VBiome.RIFT_DEPTHS, 0, 0.34, picks(TreeKind.BROADLEAF, 0.7, TreeKind.ELDER, 0.3), 0, NONE, 0.35, F, 3, G, 2);
         // Elderbough Expanse
         profile(VBiome.ELDERWOOD, 0.62, 0.26, picks(TreeKind.ELDER, 0.65, TreeKind.BROADLEAF, 0.35), 0, NONE,
@@ -246,12 +246,30 @@ public final class Vegetation {
             if (Hash.unit(h) >= density) continue;
             Material plant = pickPlant(p, Hash.unit(Hash.mix(h)));
             // Flowers grow in drifts, not evenly: outside a drift they give way to grass.
-            if (plant != null && plant.ordinal() >= Material.FLOWER_YELLOW.ordinal() && plant.ordinal() <= Material.FLOWER_VIOLET.ordinal()
-                    && biomes.patch(x * 3.1 - 1777, z * 3.1 + 5153) < 0.6) plant = Material.GRASS_TUFT;
+            if (plant != null && isFlower(plant)) {
+                if (biomes.patch(x * 3.1 - 1777, z * 3.1 + 5153) < 0.6) plant = Material.GRASS_TUFT;
+                // A drift is mostly one colour (a field of poppies, a field of cornflowers),
+                // chosen by a smooth field, with a few strays of the others.
+                else if (Hash.unit(Hash.mix(h ^ 0x5EEDL)) > 0.15) plant = driftFlower(p, biomes.patch(x * 0.8 + 313, z * 0.8 - 919), plant);
+            }
             if (plant == null || !supports(top, plant)) continue;
             out.mat[base + g + 1] = (short) plant.ordinal();
             if (g + 1 > out.topSolid[col]) out.topSolid[col] = (short) (g + 1);
         }
+    }
+
+    private static boolean isFlower(Material m) {
+        return m.ordinal() >= Material.FLOWER_YELLOW.ordinal() && m.ordinal() <= Material.FLOWER_VIOLET.ordinal();
+    }
+
+    /** The flower of the profile's flower kinds that the smooth field value u (0..1) selects. */
+    private static Material driftFlower(Profile p, double u, Material fallback) {
+        int n = 0;
+        for (Material m : p.plantKinds) if (m != null && isFlower(m)) n++;
+        if (n == 0) return fallback;
+        int pick = Math.min(n - 1, (int) (MathUtil.clamp01((u - 0.5) * 2.2 + 0.5) * n)); // stretch: the field clusters near 0.5
+        for (Material m : p.plantKinds) if (m != null && isFlower(m) && pick-- == 0) return m;
+        return fallback;
     }
 
     private static Material pickPlant(Profile p, double u) {

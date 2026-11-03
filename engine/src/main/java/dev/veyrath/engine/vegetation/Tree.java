@@ -111,10 +111,10 @@ public final class Tree {
         for (int k = 0; k < n; k++) {
             double a = a0 + k * Math.PI * 2 / n + (r.nextDouble() - 0.5) * 0.9;
             double d = 2 + 2.2 * r.nextDouble();
-            double ex = ox + Math.cos(a) * d, ez = oz + Math.sin(a) * d, ey = y0 + h * (0.85 + 0.15 * r.nextDouble());
+            double ex = ox + Math.cos(a) * d, ez = oz + Math.sin(a) * d, ey = y0 + h * (0.9 + 0.1 * r.nextDouble());
             segment(ox, fork, oz, 0.5, ex, ey, ez, 0.5);
-            double cr = crown * (0.7 + 0.3 * r.nextDouble());
-            blob(ex, ey + 0.6, ez, cr, 1.4 + 0.6 * r.nextDouble(), cr);
+            double cr = crown * (0.8 + 0.3 * r.nextDouble());
+            blob(ex, ey + 0.6, ez, cr, 1.1 + 0.4 * r.nextDouble(), cr); // thin, wide parasol layers
         }
         blob(ox, y0 + h * 0.9, oz, crown * 0.55, 1.3, crown * 0.55);
     }

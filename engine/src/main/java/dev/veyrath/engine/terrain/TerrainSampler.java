@@ -263,8 +263,8 @@ public final class TerrainSampler {
                 double hw = s.rift.width * 0.5;
                 // The wall line wanders in bays and headlands, and chutes and buttresses run
                 // down the face, so the walls read as eroded cliffs instead of one smooth sheet.
-                double jag = 16 * riftJag.fbm(x, z)
-                        + 9 * shapeGully(riftChute.sample(x, z, -s.rift.dirZ, s.rift.dirX));
+                double jag = 30 * riftJag.fbm(x, z)
+                        + 14 * shapeGully(riftChute.sample(x, z, -s.rift.dirZ, s.rift.dirX));
                 double d = s.rift.distance + jag;
                 double floor = s.rift.level;
                 out.riftDistance = d - hw;
