@@ -51,6 +51,7 @@ public final class SeedTourGameTest implements FabricClientGameTest {
 
     @Override
     public void runTest(ClientGameTestContext context) {
+        if (!GameTests.selected("tour")) return;
         String setup = System.getProperty("veyrath.tourSetup", "vanilla");
         for (String s : System.getProperty("veyrath.tourSeeds", "1,2,3").split(",")) tour(context, s.trim(), setup);
     }
@@ -203,13 +204,7 @@ public final class SeedTourGameTest implements FabricClientGameTest {
     }
 
     private static void setHudHidden(net.minecraft.client.Minecraft mc, boolean hidden) {
-        try {
-            java.lang.reflect.Field f = net.minecraft.client.gui.Hud.class.getDeclaredField("isHidden");
-            f.setAccessible(true);
-            f.setBoolean(mc.gui.hud, hidden);
-        } catch (ReflectiveOperationException e) {
-            throw new AssertionError("Cannot toggle the HUD", e);
-        }
+        GameTests.setHudHidden(mc, hidden);
     }
 
     /** First y below {@code fromY} whose block is not air: the ground or water surface under an island. */

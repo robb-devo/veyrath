@@ -3,16 +3,24 @@
   "id": "veyrath",
   "version": "${version}",
   "name": "VEYRATH",
-  "description": "VEYRATH — Unbound World. A custom fantasy Overworld: monumental mountains, world-spanning rifts, colossal forests and floating islands.",
-  "authors": ["Robb-devo"],
+  "description": "VEYRATH — Unbound World. A custom fantasy Overworld (monumental mountains, world-spanning rifts, colossal forests, floating islands) and an action combat system.",
+  "authors": [
+    "Robb-devo"
+  ],
   "contact": {},
   "license": "All-Rights-Reserved",
   "icon": "assets/veyrath/icon.png",
   "environment": "*",
   "entrypoints": {
-    "main": ["dev.veyrath.mod.VeyrathMod"],
-    "client": ["dev.veyrath.mod.client.VeyrathClient"],
-    "fabric-datagen": ["dev.veyrath.mod.data.VeyrathDataGen"]
+    "main": [
+      "dev.veyrath.mod.VeyrathMod"
+    ],
+    "client": [
+      "dev.veyrath.mod.client.VeyrathClient"
+    ],
+    "fabric-datagen": [
+      "dev.veyrath.mod.data.VeyrathDataGen"
+    ]
   },
   "depends": {
     "fabricloader": ">=0.19.5",
@@ -24,5 +32,12 @@
     "distanthorizons": "*",
     "sodium": "*",
     "iris": "*"
-  }
+  },
+  "mixins": [
+    "veyrath.mixins.json",
+    {
+      "config": "veyrath.client.mixins.json",
+      "environment": "client"
+    }
+  ]
 }

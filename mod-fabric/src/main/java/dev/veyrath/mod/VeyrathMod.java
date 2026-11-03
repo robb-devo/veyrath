@@ -1,12 +1,18 @@
 package dev.veyrath.mod;
 
+import dev.veyrath.mod.combat.CombatCommands;
+import dev.veyrath.mod.combat.CombatNet;
+import dev.veyrath.mod.combat.CombatServer;
 import dev.veyrath.mod.debug.VeyrathCommands;
 import dev.veyrath.mod.gen.VeyrathBiomeSource;
 import dev.veyrath.mod.gen.VeyrathChunkGenerator;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -14,7 +20,7 @@ import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Common entrypoint: registers the VEYRATH generator types and runtime hooks. */
+/** Common entrypoint: registers the VEYRATH generator types, combat and runtime hooks. */
 public final class VeyrathMod implements ModInitializer {
     public static final String MOD_ID = "veyrath";
     public static final Logger LOG = LoggerFactory.getLogger("VEYRATH");
@@ -37,7 +43,12 @@ public final class VeyrathMod implements ModInitializer {
             if (server.getTickCount() % 100 == 0) VeyrathRuntime.prewarmAroundPlayers(server);
         });
 
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> VeyrathCommands.register(dispatcher));
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+            VeyrathCommands.register(dispatcher);
+            CombatCommands.register(dispatcher);
+        });
+
+        registerCombat();
 
         if (FabricLoader.getInstance().isModLoaded("distanthorizons")) {
             // Loaded reflectively so this class never links against DH, and so builds made with
@@ -51,5 +62,18 @@ public final class VeyrathMod implements ModInitializer {
             }
         }
         LOG.info("VEYRATH initialised");
+    }
+
+    /** Chapter 02: combat messages, the server's fighters and damage hook. */
+    private static void registerCombat() {
+        CombatNet.register();
+        ServerPlayNetworking.registerGlobalReceiver(CombatNet.ActionC2S.TYPE, (msg, ctx) -> CombatServer.onAction(ctx.player(), msg));
+        ServerPlayNetworking.registerGlobalReceiver(CombatNet.ReleaseC2S.TYPE, (msg, ctx) -> CombatServer.onRelease(ctx.player(), msg));
+        ServerPlayNetworking.registerGlobalReceiver(CombatNet.HeldC2S.TYPE, (msg, ctx) -> CombatServer.onHeld(ctx.player(), msg));
+        ServerPlayNetworking.registerGlobalReceiver(CombatNet.StanceC2S.TYPE, (msg, ctx) -> CombatServer.onStance(ctx.player(), msg.on()));
+        ServerTickEvents.END_SERVER_TICK.register(CombatServer::tick);
+        ServerLivingEntityEvents.ALLOW_DAMAGE.register(CombatServer::allowDamage);
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> CombatServer.remove(handler.getPlayer()));
+        ServerLifecycleEvents.SERVER_STOPPING.register(CombatServer::clear);
     }
 }

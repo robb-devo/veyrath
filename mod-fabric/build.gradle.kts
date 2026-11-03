@@ -79,6 +79,8 @@ fabricApi {
 
 // Seed tour options: -Pveyrath.tourSeeds=1,2,3; the screenshot setup tag follows -Pveyrath.devMods.
 loom.runs.matching { it.name == "clientGameTest" }.configureEach {
+    // Which client game tests run: "tour" (default), "combat", "tour,combat" or "all".
+    property("veyrath.tests", providers.gradleProperty("veyrath.tests").getOrElse("tour"))
     property("veyrath.tourSeeds", providers.gradleProperty("veyrath.tourSeeds").getOrElse("1,2,3"))
     // Comma list of locator targets instead of the full tour ("none" = spawn and Crown study only).
     property("veyrath.tourTargets", providers.gradleProperty("veyrath.tourTargets").getOrElse(""))

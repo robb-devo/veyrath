@@ -3,11 +3,14 @@
   "id": "veyrath-gametest",
   "version": "${version}",
   "name": "VEYRATH client game test",
-  "description": "Development-only seed tour: creates VEYRATH worlds, teleports to landmarks and takes screenshots. Not part of the mod jar.",
+  "description": "Development-only client game tests: the seed tour (VEYRATH worlds, landmarks, screenshots) and the combat test (scripted inputs against husks). Not part of the mod jar.",
   "license": "All-Rights-Reserved",
   "environment": "client",
   "entrypoints": {
-    "fabric-client-gametest": ["dev.veyrath.mod.gametest.SeedTourGameTest"]
+    "fabric-client-gametest": [
+      "dev.veyrath.mod.gametest.SeedTourGameTest",
+      "dev.veyrath.mod.gametest.CombatGameTest"
+    ]
   },
   "depends": {
     "veyrath": "*",

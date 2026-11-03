@@ -25,5 +25,13 @@
   "biome.veyrath.glowmire": "Glowmire",
   "biome.veyrath.veil_sea": "Veil Sea",
   "biome.veyrath.veil_shallows": "Veil Shallows",
-  "biome.veyrath.glasswater_coast": "Glasswater Coast"
+  "biome.veyrath.glasswater_coast": "Glasswater Coast",
+  "key.category.veyrath.combat": "VEYRATH Combat",
+  "key.veyrath.stance": "Combat stance",
+  "death.attack.veyrath.combat": "%1$s was struck down by %2$s",
+  "death.attack.veyrath.combat.item": "%1$s was struck down by %2$s using %3$s",
+  "death.attack.veyrath.combat.player": "%1$s was struck down",
+  "veyrath.combat.stance_on": "Combat stance",
+  "veyrath.combat.stance_off": "Combat stance off",
+  "veyrath.combat.locked": "Locked on: %s"
 }
