@@ -35,6 +35,7 @@ public final class SimWorld {
 
     public void step() {
         tick++;
+        for (SimBody b : bodies) if (b.mind != null && !b.passive) b.mind.think(this, b);
         for (SimBody b : bodies) {
             if (b.passive) b.fighter.tickFollower(b.grounded, false);
             else b.fighter.tick(b.controls, b.input, b.grounded);
@@ -49,12 +50,15 @@ public final class SimWorld {
                 String moveId = a.fighter.move().id;
                 Outcome o = HitResolver.resolve(a.fighter, s, d.fighter, a.pos, d.pos);
                 if (o.dealsDamage()) {
-                    d.health -= o.damage();
+                    d.health -= o.damage() * a.damageScale;
                     if (d.immortal && d.health <= 0) d.health = d.maxHealth;
                 }
                 if (o.velocity() != null) d.fighter.queueVelocity(o.velocity());
                 if (o.attackerVelocity() != null) a.fighter.queueVelocity(o.attackerVelocity());
-                log.add(new Hit(tick, a, d, moveId, s.window(), o));
+                Hit h = new Hit(tick, a, d, moveId, s.window(), o);
+                log.add(h);
+                if (a.mind != null) a.mind.hit(h, a);
+                if (d.mind != null) d.mind.hit(h, d);
             }
         }
     }

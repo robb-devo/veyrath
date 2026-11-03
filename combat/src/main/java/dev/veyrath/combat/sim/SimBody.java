@@ -21,6 +21,18 @@ public final class SimBody {
     /** Training dummy: health refills, never moves on its own. */
     public boolean immortal;
     public Vec3 lockTarget;
+    /** AI that fills this body's controls and presses each tick (null: scripted or passive). */
+    public Mind mind;
+    /** Multiplier on the damage this body's hits deal (a sparring Duelist hits softer). */
+    public double damageScale = 1;
+
+    /** A mind that drives a body. */
+    public interface Mind {
+        /** Called at the start of each tick, before the fighters tick. */
+        void think(SimWorld w, SimBody self);
+        /** A hit this body dealt or took. */
+        default void hit(SimWorld.Hit h, SimBody self) {}
+    }
 
     public SimBody(Fighter f, Vec3 pos, double health) {
         this.fighter = f;
