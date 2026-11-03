@@ -16,6 +16,13 @@ import java.util.List;
 public final class Clip {
     public record Event(double time, String name) {}
 
+    /**
+     * How the clip meets the ground (the feet level, y = 0). FREE: no rule (air clips).
+     * NO_SINK: no key pose reaches below the ground. PLANTED: every key pose rests on the ground,
+     * so crouches, rolls and lying poses neither float nor sink.
+     */
+    public enum Ground { FREE, NO_SINK, PLANTED }
+
     public final String id;
     public final double length;
     public final boolean loop;
@@ -23,9 +30,11 @@ public final class Clip {
     final Track[] pos = new Track[Bone.COUNT];
     final double[] mask;
     public final List<Event> events;
+    public final Ground ground;
 
-    Clip(String id, double length, boolean loop, Track[] rot, Track[] pos, double[] mask, List<Event> events) {
+    Clip(String id, double length, boolean loop, Track[] rot, Track[] pos, double[] mask, List<Event> events, Ground ground) {
         this.id = id;
+        this.ground = ground;
         this.length = length;
         this.loop = loop;
         System.arraycopy(rot, 0, this.rot, 0, Bone.COUNT);

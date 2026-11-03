@@ -6,6 +6,7 @@ description = "Headless renderer, test-seed gallery and benchmark harness for th
 
 dependencies {
     implementation(project(":engine"))
+    implementation(project(":combat"))
 }
 
 application {

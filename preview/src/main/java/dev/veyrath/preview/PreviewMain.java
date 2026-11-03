@@ -51,6 +51,7 @@ public final class PreviewMain {
             case "falls" -> FallList.run(spec);
             case "light" -> LightProbe.run(spec, opt(args, "--at", "crown"), Integer.parseInt(opt(args, "--half", "3")));
             case "caves" -> CaveProfile.run(spec);
+            case "poses" -> PoseSheet.render(out.resolve("combat"));
             default -> System.out.println("unknown command " + cmd);
         }
     }

@@ -13,7 +13,11 @@ import dev.veyrath.combat.move.Move;
 import dev.veyrath.combat.move.MoveSet;
 import dev.veyrath.combat.rig.Bone;
 import dev.veyrath.combat.rig.Pose;
+import dev.veyrath.combat.rig.Rig;
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -87,5 +91,32 @@ class AnimTest {
             }
         }
         assertTrue(worst < 6, "largest jump at a switch " + worst + " degrees (" + worstName + ")");
+    }
+
+    @Test
+    void groundedClipsNeitherSinkNorFloat() {
+        // Planted clips rest on the ground at every key; between keys the body may drift by at
+        // most a pixel and a half. No-sink clips may leave the ground (hops) but never go below it.
+        ClipLibrary lib = UnarmedClips.library();
+        Pose pose = new Pose();
+        Rig.Solved solved = new Rig.Solved();
+        List<String> bad = new ArrayList<>();
+        int grounded = 0;
+        for (Clip c : lib.all()) {
+            if (c.ground == Clip.Ground.FREE) continue;
+            grounded++;
+            double low = Double.MAX_VALUE, high = -Double.MAX_VALUE;
+            for (double t = 0; t <= c.length + 1e-9; t += 0.25) {
+                c.sample(t, pose);
+                Rig.solve(pose, solved);
+                double y = Rig.lowestPoint(solved) * 16;
+                low = Math.min(low, y);
+                high = Math.max(high, y);
+            }
+            boolean ok = low >= -1.0 && (c.ground != Clip.Ground.PLANTED || high <= 1.5);
+            if (!ok) bad.add(String.format("%s %s lowest point %.2f..%.2f px", c.id, c.ground, low, high));
+        }
+        assertTrue(grounded >= 30, "most clips have a ground rule: " + grounded);
+        assertTrue(bad.isEmpty(), String.join("; ", bad));
     }
 }

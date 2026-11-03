@@ -65,6 +65,20 @@ public final class Rig {
         return new Vec3(-x * cos - z * sin, w.y() / scale, -x * sin + z * cos);
     }
 
+    /** Lowest point of the body's part boxes, in character space (blocks above the feet). */
+    public static double lowestPoint(Solved s) {
+        double low = Double.MAX_VALUE;
+        for (Bone b : Bone.ALL) {
+            if (b == Bone.ROOT) continue;
+            double[] bx = b.box();
+            for (int i = 0; i < 8; i++) {
+                Vec3 local = new Vec3((i & 1) == 0 ? bx[0] : bx[3], (i & 2) == 0 ? bx[1] : bx[4], (i & 4) == 0 ? bx[2] : bx[5]);
+                low = Math.min(low, s.toCharacter(b, local).y());
+            }
+        }
+        return low;
+    }
+
     public static Solved solve(Pose pose) {
         Solved s = new Solved();
         solve(pose, s);

@@ -2,6 +2,8 @@ package dev.veyrath.combat.anim;
 
 import dev.veyrath.combat.math.Vec3;
 import dev.veyrath.combat.rig.Bone;
+import dev.veyrath.combat.rig.Pose;
+import dev.veyrath.combat.rig.Rig;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,6 +24,7 @@ public final class ClipBuilder {
     private final List<Ease>[] posEase;
     private final double[] mask = new double[Bone.COUNT];
     private final List<Clip.Event> events = new ArrayList<>();
+    private Clip.Ground ground = Clip.Ground.FREE;
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     public ClipBuilder(String id, double length) {
@@ -41,6 +44,12 @@ public final class ClipBuilder {
     public static ClipBuilder clip(String id, double length) { return new ClipBuilder(id, length); }
 
     public ClipBuilder loop() { loop = true; return this; }
+
+    /** No key pose reaches below the ground: a key that would is lifted (moves with a hop). */
+    public ClipBuilder noSink() { ground = Clip.Ground.NO_SINK; return this; }
+
+    /** Every key pose rests on the ground: its lowest point is moved to y = 0. */
+    public ClipBuilder planted() { ground = Clip.Ground.PLANTED; return this; }
 
     public ClipBuilder key(double t, PoseSpec pose) { return key(t, pose, Ease.IN_OUT_SINE); }
 
@@ -80,14 +89,47 @@ public final class ClipBuilder {
 
     public ClipBuilder event(double t, String name) { events.add(new Clip.Event(t, name)); return this; }
 
+    /** Spacing of the baked root height for grounded clips (ticks). */
+    static final double GROUND_STEP = 0.25;
+
     public Clip build() {
+        events.sort((a, b) -> Double.compare(a.time(), b.time()));
+        Clip authored = assemble();
+        if (ground == Clip.Ground.FREE) return authored;
+        // Ground contact: bake the root offset every GROUND_STEP ticks, keeping the authored
+        // sideways and forward offsets and setting the height from the pose's lowest point. The
+        // root offset is a translation after the root rotation, so it moves the whole body.
+        int root = Bone.ROOT.ordinal();
+        Track authoredRoot = authored.pos[root];
+        Pose pose = new Pose();
+        Rig.Solved solved = new Rig.Solved();
+        List<double[]> keys = new ArrayList<>();
+        List<Ease> eases = new ArrayList<>();
+        int steps = (int) Math.ceil(length / GROUND_STEP - 1e-9);
+        for (int k = 0; k <= steps; k++) {
+            double t = Math.min(length, k * GROUND_STEP);
+            authored.sample(t, pose);
+            Rig.solve(pose, solved);
+            double low = Rig.lowestPoint(solved);
+            double lift = ground == Clip.Ground.PLANTED ? -low : Math.max(0, -low);
+            Vec3 p = authoredRoot != null ? authoredRoot.sample(t) : Vec3.ZERO;
+            keys.add(new double[]{t, p.x(), p.y() - lift * 16, p.z()}); // model space: y down, pixels
+            eases.add(Ease.LINEAR);
+        }
+        posKeys[root].clear();
+        posKeys[root].addAll(keys);
+        posEase[root].clear();
+        posEase[root].addAll(eases);
+        return assemble();
+    }
+
+    private Clip assemble() {
         Track[] rot = new Track[Bone.COUNT], pos = new Track[Bone.COUNT];
         for (int i = 0; i < Bone.COUNT; i++) {
             rot[i] = track(rotKeys[i], rotEase[i]);
             pos[i] = track(posKeys[i], posEase[i]);
         }
-        events.sort((a, b) -> Double.compare(a.time(), b.time()));
-        return new Clip(id, length, loop, rot, pos, mask, events);
+        return new Clip(id, length, loop, rot, pos, mask, events, ground);
     }
 
     private static Track track(List<double[]> keys, List<Ease> eases) {
