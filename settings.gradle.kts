@@ -17,7 +17,9 @@ rootProject.name = "veyrath"
 
 // Platform-independent world engine (pure Java, no Minecraft dependency).
 include("engine")
-// Headless preview renderer, gallery generator and benchmark harness for the engine.
+// Platform-independent combat core: input, moves, state machine, animation, hit detection.
+include("combat")
+// Headless preview renderer, gallery generator and benchmark harness for the engine and combat.
 include("preview")
 
 // The Fabric mod needs the Minecraft and Fabric maven servers. Builds on machines that

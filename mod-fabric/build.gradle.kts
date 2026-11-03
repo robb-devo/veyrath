@@ -98,9 +98,11 @@ dependencies {
     implementation("net.fabricmc:fabric-loader:${libs.versions.fabric.loader.get()}")
     implementation("net.fabricmc.fabric-api:fabric-api:${libs.versions.fabric.api.get()}")
 
-    // Engine is bundled into the mod jar (jar-in-jar).
+    // Engine and combat core are bundled into the mod jar (jar-in-jar).
     implementation(project(":engine"))
     include(project(":engine"))
+    implementation(project(":combat"))
+    include(project(":combat"))
 
     // Distant Horizons: compile-time only; DH stays optional at runtime. The DH mod jar contains
     // its API classes ("automatically included in the DH mod jar"), and DH 3.3.4-26.3 is a
