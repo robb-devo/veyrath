@@ -98,7 +98,7 @@ public final class VeyrathChunkGenerator extends ChunkGenerator {
         for (int i = 0; i < buf.flowCount; i++) {
             int p = buf.flow[i];
             pos.set(bx + (p & 15), (p >>> 8) + buf.minY, bz + ((p >> 4) & 15));
-            chunk.markPosForPostprocessing(pos);
+            chunk.markPosForPostProcessing(pos);
         }
         Heightmap.primeHeightmaps(chunk, EnumSet.of(Heightmap.Types.OCEAN_FLOOR_WG, Heightmap.Types.WORLD_SURFACE_WG));
         return CompletableFuture.completedFuture(chunk);
