@@ -168,7 +168,7 @@ public final class Tree {
         }
         // Great limbs: each leaves the trunk almost level, then turns upward, and ends in a
         // cluster of leaf masses. Clusters sit at different heights: a layered canopy.
-        int limbs = 4 + r.nextInt(4);
+        int limbs = h > 200 ? 9 + r.nextInt(4) : 4 + r.nextInt(4); // the Elder Tree carries more limbs
         a0 = r.nextDouble() * Math.PI * 2;
         for (int k = 0; k < limbs; k++) {
             double a = a0 + k * Math.PI * 2 / limbs + (r.nextDouble() - 0.5) * 0.7;

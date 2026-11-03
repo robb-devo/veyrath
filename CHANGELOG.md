@@ -64,6 +64,10 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   waterfall (`--at fall:N`), and shows marked water flowing down. The audit counts levee lips,
   rock-topped banks and fall lips; `falls` lists waterfalls and `riftprobe` finds water hanging
   over the Rift.
+- **The Elder Tree**: one colossal landmark tree per realm, 290–330 blocks tall with a 15–18
+  block trunk, on a level, dry Elderbough site away from water. Giants keep 150 blocks away; it
+  shows in Distant Horizons at every distance. `/veyrath tp elder_tree` stands 450 blocks south
+  of it; the seed tour visits it.
 - **Caves** (phase A): winding tunnels, caverns, lava at the very bottom and funnel-shaped
   mouths on hillsides. A crust keeps them away from water; trees keep off the mouths. Preview
   `caves` prints air by depth; `voxel` with `-Dveyrath.cut=N` shows them.

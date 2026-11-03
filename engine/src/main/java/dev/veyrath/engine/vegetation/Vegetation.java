@@ -109,6 +109,7 @@ public final class Vegetation {
     private final WorldSpec spec;
     private final TerrainSampler terrain;
     private final dev.veyrath.engine.cave.Caves caves;
+    private final Tree elderTree;
     private final BiomeSelector biomes;
     private final long seed;
 
@@ -126,6 +127,41 @@ public final class Vegetation {
         this.terrain = terrain;
         this.biomes = biomes;
         this.seed = Hash.derive(spec.seed(), "vegetation");
+        this.elderTree = findElderTree();
+    }
+
+    /** The realm's Elder Tree, or null when the realm has no suitable Elderbough site. */
+    public Tree elderTree() {
+        return elderTree;
+    }
+
+    /**
+     * The Elder Tree stands in the first Elderbough province (atlas order) that has a dry, level
+     * site well away from water: searched outward from the province centre.
+     */
+    private Tree findElderTree() {
+        ColumnInfo c = new ColumnInfo(), n = new ColumnInfo();
+        TerrainSampler.Scratch s = new TerrainSampler.Scratch();
+        for (dev.veyrath.engine.atlas.Province p : terrain.atlas().provinces) {
+            if (p.archetype() != dev.veyrath.engine.region.Archetype.ELDERBOUGH_EXPANSE) continue;
+            for (int r = 0; r <= 600; r += 24) {
+                int steps = Math.max(1, (int) Math.round(2 * Math.PI * r / 24));
+                for (int k = 0; k < steps; k++) {
+                    double ang = 2 * Math.PI * k / steps;
+                    double x = Math.floor(p.x() + r * Math.cos(ang)), z = Math.floor(p.z() + r * Math.sin(ang));
+                    terrain.sample(x + 0.5, z + 0.5, c, s);
+                    if (c.wet() || c.nearLake || c.riverDistance < c.riverHalfWidth + 70 || c.slope > 0.25) continue;
+                    boolean ok = true;
+                    for (int d = 0; d < 12 && ok; d++) {
+                        double a = Math.PI * d / 6;
+                        terrain.sample(x + 0.5 + 34 * Math.cos(a), z + 0.5 + 34 * Math.sin(a), n, s);
+                        ok = !n.wet() && Math.abs(n.ground - c.ground) < 7;
+                    }
+                    if (ok) return Tree.build(TreeKind.ELDER_TREE, (int) x, MathUtil.floor(c.ground) + 1, (int) z, Hash.derive(seed, "elder-tree"));
+                }
+            }
+        }
+        return null;
     }
 
     // ------------------------------------------------------------------ placement
@@ -182,6 +218,7 @@ public final class Vegetation {
                 ? biomes.treeLine(c) + (kind.shape == TreeKind.Shape.CONIFER ? 60 : 0)
                 : biomes.snowLine(c) + 40;
         if (c.ground > treeLine) return null;
+        if (layer == GIANT && elderTree != null && Math.hypot(bx - elderTree.x, bz - elderTree.z) < 150) return null;
         if (layer != GIANT) {
             for (Tree g : giants) {
                 double d = g.trunkRadius * 2.4 + 3; // at most GIANT_CLEARANCE
@@ -226,6 +263,7 @@ public final class Vegetation {
         ctx.giants.clear();
         ctx.trees.clear();
         int m = REACH[TREES] + GIANT_CLEARANCE;
+        addElder(x0 - m, z0 - m, x1 + m, z1 + m, ctx);
         collect(GIANT, x0 - m, z0 - m, x1 + m, z1 + m, ctx.giants, ctx.giants, ctx);
         if (!small) return;
         collect(TREES, x0, z0, x1, z1, ctx.giants, ctx.trees, ctx);
@@ -304,6 +342,12 @@ public final class Vegetation {
         ctx.giants.clear();
         ctx.trees.clear();
         if (step <= 16) treesFor(x0, z0, x1, z1, step <= 2, ctx);
+        else addElder(x0, z0, x1, z1, ctx); // the landmark shows at every distance
+    }
+
+    private void addElder(int x0, int z0, int x1, int z1, Context ctx) {
+        Tree t = elderTree;
+        if (t != null && t.maxX() >= x0 && t.minX() <= x1 && t.maxZ() >= z0 && t.minZ() <= z1) ctx.giants.add(t);
     }
 
     /**

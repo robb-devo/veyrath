@@ -70,7 +70,7 @@ final class VoxelView {
         }
         double ax, az;
         String tag = biomeName.toLowerCase(Locale.ROOT);
-        double placeY = Double.NaN;
+        double placeY = Double.NaN, placeX = 0, placeZ = 0;
         double[] fallCam = null;
         if (at != null && at.startsWith("fall:")) {
             // The n-th waterfall of 20+ blocks, seen from 50 blocks downstream along the river.
@@ -95,8 +95,13 @@ final class VoxelView {
             // A locator target (rift, summit, throne, ...), found from the spawn as /veyrath tp does.
             var place = dev.veyrath.engine.debug.Locator.find(world, at, world.spawnEngineX(), world.spawnEngineZ());
             if (place == null) throw new IllegalStateException("no " + at);
-            ax = place.x();
-            az = place.z();
+            // The area reaches ahead of the camera, in the direction it looks.
+            String dir0 = System.getProperty("veyrath.dir", "e");
+            double fx0 = dir0.equals("e") ? 1 : dir0.equals("w") ? -1 : 0, fz0 = dir0.equals("s") ? 1 : dir0.equals("n") ? -1 : 0;
+            placeX = place.x();
+            placeZ = place.z();
+            ax = place.x() + fx0 * size * 0.3;
+            az = place.z() + fz0 * size * 0.3;
             placeY = place.y();
             tag = at;
         } else if (at != null) {
@@ -186,8 +191,8 @@ final class VoxelView {
         if (!Double.isNaN(placeY)) {
             String dir = System.getProperty("veyrath.dir", "e");
             double ddx = dir.equals("e") ? 1 : dir.equals("w") ? -1 : 0, ddz = dir.equals("s") ? 1 : dir.equals("n") ? -1 : 0;
-            camX = cxw; camZ = czw; camY = placeY + 40 - y0;
-            tx = camX + 100 * ddx; tz = camZ + 100 * ddz; ty = camY - 8;
+            camX = placeX - cx0 * 16.0; camZ = placeZ - cz0 * 16.0; camY = placeY + 40 - y0;
+            tx = camX + 100 * ddx; tz = camZ + 100 * ddz; ty = camY;
         }
         if (fallCam != null) {
             camX = fallCam[0] - cx0 * 16.0; camY = fallCam[1] - y0; camZ = fallCam[2] - cz0 * 16.0;

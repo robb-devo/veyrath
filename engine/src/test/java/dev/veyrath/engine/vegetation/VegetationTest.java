@@ -45,7 +45,7 @@ class VegetationTest {
                 for (Tree t : all) {
                     if (!overlaps(t, bx, bz)) continue;
                     seenBy.merge(key(t), 1, Integer::sum);
-                    if (t.kind == TreeKind.ELDER_GIANT) giants++;
+                    if (t.kind == TreeKind.ELDER_GIANT || t.kind == TreeKind.ELDER_TREE) giants++;
                 }
             }
         }

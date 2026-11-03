@@ -7,6 +7,8 @@ import dev.veyrath.engine.surface.Material;
  * ranges (blocks), so no two trees of a kind are the same.
  */
 public enum TreeKind {
+    /** The Elder Tree: one per realm, a world landmark in the Elderbough (see Vegetation.elderTree). */
+    ELDER_TREE(Shape.GIANT, Material.ELDER_WOOD, Material.ELDER_LEAVES, 290, 330, 15.0, 18.0, 95, 112),
     /** Elderbough giant: buttress roots, a tapering trunk, great limbs and a layered canopy. */
     ELDER_GIANT(Shape.GIANT, Material.ELDER_WOOD, Material.ELDER_LEAVES, 72, 128, 4.0, 7.0, 26, 38),
     /** Younger elder tree of the Elderbough understorey. */
@@ -46,6 +48,7 @@ public enum TreeKind {
 
     /** Upper bound of how far any block of this tree lies from its trunk, horizontally. */
     public int reach() {
+        if (this == ELDER_TREE) return 175;
         return shape == Shape.GIANT ? 56 : (int) Math.ceil(maxCrown * 1.6 + 3);
     }
 

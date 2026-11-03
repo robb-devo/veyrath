@@ -29,7 +29,7 @@ public final class Locator {
 
     /** Target names accepted by {@link #find}. */
     public static List<String> targets() {
-        List<String> t = new ArrayList<>(List.of("spawn", "rift", "rift_rim", "crown", "throne", "summit", "waterfall"));
+        List<String> t = new ArrayList<>(List.of("spawn", "rift", "rift_rim", "crown", "throne", "summit", "waterfall", "elder_tree"));
         for (Archetype a : Archetype.values()) t.add(archetypeTarget(a));
         return t;
     }
@@ -58,6 +58,13 @@ public final class Locator {
                     return stand(terrain, c, s, t, world.spawnEngineX(), world.spawnEngineZ(), "world spawn site");
                 }
                 return stand(terrain, c, s, t, atlas.spawnX, atlas.spawnZ, "realm spawn site (atlas cell)");
+            }
+            case "elder_tree" -> {
+                // 450 blocks south of the trunk: looking north, the whole tree fits the view.
+                var tree = realm.vegetation().elderTree();
+                if (tree == null) return null;
+                return stand(terrain, c, s, t, tree.x + 0.5, tree.z + 450.5,
+                        String.format(Locale.ROOT, "450 blocks south of the Elder Tree (top y%d)", tree.maxY()));
             }
             case "waterfall" -> {
                 // The nearest fall of 20+ blocks, seen from 40 blocks downstream on the river.

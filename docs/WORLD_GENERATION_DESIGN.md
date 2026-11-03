@@ -160,6 +160,7 @@ in order:
 | Floating islands | Implemented | See below |
 | Arches, rock bridges, overhangs | Planned (WP5) | Need 3D volumes |
 | Pillars and spires | Planned (WP5) | Column-separable, cheap |
+| The Elder Tree | In engine (`Vegetation.elderTree`) | One per realm: `TreeKind.ELDER_TREE` (290–330 tall, trunk 15–18, crown 95–112, 9–12 limbs) on the first Elderbough province site that is dry, level within 34 blocks and 70+ blocks from rivers. Giants keep 150 blocks away. Drawn into chunks like any giant and added to LOD columns at every detail level |
 | Caves and cave entrances | Phase A in engine (`cave/Caves`) | Winding tunnels (two 3D fields near zero) and caverns (a third field high) on a 4 x 8 x 4 lattice, within 160 blocks below the surface; lava below y −232. A 6-block crust under the lowest neighbouring ground (14 beside water) keeps every river, lake and sea sealed (audit: 0 leaks). Funnel-shaped mouths up to 40 deep open on hillsides away from water; trees keep off them. About 5–10 % air at 20–160 blocks deep. Not in LOD. Chunk cost +0.3 ms |
 | Waterfalls (river steps, lake outlets, island falls) | Planned (WP2) | — |
 | Colossal trees | Planned (WP4) | World- and regional-tier landmarks |
