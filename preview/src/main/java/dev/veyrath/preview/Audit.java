@@ -30,6 +30,10 @@ final class Audit {
 
     private static final class Stats {
         long chunks, columns, wetColumns, water, waterSideAir, waterBelowAir, lava, lavaLeaks;
+        /** Side-air water split by the air neighbour's column: dry land below the water (bank) or lower water (step). */
+        long sideAirBank, sideAirStep;
+        /** Bank cases by how far the neighbour's ground lies below the water block: 1, 2, 3-5, 6+. */
+        final long[] bankDeficit = new long[4];
         int minGround = Integer.MAX_VALUE, maxGround = Integer.MIN_VALUE;
     }
 
@@ -102,6 +106,9 @@ final class Audit {
             total.waterBelowAir += s.waterBelowAir;
             total.lava += s.lava;
             total.lavaLeaks += s.lavaLeaks;
+            total.sideAirBank += s.sideAirBank;
+            total.sideAirStep += s.sideAirStep;
+            for (int k = 0; k < 4; k++) total.bankDeficit[k] += s.bankDeficit[k];
             total.minGround = Math.min(total.minGround, s.minGround);
             total.maxGround = Math.max(total.maxGround, s.maxGround);
         }
@@ -109,6 +116,13 @@ final class Audit {
         print("rivers", rivers);
         print("lakes", lakes);
         print("sea", sea);
+        System.out.println("side-air water by cause (bank = dry neighbour below the water, step = lower water beside it);");
+        System.out.println("bank deficit = blocks between the water block and the neighbour's ground: 1 / 2 / 3-5 / 6+");
+        for (var e : new Object[][]{{"provinces", total}, {"rivers", rivers}, {"lakes", lakes}, {"sea", sea}}) {
+            Stats s = (Stats) e[1];
+            System.out.printf(Locale.ROOT, "  %-10s bank %6d  step %6d  deficit %d / %d / %d / %d%n", e[0], s.sideAirBank, s.sideAirStep,
+                    s.bankDeficit[0], s.bankDeficit[1], s.bankDeficit[2], s.bankDeficit[3]);
+        }
     }
 
     private static void composeAround(VeyrathWorld.Realm realm, double x, double z, ChunkBuffer[] grid, ChunkComposer.Context ctx) {
@@ -144,7 +158,10 @@ final class Audit {
                     boolean belowAir = c.get(x, y - 1, z) == air;
                     if (m == water) {
                         s.water++;
-                        if (sideAir) s.waterSideAir++;
+                        if (sideAir) {
+                            s.waterSideAir++;
+                            classify(g, x, y, z, s);
+                        }
                         if (belowAir) s.waterBelowAir++;
                     } else {
                         s.lava++;
@@ -153,6 +170,35 @@ final class Audit {
                 }
             }
         }
+    }
+
+    /** Records why a water block at (x, y, z) has air beside it, looking at the first air neighbour. */
+    private static void classify(ChunkBuffer[] g, int x, int y, int z, Stats s) {
+        short air = (short) Material.AIR.ordinal();
+        int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        for (int[] d : dirs) {
+            int nx = x + d[0], nz = z + d[1];
+            if (at(g, nx, y, nz) != air) continue;
+            int[] gf = column(g, nx, nz);
+            if (gf[1] > gf[0]) {
+                s.sideAirStep++;
+            } else {
+                s.sideAirBank++;
+                int deficit = y - gf[0];
+                s.bankDeficit[deficit <= 1 ? 0 : deficit == 2 ? 1 : deficit <= 5 ? 2 : 3]++;
+            }
+            return;
+        }
+    }
+
+    /** {ground, fluidTop} of the column at chunk-local (x, z), reading neighbour chunks when needed. */
+    private static int[] column(ChunkBuffer[] g, int x, int z) {
+        int gx = 1, gz = 1;
+        if (x < 0) { gx = 0; x += 16; } else if (x > 15) { gx = 2; x -= 16; }
+        if (z < 0) { gz = 0; z += 16; } else if (z > 15) { gz = 2; z -= 16; }
+        ChunkBuffer b = g[gz * 3 + gx];
+        int col = (z << 4) | x;
+        return new int[]{b.ground[col], b.fluidTop[col]};
     }
 
     /** Material at chunk-local (x, y, z) of the centre chunk, reading neighbours when x/z leave it. */
