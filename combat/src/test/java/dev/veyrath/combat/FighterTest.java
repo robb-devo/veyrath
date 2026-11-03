@@ -285,4 +285,38 @@ class FighterTest {
         r.run(11);
         assertEquals(Fighter.Phase.IDLE, r.f.phase());
     }
+
+    @Test
+    void clientCopyFollowsTheServerAndReportsAcceptedInputs() {
+        // A client fighter reports each accepted press (what networking sends), a server follower
+        // accepts the same requests, and a server-decided hit applied on the client matches.
+        Fighter client = new Fighter(1, SET, Rules.player());
+        Fighter server = new Fighter(1, SET, Rules.player());
+        InputBuffer in = new InputBuffer();
+        Controls c = new Controls();
+        List<String> sent = new ArrayList<>();
+        client.events(new FighterEvents() {
+            @Override public void accepted(Fighter f, Action a, Move m) {
+                sent.add(a + ":" + (m == null ? "-" : m.id));
+                assertTrue(server.request(a, m == null ? null : m.id, c), "server accepts " + a + " " + (m == null ? null : m.id));
+            }
+        });
+        in.press(Action.LIGHT, client.clock() + 1);
+        for (int i = 0; i < 4; i++) { client.tick(c, in, true); server.tickFollower(true, false); }
+        in.press(Action.LIGHT, client.clock() + 1);
+        for (int i = 0; i < 6; i++) { client.tick(c, in, true); server.tickFollower(true, false); }
+        assertEquals(List.of("LIGHT:jab", "LIGHT:cross"), sent);
+        assertEquals("cross", server.move().id);
+
+        // The server decides a hit on the player; the client applies the same outcome.
+        Fighter enemy = new Fighter(2, SET, Rules.player());
+        Outcome o = server.receive(enemy, HitSpec.of(3).reaction(Reaction.STAGGER).stun(12, 6).hitstop(3).build(), 0, FROM_FRONT);
+        client.applyOutcome(o);
+        assertEquals(server.phase(), client.phase());
+        assertEquals(Reaction.STAGGER, client.reaction());
+        assertEquals(server.hitstop(), client.hitstop());
+
+        client.cancelMove(); // a reaction is not rolled back
+        assertEquals(Fighter.Phase.REACTION, client.phase());
+    }
 }

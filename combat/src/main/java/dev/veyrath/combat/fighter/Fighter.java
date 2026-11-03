@@ -288,13 +288,16 @@ public final class Fighter {
     private void handleCharge(Controls c) {
         if (c.heavyHeld && t < move.chargeMax) return;
         // Released (or fully charged).
+        Move release;
         if (t < set.tapThreshold) {
             chargeLevel = 0;
-            start(set.require(set.heavyTap));
+            release = set.require(set.heavyTap);
         } else {
             chargeLevel = Math.min(1, (t - set.tapThreshold) / (double) Math.max(1, move.chargeMax - set.tapThreshold));
-            start(set.require(set.heavyCharged));
+            release = set.require(set.heavyCharged);
         }
+        start(release);
+        events.chargeReleased(this, release, chargeLevel);
     }
 
     private void updateBlock(boolean held) {
@@ -314,14 +317,17 @@ public final class Fighter {
         in.consume(p);
         if (p.action() == Action.BLOCK) {
             openParry();
+            events.accepted(this, Action.BLOCK, null);
             return;
         }
         Move m = resolve(p.action(), c);
         if (m == null && p.action() == Action.JUMP) {
             acceptGroundJump();
+            events.accepted(this, Action.JUMP, null);
             return;
         }
         execute(m, c);
+        events.accepted(this, p.action(), m);
     }
 
     private boolean canDefend() {
@@ -646,6 +652,60 @@ public final class Fighter {
         }
         if (o.result() != Outcome.Result.PARRIED) hitstop = Math.max(hitstop, o.hitstop());
         events.connected(this, o);
+    }
+
+    // ------------------------------------------------------------------ client side of the authority
+
+    /**
+     * Applies an outcome the server decided for this fighter as the defender (client copy of the
+     * local player): the same state changes {@link #receive} makes, without deciding anything.
+     */
+    public void applyOutcome(Outcome o) {
+        switch (o.result()) {
+            case DODGED -> {
+                if (o.perfect()) gauge = Math.min(rules.gaugeMax, gauge + rules.gaugePerfectDodge);
+            }
+            case PARRIED -> {
+                gauge = Math.min(rules.gaugeMax, gauge + rules.gaugeParry);
+                parryUntil = -1;
+                Move pm = set.get(set.parry);
+                if (pm != null && !(phase == Phase.MOVE && move == pm)) start(pm);
+                hitstop = Math.max(hitstop, o.hitstop());
+            }
+            case BLOCKED -> {
+                Move bh = set.get(set.blockHit);
+                if (bh != null) {
+                    start(bh);
+                    stun = o.hitstun();
+                }
+                hitstop = Math.max(hitstop, o.hitstop());
+            }
+            case GUARD_BREAK -> {
+                stamina = 0;
+                react(Reaction.GUARD_BREAK, o.hitstun(), o.hitstop());
+            }
+            case ARMORED -> hitstop = Math.max(hitstop, o.hitstop());
+            case HIT -> {
+                boolean airborne = !grounded || (phase == Phase.REACTION && reaction == Reaction.LAUNCH);
+                int keep = airborne && o.reaction() == Reaction.LAUNCH ? juggle + 1 : (o.reaction() == Reaction.LAUNCH ? 1 : juggle);
+                react(o.reaction() == null ? Reaction.FLINCH : o.reaction(), o.hitstun(), o.hitstop());
+                juggle = keep;
+            }
+        }
+        events.struck(this, o);
+    }
+
+    /** Ends the current move and returns to idle (a rejected client prediction rolls back). */
+    public void cancelMove() {
+        if (phase == Phase.MOVE && move != null) events.moveEnded(this, move);
+        if (phase != Phase.REACTION) toIdle();
+    }
+
+    /** Takes the server's resource values (the client prediction drifts slowly). */
+    public void syncResources(double stamina, double aether, double gauge) {
+        this.stamina = stamina;
+        this.aether = aether;
+        this.gauge = gauge;
     }
 
     /** Grants resources (debug and tests). */

@@ -14,6 +14,15 @@ public record Outcome(Result result, double damage, Reaction reaction, int hitst
 
     public enum Result { HIT, ARMORED, BLOCKED, GUARD_BREAK, PARRIED, DODGED }
 
+    /**
+     * The attacker's own guess of a contact before the server's outcome arrives (client
+     * prediction): a plain hit with the strike's hit-stop.
+     */
+    public static Outcome predictedHit(dev.veyrath.combat.move.HitSpec spec) {
+        return new Outcome(Result.HIT, spec.damage(), spec.reaction(), spec.hitstun(), spec.hitstop(), null, null,
+                false, false, false, spec.shake(), spec.vfx(), spec.sfx());
+    }
+
     public boolean dealsDamage() { return damage > 0 && result != Result.DODGED && result != Result.PARRIED; }
 
     /** The strike made contact in a way that counts for combos and cancels. */
