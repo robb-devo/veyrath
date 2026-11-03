@@ -40,6 +40,8 @@ final class Audit {
         long lips;
         /** Dry columns beside river or lake water, and how many of them show bare rock on top. */
         long banks, rockBanks;
+        /** Water beside a waterfall column (the lip of a fall into the Rift). */
+        long falls;
         /** Water blocks handed to Minecraft to flow (river steps). */
         long flow;
         int minGround = Integer.MAX_VALUE, maxGround = Integer.MIN_VALUE;
@@ -121,6 +123,7 @@ final class Audit {
             total.lips += s.lips;
             total.banks += s.banks;
             total.rockBanks += s.rockBanks;
+            total.falls += s.falls;
             total.flow += s.flow;
             total.minGround = Math.min(total.minGround, s.minGround);
             total.maxGround = Math.max(total.maxGround, s.maxGround);
@@ -133,9 +136,9 @@ final class Audit {
         System.out.println("bank deficit = blocks between the water block and the neighbour's ground: 1 / 2 / 3-5 / 6+");
         for (var e : new Object[][]{{"provinces", total}, {"rivers", rivers}, {"lakes", lakes}, {"sea", sea}}) {
             Stats s = (Stats) e[1];
-            System.out.printf(Locale.ROOT, "  %-10s bank %6d  step %6d  deficit %d / %d / %d / %d  raised to contain water: %d of %d columns, flow marks %d, levee lips %d, rock-topped banks %d of %d%n",
+            System.out.printf(Locale.ROOT, "  %-10s bank %6d  step %6d  deficit %d / %d / %d / %d  raised to contain water: %d of %d columns, flow marks %d, levee lips %d, rock-topped banks %d of %d, fall lips %d%n",
                     e[0], s.sideAirBank, s.sideAirStep, s.bankDeficit[0], s.bankDeficit[1], s.bankDeficit[2], s.bankDeficit[3],
-                    s.contained, s.columns, s.flow, s.lips, s.rockBanks, s.banks);
+                    s.contained, s.columns, s.flow, s.lips, s.rockBanks, s.banks, s.falls);
         }
     }
 
@@ -204,7 +207,9 @@ final class Audit {
             int nx = x + d[0], nz = z + d[1];
             if (at(g, nx, y, nz) != air) continue;
             int[] gf = column(g, nx, nz);
-            if (gf[1] > gf[0]) {
+            if (gf[2] == 1) {
+                s.falls++;
+            } else if (gf[1] > gf[0]) {
                 s.sideAirStep++;
             } else {
                 s.sideAirBank++;
@@ -243,7 +248,7 @@ final class Audit {
         if (z < 0) { gz = 0; z += 16; } else if (z > 15) { gz = 2; z -= 16; }
         ChunkBuffer b = g[gz * 3 + gx];
         int col = (z << 4) | x;
-        return new int[]{b.ground[col], b.fluidTop[col]};
+        return new int[]{b.ground[col], b.fluidTop[col], b.fall[col] ? 1 : 0};
     }
 
     /** Material at chunk-local (x, y, z) of the centre chunk, reading neighbours when x/z leave it. */

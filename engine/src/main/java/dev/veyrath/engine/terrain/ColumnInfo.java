@@ -38,6 +38,11 @@ public final class ColumnInfo {
     public double volcano;
     /** Lava surface in a volcanic crater, or NaN. */
     public double lava = Double.NaN;
+    /**
+     * The Great Rift cut this column below the river or lake that would cover it. It is kept dry
+     * and never raised to contain water, so the water pours over the lip as a waterfall.
+     */
+    public boolean fall;
 
     public enum WaterKind { NONE, SEA, LAKE, RIVER }
 

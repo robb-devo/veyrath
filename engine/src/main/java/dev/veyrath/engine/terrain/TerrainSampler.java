@@ -255,6 +255,8 @@ public final class TerrainSampler {
         // --- the Great Rift
         out.riftDistance = Double.MAX_VALUE;
         out.riftDepth = 0;
+        out.fall = false;
+        boolean riftCut = false;
         if (riftNet != null) {
             riftNet.nearest(x, z, s.rift);
             if (s.rift.reach >= 0) {
@@ -285,9 +287,16 @@ public final class TerrainSampler {
                     if (wall < h) {
                         out.riftDepth = h - floor;
                         h = wall;
+                        riftCut = true;
                     }
                 }
             }
+        }
+        // A river the Rift cuts from under itself ends at the lip and falls into the Rift.
+        if (riftCut && kind == ColumnInfo.WaterKind.RIVER && water > h + 2.5) {
+            water = Double.NaN;
+            kind = ColumnInfo.WaterKind.NONE;
+            out.fall = true;
         }
 
         // --- volcanoes: proximity and crater lava lakes
@@ -305,7 +314,9 @@ public final class TerrainSampler {
 
         // --- water
         out.nearLake = !Double.isNaN(lakeLevel);
-        if (!Double.isNaN(lakeLevel) && h < lakeLevel) {
+        if (!Double.isNaN(lakeLevel) && h < lakeLevel && riftCut && lakeLevel > h + 2.5) {
+            out.fall = true; // a lake the Rift cuts into spills over the lip instead
+        } else if (!Double.isNaN(lakeLevel) && h < lakeLevel) {
             if (kind == ColumnInfo.WaterKind.NONE || lakeLevel >= water) {
                 water = lakeLevel;
                 kind = ColumnInfo.WaterKind.LAKE;

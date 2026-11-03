@@ -151,7 +151,7 @@ class WorldInvariantsTest {
                             for (int[] d : dirs) {
                                 if (b.get(x + d[0], y, z + d[1]) != air) continue;
                                 int n = ((z + d[1]) << 4) | (x + d[0]);
-                                if (b.fluidTop[n] > b.ground[n]) step++;
+                                if (b.fluidTop[n] > b.ground[n] || b.fall[n]) step++; // steps and falls flow
                                 else bank++;
                                 break;
                             }

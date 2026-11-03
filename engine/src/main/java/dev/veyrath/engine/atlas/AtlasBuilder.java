@@ -1249,6 +1249,7 @@ public final class AtlasBuilder {
             reaches.add(new RiverNetwork.Reach(id, xs, zs, width, level, area, downstream));
         }
         enforceConfluenceLevels(reaches);
+        terraceFalls(reaches);
         return new RiverNetwork(reaches, originX, originZ, size, RIVER_INFLUENCE);
     }
 
@@ -1259,6 +1260,42 @@ public final class AtlasBuilder {
      * then lowered from the confluence downstream. Repeats until stable, because lowering a reach
      * can lower its own mouth below the next reach downstream.
      */
+    /**
+     * Turns steep reaches into pools and waterfalls. Walking upstream from the mouth, the water
+     * stays at the pool level until the smooth profile has risen a fall height above it, then
+     * steps up: a waterfall. The fall height grows with the reach's mean gradient (none on gentle
+     * reaches, up to 34 blocks on the steepest). Levels only drop, so channels are carved, never
+     * built up, and a tributary starts from the main river's terraced level at the junction.
+     * Downstream reaches have lower ids, so processing in id order sees them first.
+     */
+    private static void terraceFalls(List<RiverNetwork.Reach> reaches) {
+        for (RiverNetwork.Reach r : reaches) {
+            int m = r.size();
+            float[] lv = r.level();
+            double length = 0;
+            for (int k = 1; k < m; k++) length += Math.hypot(r.xs()[k] - r.xs()[k - 1], r.zs()[k] - r.zs()[k - 1]);
+            double grad = (lv[0] - lv[m - 1]) / Math.max(1, length);
+            double fall = MathUtil.clamp((grad - 0.012) * 400, 0, 34);
+            if (fall < 6) continue;
+            double pool = lv[m - 1];
+            if (r.downstreamReach() >= 0) {
+                RiverNetwork.Reach d = reaches.get(r.downstreamReach());
+                double mx = r.xs()[m - 1], mz = r.zs()[m - 1], bd = Double.MAX_VALUE;
+                for (int k = 0; k < d.size(); k++) {
+                    double dd = (d.xs()[k] - mx) * (d.xs()[k] - mx) + (d.zs()[k] - mz) * (d.zs()[k] - mz);
+                    if (dd < bd) {
+                        bd = dd;
+                        pool = Math.min(lv[m - 1], d.level()[k]);
+                    }
+                }
+            }
+            for (int k = m - 1; k >= 0; k--) {
+                if (lv[k] > pool + fall) pool = lv[k];
+                lv[k] = (float) pool;
+            }
+        }
+    }
+
     private static void enforceConfluenceLevels(List<RiverNetwork.Reach> reaches) {
         boolean changed = true;
         for (int pass = 0; changed && pass < reaches.size() + 1; pass++) {

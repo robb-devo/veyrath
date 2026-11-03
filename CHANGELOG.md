@@ -60,5 +60,10 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   beds and patches, and grey ash and tuff fields.
 - Gentle slopes get fine grain, so grass shows short irregular steps instead of long contour
   lines.
-- Preview `voxel` takes `--at x,z` (in-game coordinates) or a locator target (`--at rift`), and
-  the audit counts levee lips and rock-topped banks.
+- Preview `voxel` takes `--at x,z` (in-game coordinates), a locator target (`--at rift`) or a
+  waterfall (`--at fall:N`), and shows marked water flowing down. The audit counts levee lips,
+  rock-topped banks and fall lips; `falls` lists waterfalls and `riftprobe` finds water hanging
+  over the Rift.
+- **Waterfalls**: steep river reaches become pools and falls of up to 34 blocks (462 falls on
+  seed 1, 101 of them 20+ blocks). Rivers and lakes that the Rift cuts no longer hang over it as
+  water blocks; they pour over the lip.

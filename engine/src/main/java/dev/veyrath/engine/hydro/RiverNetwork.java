@@ -119,7 +119,10 @@ public final class RiverNetwork {
                 bestEdge = edge;
                 hit.distance = d;
                 hit.width = w;
-                hit.level = MathUtil.lerp(t, r.level[s], r.level[s + 1]);
+                // A segment that drops more than 3 blocks holds a waterfall (AtlasBuilder
+                // terraces steep reaches): the level steps at its midpoint instead of sloping.
+                hit.level = r.level[s] - r.level[s + 1] > 3 ? (t < 0.5 ? r.level[s] : r.level[s + 1])
+                        : MathUtil.lerp(t, r.level[s], r.level[s + 1]);
                 hit.area = MathUtil.lerp(t, r.area[s], r.area[s + 1]);
                 hit.reach = r.id;
                 double len = Math.sqrt(len2);

@@ -99,6 +99,7 @@ public final class ChunkComposer {
                 if (!Double.isNaN(c.lava)) fluidTop = MathUtil.floor(c.lava);
                 else if (c.wet()) fluidTop = MathUtil.floor(c.water) - 1;
                 out.fluidTop[col] = (short) fluidTop;
+                out.fall[col] = c.fall;
                 int topSolid = groundY;
 
                 // Floating islands

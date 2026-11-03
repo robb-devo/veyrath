@@ -22,6 +22,8 @@ public final class ChunkBuffer {
     public final short[] ground = new short[256];
     /** Highest water/lava block per column, or Short.MIN_VALUE. */
     public final short[] fluidTop = new short[256];
+    /** Columns kept dry below a waterfall lip (see {@code ColumnInfo.fall}). */
+    public final boolean[] fall = new boolean[256];
     /** Floating-island solid interval per column, or Short.MIN_VALUE when none. */
     public final short[] islandBottom = new short[256], islandTop = new short[256];
     public int chunkX, chunkZ;

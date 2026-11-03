@@ -71,7 +71,27 @@ final class VoxelView {
         double ax, az;
         String tag = biomeName.toLowerCase(Locale.ROOT);
         double placeY = Double.NaN;
-        if (at != null && !at.matches("-?[0-9].*")) {
+        double[] fallCam = null;
+        if (at != null && at.startsWith("fall:")) {
+            // The n-th waterfall of 20+ blocks, seen from 50 blocks downstream along the river.
+            int wantFall = Integer.parseInt(at.substring(5)), seen = 0;
+            outer:
+            for (var r : realm.atlas().rivers.reaches()) {
+                for (int k = 0; k + 1 < r.size(); k++) {
+                    if (r.level()[k] - r.level()[k + 1] < 20 || seen++ != wantFall) continue;
+                    int j = k + 1;
+                    double run = 0;
+                    while (j + 1 < r.size() && run < 50) { run += Math.hypot(r.xs()[j + 1] - r.xs()[j], r.zs()[j + 1] - r.zs()[j]); j++; }
+                    double fx0 = 0.5 * (r.xs()[k] + r.xs()[k + 1]), fz0 = 0.5 * (r.zs()[k] + r.zs()[k + 1]);
+                    fallCam = new double[]{r.xs()[j], r.level()[k + 1] + 9, r.zs()[j], fx0, 0.5 * (r.level()[k] + r.level()[k + 1]), fz0};
+                    break outer;
+                }
+            }
+            if (fallCam == null) throw new IllegalStateException("no waterfall " + wantFall);
+            ax = 0.5 * (fallCam[0] + fallCam[3]);
+            az = 0.5 * (fallCam[2] + fallCam[5]);
+            tag = at.replace(':', '_');
+        } else if (at != null && !at.matches("-?[0-9].*")) {
             // A locator target (rift, summit, throne, ...), found from the spawn as /veyrath tp does.
             var place = dev.veyrath.engine.debug.Locator.find(world, at, world.spawnEngineX(), world.spawnEngineZ());
             if (place == null) throw new IllegalStateException("no " + at);
@@ -119,6 +139,24 @@ final class VoxelView {
                 for (int y = 0; y < ny; y++) vox[(z * size + x) * ny + y] = b.get(col & 15, y0 + y, col >> 4);
             }
         }
+        // Preview only: let marked water flow straight down beside it, roughly as Minecraft will
+        // once the fluid ticks run, so rapids and waterfalls show up in the render.
+        short waterId = (short) Material.WATER.ordinal(), airId = (short) Material.AIR.ordinal();
+        int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        for (int k = 0; k < n * n; k++) {
+            ChunkBuffer b = chunks[k];
+            int ox = (k % n) * 16, oz = (k / n) * 16;
+            for (int i = 0; i < b.flowCount; i++) {
+                int p = b.flow[i];
+                int x = ox + (p & 15), z = oz + ((p >> 4) & 15), y = (p >>> 8) + b.minY - y0;
+                if (y < 0 || y >= ny) continue;
+                for (int[] d : dirs) {
+                    int nx = x + d[0], nz = z + d[1];
+                    if (nx < 0 || nz < 0 || nx >= size || nz >= size) continue;
+                    for (int yy = y; yy >= 0 && vox[(nz * size + nx) * ny + yy] == airId; yy--) vox[(nz * size + nx) * ny + yy] = waterId;
+                }
+            }
+        }
         int[] pal = palette();
         // Camera: south-east of the area centre, looking north-west and down.
         double cxw = size * 0.5, czw = size * 0.5;
@@ -136,6 +174,10 @@ final class VoxelView {
             double ddx = dir.equals("e") ? 1 : dir.equals("w") ? -1 : 0, ddz = dir.equals("s") ? 1 : dir.equals("n") ? -1 : 0;
             camX = cxw; camZ = czw; camY = placeY + 40 - y0;
             tx = camX + 100 * ddx; tz = camZ + 100 * ddz; ty = camY - 8;
+        }
+        if (fallCam != null) {
+            camX = fallCam[0] - cx0 * 16.0; camY = fallCam[1] - y0; camZ = fallCam[2] - cz0 * 16.0;
+            tx = fallCam[3] - cx0 * 16.0; ty = fallCam[4] - y0; tz = fallCam[5] - cz0 * 16.0;
         }
         // Or an exact in-game camera: veyrath.cam and veyrath.look as world "x,y,z".
         String cam = System.getProperty("veyrath.cam"), look = System.getProperty("veyrath.look");

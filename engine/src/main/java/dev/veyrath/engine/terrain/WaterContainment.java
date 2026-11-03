@@ -36,7 +36,7 @@ public final class WaterContainment {
      * neighbour's fluid is above its ground.
      */
     public static double containedGround(ColumnInfo c, ColumnInfo w, ColumnInfo e, ColumnInfo n, ColumnInfo s) {
-        if (fluidTop(c) != NONE) return c.ground;
+        if (fluidTop(c) != NONE || c.fall) return c.ground;
         int need = Math.max(Math.max(fluidTop(w), fluidTop(e)), Math.max(fluidTop(n), fluidTop(s)));
         if (need == NONE || need <= MathUtil.floor(c.ground)) return c.ground;
         return need + 0.5;

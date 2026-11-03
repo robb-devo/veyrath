@@ -138,7 +138,16 @@ in order:
    has open air beside it.
 10. **Rapids.** Water beside lower water (a step on a sloped river, 0.1–0.3 % of river water) is
    listed in `ChunkBuffer.flow`; the adapter marks those blocks for post-processing, so
-   Minecraft ticks them once and they flow down as small rapids. Tall waterfalls are WP2b.
+   Minecraft ticks them once and they flow down as small rapids.
+11. **Waterfalls.** `AtlasBuilder.terraceFalls` turns steep reaches into pools and falls: walking
+   upstream from the mouth, the level stays flat until the smooth profile is a fall height above
+   it (0 on gentle reaches, up to 34 blocks on the steepest), then steps up. Levels only drop, so
+   gorges are carved, never built up; tributaries start from the main river's terraced level.
+   `RiverNetwork.nearest` puts the step at the segment midpoint, so the bank terrain forms a cliff
+   across the valley and the lip water is listed for a fluid tick (step 10), which makes it pour
+   down. Seed 1 has 462 falls in the spawn realm, 101 of them 20 blocks or taller. A river or
+   lake that the Rift cuts from under itself is cut off at the lip (`ColumnInfo.fall`) and pours
+   into the Rift instead of hanging there as a block of water.
 
 ## Formations
 
