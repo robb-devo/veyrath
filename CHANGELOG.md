@@ -50,3 +50,15 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   there, which left holes in the water.
 - River banks next to lakes now hold the river, and lake-side terrain detail no longer jumps at
   the edge of the lake zone. Bank leaks: 0 on seeds 1–3.
+- River banks are grass, one block above the water, instead of 2-block rock faces. Slopes are
+  now measured on the water surface, not the riverbed. Rock-topped banks fell from 35–51 % to
+  under 10 % of bank columns on seeds 1–3 (audit). Low ground beside a river is raised into a
+  broad bank instead of a one-block lip.
+- Great Rift walls are no longer flat sheets: the wall line wanders in bays and headlands,
+  chutes and buttresses run down the face, ledge heights vary and a scree apron covers the foot.
+- Cliffs show layered rock beds instead of vertical stripes. The Cinderwake gets red scoria
+  beds and patches, and grey ash and tuff fields.
+- Gentle slopes get fine grain, so grass shows short irregular steps instead of long contour
+  lines.
+- Preview `voxel` takes `--at x,z` (in-game coordinates) or a locator target (`--at rift`), and
+  the audit counts levee lips and rock-topped banks.

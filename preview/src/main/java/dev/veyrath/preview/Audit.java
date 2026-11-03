@@ -36,6 +36,10 @@ final class Audit {
         final long[] bankDeficit = new long[4];
         /** Dry columns the composer raised to hold a neighbour's water (see WaterContainment). */
         long contained;
+        /** Dry columns beside water that drop two or more blocks to dry land on another side: a levee lip. */
+        long lips;
+        /** Dry columns beside river or lake water, and how many of them show bare rock on top. */
+        long banks, rockBanks;
         /** Water blocks handed to Minecraft to flow (river steps). */
         long flow;
         int minGround = Integer.MAX_VALUE, maxGround = Integer.MIN_VALUE;
@@ -114,6 +118,9 @@ final class Audit {
             total.sideAirStep += s.sideAirStep;
             for (int k = 0; k < 4; k++) total.bankDeficit[k] += s.bankDeficit[k];
             total.contained += s.contained;
+            total.lips += s.lips;
+            total.banks += s.banks;
+            total.rockBanks += s.rockBanks;
             total.flow += s.flow;
             total.minGround = Math.min(total.minGround, s.minGround);
             total.maxGround = Math.max(total.maxGround, s.maxGround);
@@ -126,9 +133,9 @@ final class Audit {
         System.out.println("bank deficit = blocks between the water block and the neighbour's ground: 1 / 2 / 3-5 / 6+");
         for (var e : new Object[][]{{"provinces", total}, {"rivers", rivers}, {"lakes", lakes}, {"sea", sea}}) {
             Stats s = (Stats) e[1];
-            System.out.printf(Locale.ROOT, "  %-10s bank %6d  step %6d  deficit %d / %d / %d / %d  raised to contain water: %d of %d columns, flow marks %d%n",
+            System.out.printf(Locale.ROOT, "  %-10s bank %6d  step %6d  deficit %d / %d / %d / %d  raised to contain water: %d of %d columns, flow marks %d, levee lips %d, rock-topped banks %d of %d%n",
                     e[0], s.sideAirBank, s.sideAirStep, s.bankDeficit[0], s.bankDeficit[1], s.bankDeficit[2], s.bankDeficit[3],
-                    s.contained, s.columns, s.flow);
+                    s.contained, s.columns, s.flow, s.lips, s.rockBanks, s.banks);
         }
     }
 
@@ -158,6 +165,14 @@ final class Audit {
                 s.minGround = Math.min(s.minGround, c.ground[col]);
                 s.maxGround = Math.max(s.maxGround, c.ground[col]);
                 if (c.fluidTop[col] > c.ground[col]) s.wetColumns++;
+                else {
+                    if (isLip(g, x, z)) s.lips++;
+                    if (besideWater(g, x, z)) {
+                        s.banks++;
+                        Material topM = Material.byId(c.get(x, c.ground[col], z));
+                        if (!topM.isSoil() && topM != Material.SAND && topM != Material.GRAVEL && topM != Material.SNOW) s.rockBanks++;
+                    }
+                }
                 int top = Math.max(c.topSolid[col], c.fluidTop[col]);
                 for (int y = spec.minY() + 1; y <= top; y++) {
                     short m = c.get(x, y, z);
@@ -198,6 +213,27 @@ final class Audit {
             }
             return;
         }
+    }
+
+    private static boolean besideWater(ChunkBuffer[] g, int x, int z) {
+        int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        for (int[] d : dirs) {
+            int[] n = column(g, x + d[0], z + d[1]);
+            if (n[1] > n[0]) return true;
+        }
+        return false;
+    }
+
+    private static boolean isLip(ChunkBuffer[] g, int x, int z) {
+        int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        int ground = column(g, x, z)[0];
+        boolean wetSide = false, drop = false;
+        for (int[] d : dirs) {
+            int[] n = column(g, x + d[0], z + d[1]);
+            if (n[1] > n[0]) wetSide = true;
+            else if (n[0] <= ground - 2) drop = true;
+        }
+        return wetSide && drop;
     }
 
     /** {ground, fluidTop} of the column at chunk-local (x, z), reading neighbour chunks when needed. */

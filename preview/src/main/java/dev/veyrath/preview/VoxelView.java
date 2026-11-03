@@ -14,6 +14,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Locale;
 import java.util.stream.IntStream;
 
@@ -53,7 +54,7 @@ final class VoxelView {
         return c;
     }
 
-    static void render(WorldSpec spec, Path out, String biomeName, int size, int width, double dist, double elev) throws IOException {
+    static void render(WorldSpec spec, Path out, String biomeName, int size, int width, double dist, double elev, String at) throws IOException {
         VeyrathWorld world = new VeyrathWorld(spec, AtlasBuilder.Progress.NONE);
         VeyrathWorld.Realm realm = world.realm(0, 0);
         VBiome want = VBiome.valueOf(biomeName.toUpperCase(Locale.ROOT));
@@ -61,14 +62,35 @@ final class VoxelView {
         Province prov = null;
         dev.veyrath.engine.terrain.ColumnInfo c = new dev.veyrath.engine.terrain.ColumnInfo();
         var scratch = new dev.veyrath.engine.terrain.TerrainSampler.Scratch();
-        for (Province p : realm.atlas().provinces) {
+        for (Province p : at != null ? List.<Province>of() : realm.atlas().provinces) {
             if (p.archetype() != arch) continue;
             if (prov == null) prov = p;
             realm.terrain().sample(p.x(), p.z(), c, scratch);
             if (realm.biomes().select(c, c.slope) == want) { prov = p; break; }
         }
-        if (prov == null) throw new IllegalStateException("no province of " + arch);
-        int cx0 = (int) Math.floor(prov.x() / 16) - size / 32, cz0 = (int) Math.floor(prov.z() / 16) - size / 32;
+        double ax, az;
+        String tag = biomeName.toLowerCase(Locale.ROOT);
+        double placeY = Double.NaN;
+        if (at != null && !at.matches("-?[0-9].*")) {
+            // A locator target (rift, summit, throne, ...), found from the spawn as /veyrath tp does.
+            var place = dev.veyrath.engine.debug.Locator.find(world, at, world.spawnEngineX(), world.spawnEngineZ());
+            if (place == null) throw new IllegalStateException("no " + at);
+            ax = place.x();
+            az = place.z();
+            placeY = place.y();
+            tag = at;
+        } else if (at != null) {
+            String[] xz = at.split(",");
+            // In-game (world) block coordinates, as the F3 screen and /tp show them.
+            ax = Double.parseDouble(xz[0]) + world.originX();
+            az = Double.parseDouble(xz[1]) + world.originZ();
+            tag = "at_" + xz[0] + "_" + xz[1];
+        } else {
+            if (prov == null) throw new IllegalStateException("no province of " + arch);
+            ax = prov.x();
+            az = prov.z();
+        }
+        int cx0 = (int) Math.floor(ax / 16) - size / 32, cz0 = (int) Math.floor(az / 16) - size / 32;
         int n = size / 16;
         ChunkBuffer[] chunks = new ChunkBuffer[n * n];
         IntStream.range(0, n * n).parallel().forEach(k -> {
@@ -103,8 +125,26 @@ final class VoxelView {
         int centreCol = (size / 2) * size + size / 2;
         int gy = 0;
         while (gy < ny - 1 && Material.byId(vox[centreCol * ny + gy]).isSolid()) gy++;
-        double camX = cxw + size * dist, camZ = czw + size * dist, camY = gy + size * elev;
-        double tx = cxw - size * 0.05, tz = czw - size * 0.05, ty = gy + 20;
+        // Camera corner from the system property veyrath.from: se (default), sw, ne or nw.
+        String from = System.getProperty("veyrath.from", "se");
+        double fsx = from.endsWith("w") ? -1 : 1, fsz = from.startsWith("n") ? -1 : 1;
+        double camX = cxw + size * dist * fsx, camZ = czw + size * dist * fsz, camY = gy + size * elev;
+        double tx = cxw - size * 0.05 * fsx, tz = czw - size * 0.05 * fsz, ty = gy + 20;
+        // At a locator target: the tour's camera, 40 blocks above it, looking along veyrath.dir.
+        if (!Double.isNaN(placeY)) {
+            String dir = System.getProperty("veyrath.dir", "e");
+            double ddx = dir.equals("e") ? 1 : dir.equals("w") ? -1 : 0, ddz = dir.equals("s") ? 1 : dir.equals("n") ? -1 : 0;
+            camX = cxw; camZ = czw; camY = placeY + 40 - y0;
+            tx = camX + 100 * ddx; tz = camZ + 100 * ddz; ty = camY - 8;
+        }
+        // Or an exact in-game camera: veyrath.cam and veyrath.look as world "x,y,z".
+        String cam = System.getProperty("veyrath.cam"), look = System.getProperty("veyrath.look");
+        if (cam != null && look != null) {
+            String[] c3 = cam.split(","), l3 = look.split(",");
+            double ox = world.originX() - cx0 * 16.0, oz = world.originZ() - cz0 * 16.0;
+            camX = Double.parseDouble(c3[0]) + ox; camY = Double.parseDouble(c3[1]) - y0; camZ = Double.parseDouble(c3[2]) + oz;
+            tx = Double.parseDouble(l3[0]) + ox; ty = Double.parseDouble(l3[1]) - y0; tz = Double.parseDouble(l3[2]) + oz;
+        }
         double fx = tx - camX, fy = ty - camY, fz = tz - camZ, fl = Math.sqrt(fx * fx + fy * fy + fz * fz);
         fx /= fl; fy /= fl; fz /= fl;
         double rx = -fz, rz = fx, rl = Math.hypot(rx, rz);
@@ -138,10 +178,9 @@ final class VoxelView {
                 img.setRGB(px, py, rgb);
             }
         });
-        Path file = out.resolve(String.format(Locale.ROOT, "seed%d_voxel_%s.png", spec.seed(), want.id));
+        Path file = out.resolve(String.format(Locale.ROOT, "seed%d_voxel_%s.png", spec.seed(), at != null ? tag : want.id));
         ImageIO.write(img, "png", file.toFile());
-        System.out.printf(Locale.ROOT, "%s: %s province at engine %.0f %.0f, area %d blocks, y%d..y%d%n",
-                file, arch.displayName, prov.x(), prov.z(), size, y0, y0 + ny - 1);
+        System.out.printf(Locale.ROOT, "%s: centre %.0f %.0f, area %d blocks, y%d..y%d%n", file, ax, az, size, y0, y0 + ny - 1);
     }
 
     private static int colour(Material m, int[] pal, int grass, int foliage, int water) {

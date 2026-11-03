@@ -58,8 +58,8 @@ public final class TerrainSampler {
 
     private final RealmAtlas atlas;
     private final WorldSpec spec;
-    private final Fractal ridged, erosive, rough, strataStep, mesa;
-    private final dev.veyrath.engine.math.GullyNoise gully1, gully2, gully3;
+    private final Fractal ridged, erosive, rough, grain, strataStep, mesa, riftJag;
+    private final dev.veyrath.engine.math.GullyNoise gully1, gully2, gully3, riftChute;
     private final DomainWarp detailWarp;
     private final RiverNetwork riftNet;
     private final double sea;
@@ -82,8 +82,11 @@ public final class TerrainSampler {
         ridged = new Fractal(Hash.derive(s, "ridged"), 640, 5, 2.05, 0.5);
         erosive = new Fractal(Hash.derive(s, "erosive"), 360, 5, 2.0, 0.5);
         rough = new Fractal(Hash.derive(s, "rough"), 48, 3, 2.1, 0.5);
+        grain = new Fractal(Hash.derive(s, "grain"), 13, 2, 2.3, 0.45);
         strataStep = new Fractal(Hash.derive(s, "strata"), 900, 2, 2.0, 0.5);
         mesa = new Fractal(Hash.derive(s, "mesa"), 220, 3, 2.0, 0.5);
+        riftJag = new Fractal(Hash.derive(s, "rift-jag"), 110, 3, 2.1, 0.5);
+        riftChute = new dev.veyrath.engine.math.GullyNoise(Hash.derive(s, "rift-chute"), 90, 26);
         detailWarp = new DomainWarp(Hash.derive(s, "detail-warp"), 500, 2, 90);
         gully1 = new dev.veyrath.engine.math.GullyNoise(Hash.derive(s, "gully1"), 150, 84);
         gully2 = new dev.veyrath.engine.math.GullyNoise(Hash.derive(s, "gully2"), 64, 34);
@@ -186,6 +189,9 @@ public final class TerrainSampler {
         double crag = MathUtil.smoothstep(380, 640, e) * rug;
         if (crag > 0.01) h += (ridged.ridged(wx, wz, 2.0) - 0.4) * 46 * crag * calm;
         h += rough.fbm(x, z) * (0.6 + 1.8 * rug + 2.0 * sl) * calm;
+        // Fine grain on gentle ground breaks the long, map-like contour steps of smooth slopes
+        // into short irregular ones. Fades out on steep ground, where it is not needed.
+        h += grain.fbm(x, z) * 1.1 * calm * (1 - MathUtil.smoothstep(0.5, 1.2, sl));
 
         // --- strata terraces (flat treads, steep risers); stronger on high ground
         double st = strata * MathUtil.smoothstep(sea + 30, sea + 140, h);
@@ -232,11 +238,17 @@ public final class TerrainSampler {
                 kind = ColumnInfo.WaterKind.RIVER;
             } else if (d < hw + bank) {
                 double t = (d - hw) / bank;
-                double target = level + 1.0 + (h - level - 1.0) * MathUtil.smoothstep(0, 1, t);
+                // The bank top starts one block above the water, as in vanilla rivers.
+                double target = level + 0.05 + (h - level - 0.05) * MathUtil.smoothstep(0, 1, t);
                 h = Math.min(h, target);
-                // Never leave dry ground below the water level right beside the channel, unless
-                // a lake drowns this stretch of river (lake level at or above the river's).
-                if (t < 0.25 && !(lakeLevel > level - 1.0)) h = Math.max(h, level + 0.6);
+            }
+            // Never leave dry ground below the water level beside the channel, unless a lake
+            // drowns this stretch of river (lake level at or above the river's). Low ground is
+            // raised into a broad bank that falls away at about 1 in 2.5, so a river never runs
+            // on a one-block lip with a cliff behind it. Sea floor is left to the sea.
+            if (d >= hw && h >= sea - 1 && !(lakeLevel > level - 1.0)) {
+                double berm = level + 0.6 - 0.4 * Math.max(0, d - hw - 1.5);
+                if (berm > h) h = berm;
             }
         }
 
@@ -247,7 +259,11 @@ public final class TerrainSampler {
             riftNet.nearest(x, z, s.rift);
             if (s.rift.reach >= 0) {
                 double hw = s.rift.width * 0.5;
-                double d = s.rift.distance;
+                // The wall line wanders in bays and headlands, and chutes and buttresses run
+                // down the face, so the walls read as eroded cliffs instead of one smooth sheet.
+                double jag = 16 * riftJag.fbm(x, z)
+                        + 9 * shapeGully(riftChute.sample(x, z, -s.rift.dirZ, s.rift.dirX));
+                double d = s.rift.distance + jag;
                 double floor = s.rift.level;
                 out.riftDistance = d - hw;
                 if (h > floor) {
@@ -255,14 +271,16 @@ public final class TerrainSampler {
                     if (d < hw) {
                         wall = floor + 1.5 * mesa.fbm(x * 2, z * 2) + 1.5;
                     } else {
-                        // Near-vertical walls (about 80 degrees) with strata ledges.
+                        // Near-vertical walls (about 80 degrees) with strata ledges of varying
+                        // height, above a scree apron that hides the hard corner at the foot.
                         double t = d - hw;
-                        wall = floor + t * 6.0;
-                        double step = 22;
-                        double q = (wall - floor) / step;
+                        double apron = 7 + 5 * rough.fbm(x * 0.5, z * 0.5);
+                        double cliff = Math.max(0, t - apron) * 6.0;
+                        double step = 23 + 8 * strataStep.fbm(x * 3, z * 3);
+                        double q = cliff / step;
                         double k = Math.floor(q);
                         double f = q - k;
-                        wall = floor + (k + MathUtil.smoothstep(0.25, 0.75, f)) * step;
+                        wall = floor + Math.max(0.65 * t, (k + MathUtil.smoothstep(0.25, 0.75, f)) * step);
                     }
                     if (wall < h) {
                         out.riftDepth = h - floor;

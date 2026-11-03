@@ -44,4 +44,13 @@ public final class ColumnInfo {
     public boolean wet() {
         return !Double.isNaN(water) && water > ground;
     }
+
+    /**
+     * Height of the column's top surface: the water or lava surface over a wet column, else the
+     * ground. Slopes are measured on this, so a bank beside a deep river is not painted as a cliff.
+     */
+    public double surface() {
+        if (!Double.isNaN(lava)) return Math.max(ground, lava);
+        return wet() ? water : ground;
+    }
 }

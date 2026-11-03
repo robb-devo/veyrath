@@ -41,7 +41,7 @@ public final class PreviewMain {
             case "view" -> Views.render(spec, out, Integer.parseInt(opt(args, "--width", "1600")));
             case "voxel" -> VoxelView.render(spec, out, opt(args, "--biome", "elderwood"), Integer.parseInt(opt(args, "--size", "256")),
                     Integer.parseInt(opt(args, "--width", "1280")),
-                    Double.parseDouble(opt(args, "--dist", "0.42")), Double.parseDouble(opt(args, "--elev", "0.32")));
+                    Double.parseDouble(opt(args, "--dist", "0.42")), Double.parseDouble(opt(args, "--elev", "0.32")), opt(args, "--at", null));
             case "bench" -> {
                 try { Bench.run(spec); } catch (Exception e) { throw new RuntimeException(e); }
             }

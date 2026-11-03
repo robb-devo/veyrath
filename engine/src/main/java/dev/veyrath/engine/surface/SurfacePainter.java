@@ -108,8 +108,8 @@ public final class SurfacePainter {
             case MOSSDEEP_HOLLOWS -> n > 0.0 ? Material.MOSS : Material.MUD;
             case PRISMMERE_SHORES -> n > 0.3 ? Material.CALCITE : Material.GRASS;
             case SHARDFIELDS -> n > 0.0 ? Material.CRYSTAL_STONE : Material.CALCITE;
-            case CINDER_PEAKS -> n > 0.2 ? Material.BASALT : Material.ASH;
-            case ASHEN_WASTES -> n > 0.55 ? Material.BLACKSTONE : Material.ASH;
+            case CINDER_PEAKS -> n > 0.2 ? Material.BASALT : (n < -0.45 ? Material.STRATA_RED : Material.ASH);
+            case ASHEN_WASTES -> n > 0.55 ? Material.BLACKSTONE : (n < -0.3 ? Material.GRAVEL : (n < 0.0 ? Material.TUFF : Material.ASH));
             case EMBERVEIN_FLATS -> n > 0.45 ? Material.MAGMA : Material.BLACKSTONE;
             case CHARWOOD -> n > 0.1 ? Material.COARSE_DIRT : Material.ASH;
             case GLOAMREED_MARSH, GLOWMIRE -> n > 0.15 ? Material.MUD : Material.GRASS;
@@ -135,14 +135,25 @@ public final class SurfacePainter {
     public Material rockAt(ColumnInfo c, int y, double mix) {
         if (y < -64) return mix > 0.55 ? Material.TUFF : Material.DEEPSLATE;
         if (y < 0 && mix * 32 + y < -16) return Material.DEEPSLATE;
+        if (c.archetype == Archetype.VESPERFALL_RIFTLANDS) return strata(c, y);
+        // Rock types follow gently warped beds as well as the 2D mix, so a cliff shows lenses
+        // and layers instead of vertical stripes.
+        double m = mix + bed(y, mix);
         return switch (c.archetype) {
-            case VESPERFALL_RIFTLANDS -> strata(c, y);
-            case CINDERWAKE_DOMINION -> mix > 0.25 ? Material.BLACKSTONE : (mix < -0.5 ? Material.OBSIDIAN : Material.BASALT);
-            case PRISMMERE_WILDS -> mix > 0.45 ? Material.CRYSTAL_STONE : (mix < -0.45 ? Material.AMETHYST : Material.CALCITE);
-            case AETHERCROWN_HIGHLANDS -> mix > 0.4 ? Material.ANDESITE : (mix < -0.55 ? Material.DIORITE : Material.STONE);
-            case GLOAMREED_FEN -> mix > 0.5 ? Material.TUFF : Material.STONE;
-            default -> mix > 0.55 ? Material.ANDESITE : (mix < -0.6 ? Material.GRANITE : Material.STONE);
+            case CINDERWAKE_DOMINION -> m > 0.3 ? Material.BLACKSTONE : m < -0.55 ? Material.OBSIDIAN
+                    : m < -0.25 ? Material.STRATA_RED : Material.BASALT; // red scoria beds in the basalt
+            case PRISMMERE_WILDS -> m > 0.45 ? Material.CRYSTAL_STONE : (m < -0.45 ? Material.AMETHYST : Material.CALCITE);
+            case AETHERCROWN_HIGHLANDS -> m > 0.4 ? Material.ANDESITE : (m < -0.55 ? Material.DIORITE : Material.STONE);
+            case GLOAMREED_FEN -> m > 0.5 ? Material.TUFF : Material.STONE;
+            default -> m > 0.55 ? Material.ANDESITE : (m < -0.6 ? Material.GRANITE : Material.STONE);
         };
+    }
+
+    /** Offset of the rock-type threshold for the 4-block bed at height y (about +-0.3). */
+    private double bed(int y, double mix) {
+        int band = MathUtil.floor((y + mix * 9) * 0.25);
+        long h = Hash.hash(seed ^ 0x1A7E2L, band);
+        return ((h >>> 11) * 0x1.0p-53 - 0.5) * 0.6;
     }
 
     private Material strata(ColumnInfo c, int y) {

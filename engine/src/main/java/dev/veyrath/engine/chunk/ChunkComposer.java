@@ -74,8 +74,8 @@ public final class ChunkComposer {
         for (int z = 0; z < 16; z++) {
             for (int x = 0; x < 16; x++) {
                 int i = (z + 1) * 18 + (x + 1), col = (z << 4) | x;
-                double gx = (g[i + 1].ground - g[i - 1].ground) * 0.5;
-                double gz = (g[i + 18].ground - g[i - 18].ground) * 0.5;
+                double gx = (g[i + 1].surface() - g[i - 1].surface()) * 0.5;
+                double gz = (g[i + 18].surface() - g[i - 18].surface()) * 0.5;
                 ctx.slope[col] = Math.sqrt(gx * gx + gz * gz);
                 ctx.ground[col] = WaterContainment.containedGround(g[i], g[i - 1], g[i + 1], g[i - 18], g[i + 18]);
                 if (ctx.ground[col] != g[i].ground) out.containedColumns++;

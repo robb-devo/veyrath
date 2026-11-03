@@ -124,7 +124,7 @@ public final class LodSampler {
                 ColumnInfo c = ctx.grid[(j + 1) * gw + (i + 1)];
                 ColumnInfo w = ctx.grid[(j + 1) * gw + i], e = ctx.grid[(j + 1) * gw + i + 2];
                 ColumnInfo n = ctx.grid[j * gw + i + 1], s = ctx.grid[(j + 2) * gw + i + 1];
-                double gx = (e.ground - w.ground) / (2.0 * step), gz = (s.ground - n.ground) / (2.0 * step);
+                double gx = (e.surface() - w.surface()) / (2.0 * step), gz = (s.surface() - n.surface()) / (2.0 * step);
                 ctx.slope[k] = Math.sqrt(gx * gx + gz * gz);
                 ctx.lowest[k] = Math.min(Math.min(w.ground, e.ground), Math.min(n.ground, s.ground));
                 ctx.ground[k] = WaterContainment.containedGround(c, w, e, n, s);
