@@ -18,6 +18,7 @@ import dev.veyrath.mod.VeyrathMod;
 import dev.veyrath.mod.mixin.EntityInvoker;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
@@ -27,7 +28,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -402,7 +402,7 @@ public final class CombatServer {
     }
 
     static boolean canStrike(LivingEntity attacker, LivingEntity t) {
-        if (t == attacker || !t.isAlive() || t.isSpectator() || !t.isAttackable() || t.getType() == EntityType.ARMOR_STAND) return false;
+        if (t == attacker || !t.isAlive() || t.isSpectator() || !t.isAttackable() || t instanceof ArmorStand) return false;
         return !attacker.isAlliedTo(t) && !t.isAlliedTo(attacker);
     }
 

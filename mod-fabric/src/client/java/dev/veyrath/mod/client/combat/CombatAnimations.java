@@ -2,6 +2,7 @@ package dev.veyrath.mod.client.combat;
 
 import net.fabricmc.fabric.api.client.rendering.v1.FabricRenderState;
 import net.fabricmc.fabric.api.client.rendering.v1.RenderStateDataKey;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -68,8 +69,10 @@ public final class CombatAnimations {
 
     /** Combat stance is unarmed in Chapter 02: no held item, no item arm poses. */
     private static void hideHeldItems(ArmedEntityRenderState s) {
-        s.rightHandItem.clear();
-        s.leftHandItem.clear();
+        s.rightHandItemState.clear();
+        s.rightHandItemStack = ItemStack.EMPTY;
+        s.leftHandItemState.clear();
+        s.leftHandItemStack = ItemStack.EMPTY;
         s.rightArmPose = HumanoidModel.ArmPose.EMPTY;
         s.leftArmPose = HumanoidModel.ArmPose.EMPTY;
     }

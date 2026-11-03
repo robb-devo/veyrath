@@ -21,7 +21,7 @@ public final class CombatCommands {
                     ctx.getSource().sendSuccess(() -> Component.literal(s), false);
                     return 1;
                 }))
-                .then(Commands.literal("refill").requires(src -> src.getServer().isSingleplayer()).executes(ctx -> {
+                .then(Commands.literal("refill").requires(src -> src.getServer() != null && src.getServer().isSingleplayer()).executes(ctx -> {
                     ServerPlayer p = ctx.getSource().getPlayerOrException();
                     if (!CombatServer.refill(p)) {
                         ctx.getSource().sendFailure(Component.literal("Enter combat stance first (Z)."));

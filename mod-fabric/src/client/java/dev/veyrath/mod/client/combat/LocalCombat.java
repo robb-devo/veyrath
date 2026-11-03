@@ -19,6 +19,7 @@ import dev.veyrath.mod.VeyrathMod;
 import dev.veyrath.mod.combat.CombatContent;
 import dev.veyrath.mod.combat.CombatNet;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
@@ -27,7 +28,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -127,7 +127,7 @@ public final class LocalCombat {
         LocalPlayer p = mc.player;
         if (p == null || !canFight(p)) return;
         if (!ClientPlayNetworking.canSend(CombatNet.StanceC2S.TYPE)) {
-            p.displayClientMessage(Component.literal("This server does not run VEYRATH combat."), true);
+            p.sendOverlayMessage(Component.literal("This server does not run VEYRATH combat."));
             return;
         }
         stance = true;
@@ -148,7 +148,7 @@ public final class LocalCombat {
         p.setSprinting(false);
         setModifier(p, Attributes.STEP_HEIGHT, STEP_ID, 0.45, AttributeModifier.Operation.ADD_VALUE);
         send(new CombatNet.StanceC2S(true));
-        p.displayClientMessage(Component.translatable("veyrath.combat.stance_on"), true);
+        p.sendOverlayMessage(Component.translatable("veyrath.combat.stance_on"));
     }
 
     static void exit(Minecraft mc, boolean tellServer) {
@@ -161,7 +161,7 @@ public final class LocalCombat {
             if (!p.isRemoved()) {
                 p.setYRot(ActionCamera.yaw());
                 p.setXRot(ActionCamera.pitch());
-                p.displayClientMessage(Component.translatable("veyrath.combat.stance_off"), true);
+                p.sendOverlayMessage(Component.translatable("veyrath.combat.stance_off"));
             }
         }
         if (previousCamera != null) mc.options.setCameraType(previousCamera);
@@ -332,7 +332,7 @@ public final class LocalCombat {
     }
 
     static boolean canTarget(LivingEntity self, LivingEntity e) {
-        return e != self && e.isAlive() && !e.isSpectator() && e.isAttackable() && e.getType() != EntityType.ARMOR_STAND
+        return e != self && e.isAlive() && !e.isSpectator() && e.isAttackable() && !(e instanceof ArmorStand)
                 && !self.isAlliedTo(e) && !e.isAlliedTo(self);
     }
 
@@ -407,7 +407,7 @@ public final class LocalCombat {
             }
         }
         lockId = best == null ? -1 : best.getId();
-        if (best != null) p.displayClientMessage(Component.translatable("veyrath.combat.locked", best.getDisplayName()), true);
+        if (best != null) p.sendOverlayMessage(Component.translatable("veyrath.combat.locked", best.getDisplayName()));
     }
 
     // ------------------------------------------------------------------ helpers

@@ -4,6 +4,7 @@ import dev.veyrath.combat.fighter.Outcome;
 import dev.veyrath.mod.client.combat.CombatClient;
 import dev.veyrath.mod.client.combat.LocalCombat;
 import dev.veyrath.mod.combat.CombatServer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
@@ -12,7 +13,8 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Options;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +62,7 @@ public final class CombatGameTest implements FabricClientGameTest {
             shot(context, "c01_stance", true);
 
             groundString(context, sp, y);
+            logFighter(context, "before launcher");
             launcherJuggle(context, sp, y);
             guard(context, sp, y);
             abilities(context, sp, y);
@@ -114,7 +117,11 @@ public final class CombatGameTest implements FabricClientGameTest {
         double peak = 0;
         tap(context, ATTACK, 3);
         tap(context, ATTACK, 4);
+        int huskId = sp.getServer().computeOnServer(s -> tagged(s, "vt_air").getId());
+        startYTrace(huskId);
+        logFighter(context, "after jab+cross");
         tap(context, USE, 5);
+        logFighter(context, "after launcher press");
         shot(context, "c05_launcher", false);
         tap(context, JUMP, 5);
         peak = Math.max(peak, height(sp, "vt_air", y));
@@ -128,6 +135,7 @@ public final class CombatGameTest implements FabricClientGameTest {
             peak = Math.max(peak, height(sp, "vt_air", y));
             context.waitTick();
         }
+        LOG.info("launcher juggle: husk client Y per tick for {} ticks after the launcher: {}", Y_TRACE_TICKS, yTraceLine());
         float after = health(sp, "vt_air");
         LOG.info("launcher juggle: husk health {} -> {}, peak height {} blocks", before, after, String.format(Locale.ROOT, "%.2f", peak));
         check(peak > 1.5, "the launcher lifts the husk more than 1.5 blocks (" + String.format(Locale.ROOT, "%.2f", peak) + ")");
@@ -170,7 +178,10 @@ public final class CombatGameTest implements FabricClientGameTest {
         int[] impact = {8, 5, 7};
         for (int i = 0; i < 3; i++) {
             final int k = i;
-            tap(context, o -> o.keyHotbarSlots[k], impact[i]);
+            logFighter(context, "before " + names[i]);
+            tap(context, o -> o.keyHotbarSlots[k], 1);
+            logFighter(context, "1 tick after " + names[i]);
+            context.waitTicks(impact[i] - 1);
             shot(context, names[i], true);
             context.waitTicks(30);
             LOG.info("{}: group health {}", names[i], groupHealth(sp));
@@ -179,7 +190,10 @@ public final class CombatGameTest implements FabricClientGameTest {
         }
         server.runCommand("execute as @p run veyrath combat refill");
         context.waitTicks(2);
-        tap(context, o -> o.keyHotbarSlots[3], 28);
+        logFighter(context, "before ultimate");
+        tap(context, o -> o.keyHotbarSlots[3], 1);
+        logFighter(context, "1 tick after ultimate");
+        context.waitTicks(27);
         shot(context, "c11_ultimate_barrage", true);
         context.waitTicks(20);
         shot(context, "c12_ultimate_finisher", true);
@@ -194,6 +208,49 @@ public final class CombatGameTest implements FabricClientGameTest {
         return String.format(Locale.ROOT, "summon minecraft:%s %.2f %d %.2f %s", type, x, y, z, nbt);
     }
 
+    /** Client-side Y of one entity, sampled at the end of every client tick (tags are not synced, so by id). */
+    private static final int Y_TRACE_TICKS = 40;
+    private static final List<Double> Y_TRACE = new ArrayList<>();
+    private static int yTraceId = -1;
+    private static boolean yTraceRegistered;
+
+    private static void startYTrace(int entityId) {
+        synchronized (Y_TRACE) {
+            Y_TRACE.clear();
+            yTraceId = entityId;
+        }
+        if (!yTraceRegistered) {
+            yTraceRegistered = true;
+            ClientTickEvents.END_CLIENT_TICK.register(mc -> {
+                synchronized (Y_TRACE) {
+                    if (yTraceId < 0 || Y_TRACE.size() >= Y_TRACE_TICKS || mc.level == null) return;
+                    Entity e = mc.level.getEntity(yTraceId);
+                    Y_TRACE.add(e == null ? Double.NaN : e.getY());
+                }
+            });
+        }
+    }
+
+    private static String yTraceLine() {
+        synchronized (Y_TRACE) {
+            StringBuilder b = new StringBuilder();
+            for (double v : Y_TRACE) b.append(b.length() == 0 ? "" : " ").append(String.format(Locale.ROOT, "%.3f", v));
+            yTraceId = -1;
+            return b.toString();
+        }
+    }
+
+    /** One line of the local predicted fighter's state, to see why a press is or is not accepted. */
+    private static void logFighter(ClientGameTestContext context, String label) {
+        LOG.info("fighter {}: {}", label, context.computeOnClient(mc -> {
+            var f = LocalCombat.fighter();
+            if (f == null) return "none";
+            return String.format(Locale.ROOT, "phase %s move %s t %d clock %d hitstop %d stun %d grounded %s frozen %s stamina %.1f aether %.1f gauge %.1f",
+                    f.phase(), f.move() == null ? "-" : f.move().id, f.moveTick(), f.clock(), f.hitstop(), f.stun(), f.grounded(), f.frozen(),
+                    f.stamina(), f.aether(), f.gauge());
+        }));
+    }
+
     private static void tap(ClientGameTestContext context, Function<Options, KeyMapping> key, int waitAfter) {
         context.getInput().pressKey(key);
         if (waitAfter > 0) context.waitTicks(waitAfter);
@@ -201,7 +258,7 @@ public final class CombatGameTest implements FabricClientGameTest {
 
     private static LivingEntity tagged(net.minecraft.server.MinecraftServer s, String tag) {
         for (ServerLevel level : s.getAllLevels()) {
-            for (var e : level.getEntities(EntityType.HUSK, h -> h.getTags().contains(tag))) return e;
+            for (var e : level.getEntities(EntityTypes.HUSK, h -> h.entityTags().contains(tag))) return e;
         }
         return null;
     }
@@ -224,7 +281,7 @@ public final class CombatGameTest implements FabricClientGameTest {
         return sp.getServer().computeOnServer(s -> {
             StringBuilder b = new StringBuilder();
             for (ServerLevel level : s.getAllLevels()) {
-                for (var e : level.getEntities(EntityType.HUSK, h -> h.getTags().contains("vt_group"))) {
+                for (var e : level.getEntities(EntityTypes.HUSK, h -> h.entityTags().contains("vt_group"))) {
                     b.append(String.format(Locale.ROOT, "%.1f ", e.isAlive() ? e.getHealth() : 0f));
                 }
             }
