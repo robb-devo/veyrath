@@ -1,5 +1,8 @@
 package dev.veyrath.mod;
 
+import dev.veyrath.mod.arena.ArenaCommands;
+import dev.veyrath.mod.arena.ArenaEntities;
+import dev.veyrath.mod.arena.ProvingGrounds;
 import dev.veyrath.mod.combat.CombatCommands;
 import dev.veyrath.mod.combat.CombatNet;
 import dev.veyrath.mod.combat.CombatServer;
@@ -46,6 +49,7 @@ public final class VeyrathMod implements ModInitializer {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             VeyrathCommands.register(dispatcher);
             CombatCommands.register(dispatcher);
+            ArenaCommands.register(dispatcher);
         });
 
         registerCombat();
@@ -64,16 +68,24 @@ public final class VeyrathMod implements ModInitializer {
         LOG.info("VEYRATH initialised");
     }
 
-    /** Chapter 02: combat messages, the server's fighters and damage hook. */
+    /** Chapter 02: combat messages, the server's fighters, damage hook and the Proving Grounds. */
     private static void registerCombat() {
         CombatNet.register();
         ServerPlayNetworking.registerGlobalReceiver(CombatNet.ActionC2S.TYPE, (msg, ctx) -> CombatServer.onAction(ctx.player(), msg));
         ServerPlayNetworking.registerGlobalReceiver(CombatNet.ReleaseC2S.TYPE, (msg, ctx) -> CombatServer.onRelease(ctx.player(), msg));
         ServerPlayNetworking.registerGlobalReceiver(CombatNet.HeldC2S.TYPE, (msg, ctx) -> CombatServer.onHeld(ctx.player(), msg));
         ServerPlayNetworking.registerGlobalReceiver(CombatNet.StanceC2S.TYPE, (msg, ctx) -> CombatServer.onStance(ctx.player(), msg.on()));
+        ServerTickEvents.START_SERVER_TICK.register(CombatServer::startTick);
         ServerTickEvents.END_SERVER_TICK.register(CombatServer::tick);
         ServerLivingEntityEvents.ALLOW_DAMAGE.register(CombatServer::allowDamage);
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> CombatServer.remove(handler.getPlayer()));
         ServerLifecycleEvents.SERVER_STOPPING.register(CombatServer::clear);
+
+        // Proving Grounds: arena dimension (datapack), Duelist and training dummy, sparring rounds.
+        ArenaEntities.register();
+        ProvingGrounds.init();
+        ServerTickEvents.END_SERVER_TICK.register(ProvingGrounds::tick);
+        ServerLivingEntityEvents.ALLOW_DEATH.register(ProvingGrounds::allowDeath);
+        ServerLifecycleEvents.SERVER_STOPPING.register(ProvingGrounds::clear);
     }
 }

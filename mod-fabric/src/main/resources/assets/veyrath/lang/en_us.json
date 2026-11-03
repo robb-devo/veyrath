@@ -33,5 +33,19 @@
   "death.attack.veyrath.combat.player": "%1$s was struck down",
   "veyrath.combat.stance_on": "Combat stance",
   "veyrath.combat.stance_off": "Combat stance off",
-  "veyrath.combat.locked": "Locked on: %s"
+  "veyrath.combat.locked": "Locked on: %s",
+  "entity.veyrath.duelist": "Duelist",
+  "entity.veyrath.training_dummy": "Training Dummy",
+  "veyrath.style.apprentice": "Apprentice",
+  "veyrath.style.adept": "Adept",
+  "veyrath.style.master": "Master",
+  "veyrath.arena.bar": "Duelist · %s",
+  "veyrath.arena.round": "Round %s · %s",
+  "veyrath.arena.score": "%s – %s",
+  "veyrath.arena.fight": "FIGHT",
+  "veyrath.arena.victory": "VICTORY",
+  "veyrath.arena.defeat": "DEFEAT",
+  "veyrath.arena.stance_hint": "Press Z for combat stance",
+  "veyrath.arena.welcome": "Proving Grounds. /veyrath arena duelist [apprentice|adept|master] to spar in rounds, /veyrath arena dummy for a training dummy, /veyrath arena leave to go back.",
+  "veyrath.arena.missing": "The Proving Grounds dimension is not loaded in this world (it comes with the VEYRATH mod's data)."
 }

@@ -31,6 +31,12 @@ public final class CombatAnimations {
 
     public static Animator find(int entityId) { return REMOTE.get(entityId); }
 
+    /** True while a hit reaction holds this entity's facing (toward its attacker). */
+    public static boolean facingOverridden(int entityId) {
+        Animator a = REMOTE.get(entityId);
+        return a != null && a.faceOverride;
+    }
+
     /** End of each client tick: advance clocks, drop animators of entities that are gone or idle. */
     public static void tick(ClientLevel level) {
         if (REMOTE.isEmpty()) return;
@@ -57,7 +63,10 @@ public final class CombatAnimations {
             a = REMOTE.get(entity.getId());
             if (a != null && a.faceOverride) face = a.yaw;
         }
-        PoseSample s = a == null ? null : a.sample(partialTick, local ? state.walkAnimationSpeed * 1.6 : 0);
+        // Fighters with a base pose (the local player, players in stance, the Duelist) step with
+        // vanilla's walk cycle under their guard; plain mobs only show reactions.
+        boolean walks = local || (a != null && a.hasBase());
+        PoseSample s = a == null ? null : a.sample(partialTick, walks ? state.walkAnimationSpeed * 1.6 : 0);
         data.setData(POSE, s);
         if (!Float.isNaN(face) && (local || s != null)) {
             state.bodyRot = face;

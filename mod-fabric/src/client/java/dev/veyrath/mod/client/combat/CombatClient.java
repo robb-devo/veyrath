@@ -35,6 +35,7 @@ public final class CombatClient {
         ClientPlayConnectionEvents.DISCONNECT.register((handler, mc) -> {
             LocalCombat.reset();
             CombatAnimations.clear();
+            DamageNumbers.clear();
         });
 
         ClientPlayNetworking.registerGlobalReceiver(CombatNet.HitS2C.TYPE, (msg, ctx) -> onHit(ctx.client(), msg));
@@ -45,8 +46,13 @@ public final class CombatClient {
         });
         ClientPlayNetworking.registerGlobalReceiver(CombatNet.StateS2C.TYPE, (msg, ctx) -> LocalCombat.state(msg));
         ClientPlayNetworking.registerGlobalReceiver(CombatNet.RejectS2C.TYPE, (msg, ctx) -> LocalCombat.rejected(msg.seq()));
+        ClientPlayNetworking.registerGlobalReceiver(CombatNet.BaseS2C.TYPE, (msg, ctx) -> {
+            Animator a = CombatAnimations.remote(msg.entity());
+            a.setBase(msg.clip().isEmpty() ? null : msg.clip(), a.clock, 3);
+        });
 
         HudElementRegistry.attachElementAfter(VanillaHudElements.HOTBAR, VeyrathMod.id("combat"), CombatHud::extract);
+        HudElementRegistry.addFirst(VeyrathMod.id("damage_numbers"), DamageNumbers::extract);
         // In stance the ability slots take the hotbar's place (keys 1-4 are abilities there, and the
         // held item is hidden); the crosshair means nothing with a free camera. Hearts, armour, food
         // and air stay.
@@ -73,6 +79,7 @@ public final class CombatClient {
             if (byMe) CombatEffects.sound(level, o.sfx(), at);
         }
         if (byMe || onMe) ActionCamera.addTrauma(predicted ? 0 : o.shake());
+        if (byMe || onMe) DamageNumbers.add(at, o, byMe);
 
         if (onMe) {
             if (LocalCombat.active()) LocalCombat.struck(o);

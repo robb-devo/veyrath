@@ -61,6 +61,8 @@ public final class Animator {
 
     public String actionClip() { return actionClip; }
 
+    public boolean hasBase() { return baseClip != null; }
+
     /** Remote animators: one client tick. */
     void tick() {
         if (freeze > 0) {

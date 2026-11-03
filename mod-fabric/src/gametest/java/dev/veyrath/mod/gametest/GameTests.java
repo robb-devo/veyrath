@@ -7,7 +7,7 @@ final class GameTests {
     private GameTests() {}
 
     /**
-     * Which tests run: system property {@code veyrath.tests}, a comma list of "tour" and "combat"
+     * Which tests run: system property {@code veyrath.tests}, a comma list of "tour", "combat" and "arena"
      * (gradle: {@code -Pveyrath.tests=combat}); default "tour", the Chapter 01 seed tour.
      */
     static boolean selected(String name) {

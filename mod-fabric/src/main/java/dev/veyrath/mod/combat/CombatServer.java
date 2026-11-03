@@ -1,5 +1,7 @@
 package dev.veyrath.mod.combat;
 
+import dev.veyrath.combat.ai.DuelistBrain;
+import dev.veyrath.combat.ai.Style;
 import dev.veyrath.combat.fighter.Controller;
 import dev.veyrath.combat.fighter.Fighter;
 import dev.veyrath.combat.fighter.FighterEvents;
@@ -10,20 +12,26 @@ import dev.veyrath.combat.hit.HitDetector;
 import dev.veyrath.combat.hit.HitResolver;
 import dev.veyrath.combat.input.Action;
 import dev.veyrath.combat.input.Controls;
+import dev.veyrath.combat.input.InputBuffer;
 import dev.veyrath.combat.math.Vec3;
 import dev.veyrath.combat.move.HitSpec;
 import dev.veyrath.combat.move.Move;
 import dev.veyrath.combat.move.Reaction;
 import dev.veyrath.mod.VeyrathMod;
+import dev.veyrath.mod.arena.DuelistEntity;
+import dev.veyrath.mod.arena.TrainingDummyEntity;
 import dev.veyrath.mod.mixin.EntityInvoker;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.core.Holder;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
@@ -62,7 +70,7 @@ public final class CombatServer {
     static final int IDLE_DROP = 200;
 
     static final Identifier GRAVITY_ID = VeyrathMod.id("combat_gravity");
-    /** Downward speed kept while frozen on the ground (vanilla reports a body at rest with zero speed as airborne). */
+    /** Least downward speed of a grounded body that is not jumping (see LocalCombat.GROUND_PRESS). */
     static final double GROUND_PRESS = 0.0784;
     static final Identifier STEP_ID = VeyrathMod.id("stance_step");
 
@@ -95,6 +103,8 @@ public final class CombatServer {
         float facing;
         double appliedGravity = 1;
         int idle, stateTimer;
+        /** Duelists: the mind that presses this fighter's inputs (null for players and mobs). */
+        Mind mind;
 
         Entry(LivingEntity entity, Fighter fighter, boolean player) {
             this.entity = entity;
@@ -103,6 +113,31 @@ public final class CombatServer {
         }
     }
 
+    /**
+     * A fighter whose inputs come from a {@link DuelistBrain} on the server: the Proving Grounds
+     * Duelist. It owns its fighter like a client owns the player's: think, tick, move at the start
+     * of the server tick (so the body moves during the tick, as in the headless sim), then its hit
+     * windows are swept with everyone else's at the end.
+     */
+    static final class Mind {
+        final DuelistBrain brain;
+        final Style style;
+        final Controls controls = new Controls();
+        final InputBuffer input = new InputBuffer();
+        /** False between rounds: it stands in guard, turns to face the player and does nothing else. */
+        boolean active = true;
+        String base = "";
+        int baseTimer;
+
+        Mind(DuelistBrain brain, Style style) {
+            this.brain = brain;
+            this.style = style;
+        }
+    }
+
+    /** Duelists look for a player in combat stance this close. */
+    static final double DUEL_RANGE = 24;
+
     private static final Map<Integer, Entry> ENTRIES = new HashMap<>();
     private static final List<Runnable> AFTER_TICK = new ArrayList<>();
     private static boolean applyingDamage;
@@ -110,6 +145,10 @@ public final class CombatServer {
     // Session statistics for /veyrath combat stats (acceptance: zero rejected moves).
     private static int accepted, acceptedAfterRetry, rejected;
     private static final EnumMap<Outcome.Result, Integer> RESULTS = new EnumMap<>(Outcome.Result.class);
+    // Duelist statistics (game tests, /veyrath combat stats): its tells, its strikes, strikes on it.
+    private static int tells;
+    private static final EnumMap<Outcome.Result, Integer> DUELIST_STRIKES = new EnumMap<>(Outcome.Result.class);
+    private static final EnumMap<Outcome.Result, Integer> DUELIST_STRUCK = new EnumMap<>(Outcome.Result.class);
 
     // ------------------------------------------------------------------ queries
 
@@ -131,9 +170,11 @@ public final class CombatServer {
     static Entry entryFor(LivingEntity e) {
         Entry en = ENTRIES.get(e.getId());
         if (en != null && en.entity == e) return en;
+        if (e instanceof DuelistEntity d) return attachDuelist(d, Style.byId(d.styleId()), d.getRandom().nextLong());
         boolean player = e instanceof ServerPlayer;
+        // The training dummy reacts to every hit (no super-armour despite its large health pool).
         Fighter f = new Fighter(e.getId(), player ? CombatContent.PLAYER : CombatContent.MOB,
-                player ? Rules.player() : Rules.mob(poiseFor(e)));
+                player ? Rules.player() : Rules.mob(e instanceof TrainingDummyEntity ? 0 : poiseFor(e)));
         f.yaw = e.getYRot();
         Entry created = new Entry(e, f, player);
         created.facing = e.getYRot();
@@ -155,6 +196,183 @@ public final class CombatServer {
         if (hp <= 60) return 25;
         if (hp <= 150) return 60;
         return 200;
+    }
+
+    // ------------------------------------------------------------------ duelists
+
+    /** Gives a Duelist entity its fighter and mind (replacing any it had). */
+    public static Entry attachDuelist(DuelistEntity d, Style style, long seed) {
+        Fighter f = new Fighter(d.getId(), CombatContent.PLAYER, style.rules());
+        f.yaw = d.getYRot();
+        Entry en = new Entry(d, f, false);
+        en.facing = d.getYRot();
+        DuelistBrain brain = new DuelistBrain(style, seed).listener(new DuelistBrain.Listener() {
+            @Override
+            public void telegraph(DuelistBrain.Telegraph t) { tell(en, t); }
+        });
+        en.mind = new Mind(brain, style);
+        f.events(new FighterEvents() {
+            @Override
+            public void moveStarted(Fighter fighter, Move m) {
+                en.shownClip = m.clip;
+                broadcastAnim(en, m.clip, (float) m.blendIn);
+            }
+        });
+        ENTRIES.put(d.getId(), en);
+        return en;
+    }
+
+    /** Called by every Duelist each server tick: an entity loaded from disk gets its mind back. */
+    public static void ensureDuelist(DuelistEntity d) {
+        Entry en = ENTRIES.get(d.getId());
+        if (en == null || en.entity != d) entryFor(d);
+    }
+
+    /** Between rounds a Duelist only guards; in a round it fights. */
+    public static void setDuelistActive(DuelistEntity d, boolean active) {
+        Entry en = entryFor(d);
+        if (en.mind == null) return;
+        en.mind.active = active;
+        if (!active) {
+            en.mind.input.clear();
+            en.mind.controls.moveX = en.mind.controls.moveZ = 0;
+            en.mind.controls.blockHeld = en.mind.controls.heavyHeld = en.mind.controls.sprintHeld = en.mind.controls.jumpHeld = false;
+        }
+    }
+
+    /** A fresh fighter for a new round: full resources, no move, no cooldowns, same style. */
+    public static void resetDuelist(DuelistEntity d) {
+        Entry old = ENTRIES.get(d.getId());
+        Style style = old != null && old.mind != null ? old.mind.style : Style.byId(d.styleId());
+        boolean active = old == null || old.mind == null || old.mind.active;
+        Entry en = attachDuelist(d, style, d.getRandom().nextLong());
+        en.mind.active = active;
+        removeModifier(d, Attributes.GRAVITY, GRAVITY_ID);
+        broadcastAnim(en, "", 2);
+    }
+
+    /** Start of the server tick: Duelists think, tick their fighters and set their bodies moving. */
+    public static void startTick(MinecraftServer server) {
+        if (ENTRIES.isEmpty()) return;
+        for (Entry e : new ArrayList<>(ENTRIES.values())) {
+            if (e.mind != null && !e.entity.isRemoved() && e.entity.isAlive()) drive(e);
+        }
+    }
+
+    private static void drive(Entry e) {
+        LivingEntity en = e.entity;
+        Fighter f = e.fighter;
+        Mind m = e.mind;
+        Controls c = m.controls;
+        boolean grounded = en.onGround();
+        Vec3 feet = feet(en);
+        ServerPlayer near = nearestPlayer(en);
+        Entry foe = m.active && near != null && inStance(near) ? ENTRIES.get(near.getId()) : null;
+        Vec3 lock = null, soft = null;
+        if (foe != null) {
+            Vec3 foeFeet = feet(near);
+            m.brain.think(f, feet, foe.fighter, foeFeet, c, m.input);
+            lock = m.brain.aim();
+            soft = foeFeet;
+        } else {
+            setDuelistIdle(m);
+            // Without an opponent in stance it waits in guard, turned toward the nearest player.
+            if (near != null) lock = feet(near);
+        }
+        f.tick(c, m.input, grounded);
+        Controller.Intent in = Controller.compute(f, c, feet, lock, soft);
+        f.yaw = in.yaw();
+        float yaw = (float) in.yaw();
+        en.setYRot(yaw);
+        en.setYHeadRot(yaw);
+        en.setYBodyRot(yaw);
+        en.setXRot(0);
+
+        // Body velocity as the client sets the player's (LocalCombat.applyIntent).
+        net.minecraft.world.phys.Vec3 dm = en.getDeltaMovement();
+        double vx = dm.x, vy = dm.y, vz = dm.z;
+        Vec3 hit = f.takeVelocity();
+        if (hit != null) {
+            vx = hit.x();
+            vy = hit.y();
+            vz = hit.z();
+        }
+        if (in.forcesHorizontal()) {
+            vx = in.vx();
+            vz = in.vz();
+        } else if (c.hasMove() && in.inputScale() > 0) {
+            Vec3 dir = new Vec3(c.moveX, 0, c.moveZ).normalize();
+            double speed = Controller.WALK * in.inputScale();
+            if (grounded) {
+                vx = dir.x() * speed;
+                vz = dir.z() * speed;
+            } else {
+                double cap = Math.max(speed, Math.hypot(vx, vz));
+                vx += dir.x() * 0.025;
+                vz += dir.z() * 0.025;
+                double h = Math.hypot(vx, vz);
+                if (h > cap) {
+                    vx *= cap / h;
+                    vz *= cap / h;
+                }
+            }
+        }
+        if (f.takeJumpRequest() && grounded) vy = en.getAttributeValue(Attributes.JUMP_STRENGTH);
+        double bounce = f.bounceVelocity();
+        if (!Double.isNaN(bounce)) vy = bounce;
+        if (in.forcesVertical()) vy = in.vy();
+        if (grounded && vy <= 0 && vy > -GROUND_PRESS) vy = -GROUND_PRESS;
+        en.setDeltaMovement(vx, vy, vz);
+        double g = in.gravity();
+        if (Math.abs(g - 1) < 1e-9) removeModifier(en, Attributes.GRAVITY, GRAVITY_ID);
+        else setModifier(en, Attributes.GRAVITY, GRAVITY_ID, g - 1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
+        // A sparring partner: launches and air strings never end in fall damage.
+        if (!grounded) en.resetFallDistance();
+    }
+
+    private static void setDuelistIdle(Mind m) {
+        Controls c = m.controls;
+        c.moveX = c.moveZ = 0;
+        c.blockHeld = c.heavyHeld = c.sprintHeld = c.jumpHeld = false;
+        m.input.clear();
+    }
+
+    private static ServerPlayer nearestPlayer(LivingEntity e) {
+        if (!(e.level() instanceof ServerLevel level)) return null;
+        ServerPlayer best = null;
+        double bestD = DUEL_RANGE * DUEL_RANGE;
+        for (ServerPlayer p : level.players()) {
+            if (!p.isAlive() || p.isSpectator()) continue;
+            double d = p.distanceToSqr(e);
+            if (d < bestD) {
+                bestD = d;
+                best = p;
+            }
+        }
+        return best;
+    }
+
+    /** The Duelist's tell before an attack from neutral: a glint at its eyes and a chime the player can learn. */
+    private static void tell(Entry e, DuelistBrain.Telegraph t) {
+        tells++;
+        if (!(e.entity.level() instanceof ServerLevel level)) return;
+        LivingEntity d = e.entity;
+        double yawR = Math.toRadians(d.getYRot());
+        double x = d.getX() - Math.sin(yawR) * 0.3, y = d.getY() + d.getBbHeight() * 0.9, z = d.getZ() + Math.cos(yawR) * 0.3;
+        switch (t.kind()) {
+            case STRIKE -> {
+                level.sendParticles(ParticleTypes.END_ROD, x, y, z, 4, 0.06, 0.06, 0.06, 0.01);
+                level.playSound(null, x, y, z, CombatSounds.ev(SoundEvents.AMETHYST_BLOCK_CHIME), SoundSource.HOSTILE, 1.0f, 1.8f);
+            }
+            case HEAVY -> {
+                level.sendParticles(ParticleTypes.END_ROD, x, y, z, 10, 0.15, 0.15, 0.15, 0.03);
+                level.playSound(null, x, y, z, CombatSounds.ev(SoundEvents.AMETHYST_BLOCK_CHIME), SoundSource.HOSTILE, 1.2f, 1.1f);
+            }
+            case UNBLOCKABLE -> {
+                level.sendParticles(new DustParticleOptions(0xE8302A, 1.6f), x, y, z, 16, 0.25, 0.25, 0.25, 0);
+                level.playSound(null, x, y, z, CombatSounds.ev(SoundEvents.AMETHYST_BLOCK_RESONATE), SoundSource.HOSTILE, 1.4f, 0.7f);
+            }
+        }
     }
 
     // ------------------------------------------------------------------ client messages
@@ -273,7 +491,7 @@ public final class CombatServer {
         ServerLevel level = (ServerLevel) p.level();
         net.minecraft.world.phys.Vec3 at = p.position().add(0, p.getBbHeight() * 0.6, 0);
         // Vanilla applies its own knockback on a hit; nothing for the client to add.
-        Outcome sent = withVelocities(o, null, null);
+        Outcome sent = withVelocities(o, o.damage(), null, null);
         sendHit(level, from, p, sent, at, "", 0, p.getYRot());
         switch (o.result()) {
             case HIT, ARMORED -> {
@@ -316,14 +534,23 @@ public final class CombatServer {
         for (Entry e : all) {
             if (ENTRIES.get(e.entity.getId()) == e && e.fighter.activeWindows().length > 0) detectHits(e);
         }
-        ENTRIES.values().removeIf(e -> !e.stance && e.idle > IDLE_DROP);
+        ENTRIES.values().removeIf(e -> !e.stance && e.mind == null && e.idle > IDLE_DROP);
     }
 
     private static void tickEntry(Entry e) {
         LivingEntity en = e.entity;
         Fighter f = e.fighter;
         boolean grounded = en.onGround();
-        if (e.player) {
+        if (e.mind != null) {
+            // Ticked and moved at the start of the tick (drive). Here: its base pose for viewers.
+            String base = f.phase() == Fighter.Phase.BLOCK ? "block_hold" : "stance_idle";
+            if (!base.equals(e.mind.base) || ++e.mind.baseTimer >= 20) {
+                e.mind.base = base;
+                e.mind.baseTimer = 0;
+                CombatNet.BaseS2C msg = new CombatNet.BaseS2C(en.getId(), base);
+                for (ServerPlayer viewer : PlayerLookup.tracking(en)) ServerPlayNetworking.send(viewer, msg);
+            }
+        } else if (e.player) {
             f.yaw = en.getYRot();
             f.tickFollower(grounded, e.blockHeld);
             processPending(e);
@@ -354,6 +581,10 @@ public final class CombatServer {
                     net.minecraft.world.phys.Vec3 dm = en.getDeltaMovement();
                     en.setDeltaMovement(dm.x, bounce, dm.z);
                     ((EntityInvoker) en).veyrath$markHurt();
+                } else if (grounded && v == null) {
+                    // Right after a hit-stop the speed is still zero: keep the resting downward speed.
+                    net.minecraft.world.phys.Vec3 dm = en.getDeltaMovement();
+                    if (dm.y <= 0 && dm.y > -GROUND_PRESS) en.setDeltaMovement(dm.x, -GROUND_PRESS, dm.z);
                 }
             }
             double g = f.frozen() || f.inHitstop() ? 0 : f.gravityScale();
@@ -417,6 +648,16 @@ public final class CombatServer {
         HitSpec spec = ae.fighter.window(s.window()).spec();
         Outcome o = HitResolver.resolve(ae.fighter, s, de.fighter, aFeet, dFeet);
         count(o);
+        if (ae.mind != null) {
+            ae.mind.brain.connected(o);
+            DUELIST_STRIKES.merge(o.result(), 1, Integer::sum);
+        }
+        if (de.mind != null) {
+            de.mind.brain.struck(o);
+            DUELIST_STRUCK.merge(o.result(), 1, Integer::sum);
+        }
+        // The Duelist is a sparring partner: its hits deal a fraction of the player's.
+        double damage = o.damage() * (ae.mind != null ? ae.mind.style.damageScale : 1);
 
         if (!de.player) {
             // Mobs face their attacker, stop at once for the hit-stop and take the push afterwards.
@@ -436,7 +677,7 @@ public final class CombatServer {
         }
         if (!ae.player && o.attackerVelocity() != null) ae.fighter.queueVelocity(o.attackerVelocity());
 
-        if (o.dealsDamage()) hurt(level, d, level.damageSources().source(CombatContent.DAMAGE, a), (float) o.damage());
+        if (o.dealsDamage()) hurt(level, d, level.damageSources().source(CombatContent.DAMAGE, a), (float) damage);
 
         Vec3 p = s.point();
         net.minecraft.world.phys.Vec3 at = new net.minecraft.world.phys.Vec3(p.x(), p.y(), p.z());
@@ -446,7 +687,7 @@ public final class CombatServer {
         if (o.perfect() && o.result() == Outcome.Result.DODGED) SlowMotion.trigger(level.getServer(), 10, 12);
         if ("ultimate".equals(spec.sfx()) && o.result() == Outcome.Result.HIT) SlowMotion.trigger(level.getServer(), 6, 14);
 
-        Outcome sent = withVelocities(o, de.player ? o.velocity() : null, ae.player ? o.attackerVelocity() : null);
+        Outcome sent = withVelocities(o, damage, de.player ? o.velocity() : null, ae.player ? o.attackerVelocity() : null);
         sendHit(level, a, d, sent, at, move == null ? "" : move.id, s.window(), de.player ? d.getYRot() : de.facing);
     }
 
@@ -490,8 +731,9 @@ public final class CombatServer {
         }
     }
 
-    private static Outcome withVelocities(Outcome o, Vec3 velocity, Vec3 attackerVelocity) {
-        return new Outcome(o.result(), o.damage(), o.reaction(), o.hitstun(), o.hitstop(), velocity, attackerVelocity,
+    /** The outcome as clients get it: the damage actually dealt and only the velocities they apply themselves. */
+    private static Outcome withVelocities(Outcome o, double damage, Vec3 velocity, Vec3 attackerVelocity) {
+        return new Outcome(o.result(), damage, o.reaction(), o.hitstun(), o.hitstop(), velocity, attackerVelocity,
                 o.counter(), o.perfect(), o.poiseBreak(), o.shake(), o.vfx(), o.sfx());
     }
 
@@ -539,8 +781,24 @@ public final class CombatServer {
             sb.append("\nstrikes:");
             RESULTS.forEach((r, n) -> sb.append(' ').append(r.name().toLowerCase(Locale.ROOT)).append(' ').append(n));
         }
+        if (tells > 0 || !DUELIST_STRUCK.isEmpty()) sb.append('\n').append(duelistStats());
         return sb.toString();
     }
+
+    /** What Duelists did this session: tells shown, their strikes by result, strikes on them by result. */
+    public static String duelistStats() {
+        StringBuilder sb = new StringBuilder("duelist: ").append(tells).append(" tells; its strikes:");
+        DUELIST_STRIKES.forEach((r, n) -> sb.append(' ').append(r.name().toLowerCase(Locale.ROOT)).append(' ').append(n));
+        sb.append("; strikes on it:");
+        DUELIST_STRUCK.forEach((r, n) -> sb.append(' ').append(r.name().toLowerCase(Locale.ROOT)).append(' ').append(n));
+        return sb.toString();
+    }
+
+    public static int duelistStrikes(Outcome.Result r) { return DUELIST_STRIKES.getOrDefault(r, 0); }
+
+    public static int duelistStruck(Outcome.Result r) { return DUELIST_STRUCK.getOrDefault(r, 0); }
+
+    public static int duelistTells() { return tells; }
 
     public static void remove(ServerPlayer p) {
         Entry e = ENTRIES.get(p.getId());
@@ -553,5 +811,8 @@ public final class CombatServer {
         SlowMotion.reset(server);
         accepted = acceptedAfterRetry = rejected = 0;
         RESULTS.clear();
+        tells = 0;
+        DUELIST_STRIKES.clear();
+        DUELIST_STRUCK.clear();
     }
 }

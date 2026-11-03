@@ -207,6 +207,21 @@ public final class CombatNet {
 
     // ------------------------------------------------------------------ registration and helpers
 
+    /** Base pose of a fighter that is not a player in stance (the Duelist): "stance_idle", "block_hold" or "" for none. */
+    public record BaseS2C(int entity, String clip) implements CustomPacketPayload {
+        public static final Type<BaseS2C> TYPE = payloadType("base_pose");
+        public static final StreamCodec<FriendlyByteBuf, BaseS2C> CODEC = CustomPacketPayload.codec(BaseS2C::write, BaseS2C::new);
+
+        private BaseS2C(FriendlyByteBuf b) { this(b.readVarInt(), b.readUtf(64)); }
+
+        private void write(FriendlyByteBuf b) {
+            b.writeVarInt(entity);
+            b.writeUtf(clip, 64);
+        }
+
+        @Override public Type<BaseS2C> type() { return TYPE; }
+    }
+
     public static void register() {
         PayloadTypeRegistry.serverboundPlay().register(ActionC2S.TYPE, ActionC2S.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ReleaseC2S.TYPE, ReleaseC2S.CODEC);
@@ -217,6 +232,7 @@ public final class CombatNet {
         PayloadTypeRegistry.clientboundPlay().register(StanceS2C.TYPE, StanceS2C.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(StateS2C.TYPE, StateS2C.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(RejectS2C.TYPE, RejectS2C.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(BaseS2C.TYPE, BaseS2C.CODEC);
     }
 
     private static void writeVec(FriendlyByteBuf b, Vec3 v) {

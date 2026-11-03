@@ -16,7 +16,7 @@ public final class CombatSounds {
     public record Cue(SoundEvent sound, float volume, float pitch) {}
 
     /** Some vanilla sound constants are plain events, others registry holders (26.3). */
-    private static SoundEvent ev(Object o) {
+    public static SoundEvent ev(Object o) {
         if (o instanceof Holder<?> h) return (SoundEvent) h.value();
         return (SoundEvent) o;
     }
