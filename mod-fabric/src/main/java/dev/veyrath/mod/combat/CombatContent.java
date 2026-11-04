@@ -1,7 +1,6 @@
 package dev.veyrath.mod.combat;
 
-import dev.veyrath.combat.content.UnarmedClips;
-import dev.veyrath.combat.content.UnarmedMoves;
+import dev.veyrath.combat.content.Weapons;
 import dev.veyrath.combat.hit.ClipLibrary;
 import dev.veyrath.combat.move.MoveSet;
 import dev.veyrath.mod.VeyrathMod;
@@ -17,10 +16,11 @@ public final class CombatContent {
     private CombatContent() {}
 
     /** The player's unarmed move set (Chapter 02). */
-    public static final MoveSet PLAYER = UnarmedMoves.moveSet();
+    public static final MoveSet PLAYER = Weapons.UNARMED.moves();
     /** Vanilla mobs: reactions only. */
     public static final MoveSet MOB = MoveSet.reactionsOnly();
-    public static final ClipLibrary CLIPS = UnarmedClips.library();
+    /** Clips of every weapon (Weapons.CLIPS). */
+    public static final ClipLibrary CLIPS = Weapons.CLIPS;
 
     /**
      * Damage type of combat hits (data/veyrath/damage_type/combat.json). Tagged bypasses_cooldown

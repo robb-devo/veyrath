@@ -32,7 +32,8 @@ public final class Fighter {
     public enum Phase { IDLE, MOVE, BLOCK, REACTION }
 
     public final int id;
-    public final MoveSet set;
+    /** The equipped weapon's moves; changed only through {@link #equip}. */
+    public MoveSet set;
     public final Rules rules;
     private FighterEvents events = FighterEvents.NONE;
 
@@ -87,6 +88,21 @@ public final class Fighter {
     }
 
     public Fighter events(FighterEvents e) { events = e == null ? FighterEvents.NONE : e; return this; }
+
+    // ------------------------------------------------------------------ weapons
+
+    /**
+     * Switches to another weapon's move set. Only between actions (idle or holding block), so a
+     * move never continues with another weapon's frame data; cooldowns are per move id and stay.
+     * Returns false (nothing changes) otherwise.
+     */
+    public boolean equip(MoveSet next) {
+        if (next == null || next == set) return next == set;
+        if (phase != Phase.IDLE && phase != Phase.BLOCK) return false;
+        set = next;
+        endedMove = null;
+        return true;
+    }
 
     // ------------------------------------------------------------------ queries
 
