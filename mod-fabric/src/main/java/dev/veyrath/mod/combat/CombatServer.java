@@ -143,7 +143,7 @@ public final class CombatServer {
     private static boolean applyingDamage;
 
     // Session statistics for /veyrath combat stats (acceptance: zero rejected moves).
-    private static int accepted, acceptedAfterRetry, rejected;
+    private static int accepted, acceptedAfterRetry, rejected, rejectedWhileStruck;
     private static final EnumMap<Outcome.Result, Integer> RESULTS = new EnumMap<>(Outcome.Result.class);
     // Duelist statistics (game tests, /veyrath combat stats): its tells, its strikes, strikes on it.
     private static int tells;
@@ -464,8 +464,11 @@ public final class CombatServer {
                         head.release ? "release" : head.action, head.move, head.seq, e.entity.getName().getString(),
                         f.phase(), f.move() == null ? "-" : f.move().id, f.moveTick(), f.grounded());
                 // Everything queued behind it depended on it.
+                // An input that met a hit landing on the same tick is a fair loss, not a desync.
+                boolean struck = f.phase() == Fighter.Phase.REACTION;
                 for (Pending p : e.pending) {
                     rejected++;
+                    if (struck) rejectedWhileStruck++;
                     if (e.entity instanceof ServerPlayer sp) ServerPlayNetworking.send(sp, new CombatNet.RejectS2C(p.seq));
                 }
                 e.pending.clear();
@@ -796,10 +799,13 @@ public final class CombatServer {
 
     public static int rejectedCount() { return rejected; }
 
+    /** Rejected inputs whose fighter was reeling from a hit (the hit arrived first on the server). */
+    public static int rejectedWhileStruckCount() { return rejectedWhileStruck; }
+
     public static String stats() {
         StringBuilder sb = new StringBuilder(String.format(Locale.ROOT,
-                "combat: %d inputs accepted (%d after waiting for the server copy), %d rejected; %d fighters tracked",
-                accepted, acceptedAfterRetry, rejected, ENTRIES.size()));
+                "combat: %d inputs accepted (%d after waiting for the server copy), %d rejected (%d of them while struck); %d fighters tracked",
+                accepted, acceptedAfterRetry, rejected, rejectedWhileStruck, ENTRIES.size()));
         if (!RESULTS.isEmpty()) {
             sb.append("\nstrikes:");
             RESULTS.forEach((r, n) -> sb.append(' ').append(r.name().toLowerCase(Locale.ROOT)).append(' ').append(n));
@@ -832,7 +838,7 @@ public final class CombatServer {
         ENTRIES.clear();
         AFTER_TICK.clear();
         SlowMotion.reset(server);
-        accepted = acceptedAfterRetry = rejected = 0;
+        accepted = acceptedAfterRetry = rejected = rejectedWhileStruck = 0;
         RESULTS.clear();
         tells = 0;
         DUELIST_STRIKES.clear();

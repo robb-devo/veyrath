@@ -257,6 +257,32 @@ class FighterTest {
         assertTrue(server.request(Action.LIGHT, "cross", c), "open at move tick 3");
     }
 
+    /**
+     * The client held its jab through the hit-stop of a hit it predicted; the server's copy missed,
+     * so it ran out earlier. A cross the client started within that margin is still accepted, a
+     * later one is not.
+     */
+    @Test
+    void followerAcceptsALateBranchWithinTheHitStopMargin() {
+        Controls c = new Controls();
+        Fighter server = new Fighter(2, SET, Rules.player());
+        assertTrue(server.request(Action.LIGHT, "jab", c));
+        int ticks = 0;
+        while (server.phase() == Fighter.Phase.MOVE && ticks++ < 40) server.tickFollower(true, false);
+        assertEquals(Fighter.Phase.IDLE, server.phase(), "the jab ran out (no hit on the server)");
+        server.tickFollower(true, false);
+        assertTrue(server.request(Action.LIGHT, "cross", c), "a cross one tick after the jab ended (jab hit-stop 2)");
+        assertEquals("cross", server.move().id);
+
+        Fighter late = new Fighter(3, SET, Rules.player());
+        assertTrue(late.request(Action.LIGHT, "jab", c));
+        ticks = 0;
+        while (late.phase() == Fighter.Phase.MOVE && ticks++ < 40) late.tickFollower(true, false);
+        for (int i = 0; i < 4; i++) late.tickFollower(true, false);
+        assertFalse(late.request(Action.LIGHT, "cross", c), "four ticks after the jab ended is past the margin");
+        assertTrue(late.request(Action.LIGHT, "jab", c), "a fresh jab is still fine");
+    }
+
     @Test
     void deterministic() {
         List<String> a = scripted(), b = scripted();

@@ -67,6 +67,11 @@ public final class Fighter {
     private int combo;
     private long lastComboHit = -1000;
 
+    /** The move that last ran out into idle, when, and whether it had connected (late branches). */
+    private Move endedMove;
+    private long endedAt = -1000;
+    private boolean endedConnected;
+
     /** Facing in degrees (Minecraft yaw). The owner keeps it in sync with the entity. */
     public double yaw;
 
@@ -282,6 +287,9 @@ public final class Fighter {
     private void endMove() {
         Move done = move;
         if (done.kind == Kind.DODGE) lastDodgeEnd = clock;
+        endedMove = done;
+        endedAt = clock;
+        endedConnected = connected;
         events.moveEnded(this, done);
         if (done.next != null) start(set.require(done.next));
         else toIdle();
@@ -506,9 +514,35 @@ public final class Fighter {
             jumpRequested = false;
             return true;
         }
-        if (m == null || !m.id.equals(moveId)) return false;
+        if (m == null || !m.id.equals(moveId)) {
+            Move late = lateBranch(a, moveId);
+            if (late == null) return false;
+            m = late;
+        }
         execute(m, c);
         return true;
+    }
+
+    /**
+     * A string follow-up the client started after this fighter's copy of the move already ended.
+     * The client holds a move through the hit-stop of hits it predicts; when the server resolves
+     * such a hit differently (a block, a dodge, a miss), its copy runs out earlier, by at most the
+     * move's total hit-stop. A branch that was still open on the client within that margin is
+     * accepted from idle instead of being rejected.
+     */
+    private Move lateBranch(Action a, String moveId) {
+        if (moveId == null || endedMove == null || (phase != Phase.IDLE && phase != Phase.BLOCK)) return null;
+        int hold = 0;
+        for (HitWindow w : endedMove.hits) hold += w.spec().hitstop();
+        long since = clock - endedAt;
+        if (hold <= 0 || since > hold) return null;
+        for (Branch br : endedMove.branches) {
+            if (br.input() != a || !br.to().equals(moveId) || (br.onHit() && !endedConnected)) continue;
+            // The client's tick in the ended move: its end plus the ticks since, less what it was held.
+            if (br.until() < endedMove.duration + since - hold) continue;
+            return affordable(set.get(moveId));
+        }
+        return null;
     }
 
     /** Server side of a charged-heavy release: the client reports its charge level. */

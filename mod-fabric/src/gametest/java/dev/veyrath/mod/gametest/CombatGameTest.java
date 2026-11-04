@@ -75,7 +75,11 @@ public final class CombatGameTest implements FabricClientGameTest {
             int rejected = context.computeOnClient(mc -> LocalCombat.rejectedCount());
             String stats = server.computeOnServer(s -> CombatServer.stats());
             LOG.info("{}\nclient saw {} rejected inputs", stats, rejected);
-            check(rejected == 0, "no input was rejected by the server (" + rejected + ")");
+            // An input pressed on the tick an enemy hit lands is lost to that hit on the server: fair,
+            // and a matter of the husks' timing. Any other rejection is a desync.
+            int struck = server.computeOnServer(s -> CombatServer.rejectedWhileStruckCount());
+            check(rejected - struck == 0, "no input was rejected by the server except ones that met a hit ("
+                    + rejected + " rejected, " + struck + " of them while struck)");
 
             context.getInput().pressKey(CombatClient.STANCE_KEY);
             context.waitTicks(5);
