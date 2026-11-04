@@ -23,7 +23,13 @@ public final class CombatHud {
     private static final int BG = 0xB0101418, FRAME = 0xFF2A3038, READY = 0xFF5A6674;
     private static final int STAMINA = 0xFFE6C84A, AETHER = 0xFF4FB4FF, GAUGE = 0xFFFF9A3C, GAUGE_FULL = 0xFFFFE08A;
     private static final String[] SLOT_KEYS = {"1", "2", "3", "4"};
-    private static final String[] SLOT_NAMES = {"GALE", "SKY", "QUAKE", "ULT"};
+    /** Short slot labels per ability move id; the ultimate slot always reads ULT. */
+    private static final java.util.Map<String, String> SLOT_LABELS = java.util.Map.ofEntries(
+            java.util.Map.entry("gale_step", "GALE"), java.util.Map.entry("skybreaker", "SKY"), java.util.Map.entry("quake_palm", "QUAKE"),
+            java.util.Map.entry("gs_rending_arc", "ARC"), java.util.Map.entry("gs_grave_drop", "DROP"), java.util.Map.entry("gs_guard_crush", "CRUSH"),
+            java.util.Map.entry("tb_thousand_cuts", "CUTS"), java.util.Map.entry("tb_shadow_step", "STEP"), java.util.Map.entry("tb_talon_spiral", "TALON"),
+            java.util.Map.entry("gl_vault_thrust", "VAULT"), java.util.Map.entry("gl_crescent_sweep", "ARC"), java.util.Map.entry("gl_piercing_gale", "GALE"),
+            java.util.Map.entry("gr_lance", "LANCE"), java.util.Map.entry("gr_star_mine", "MINE"), java.util.Map.entry("gr_rift_pull", "PULL"));
 
     private static double shownCombo;
     private static int comboHold;
@@ -36,8 +42,28 @@ public final class CombatHud {
         int w = mc.getWindow().getGuiScaledWidth(), h = mc.getWindow().getGuiScaledHeight();
 
         int x = 8, y = h - 44;
+        var p = mc.player;
+        // Our own vitals in place of vanilla's hearts, armour and food (hidden in stance).
+        g.fill(x - 4, y - 44, x + 22 + BAR_W + 74, y + 30, 0x7008090C);
         String weapon = dev.veyrath.combat.content.Weapons.of(f.set).name().toUpperCase(Locale.ROOT);
-        g.text(font, weapon, x, y - 13, 0xFFE8DCC0, true);
+        g.text(font, weapon, x, y - 40, 0xFFE8DCC0, true);
+        if (p != null) {
+            float hp = p.getHealth(), max = p.getMaxHealth();
+            int hy = y - 27;
+            g.text(font, "HP", x, hy, 0xFFB8C0CC, true);
+            int bx = x + 22, bw = BAR_W + 30, bh = 8;
+            g.fill(bx - 1, hy - 1, bx + bw + 1, hy + bh + 1, FRAME);
+            g.fill(bx, hy, bx + bw, hy + bh, BG);
+            int fillW = (int) Math.round(bw * Math.clamp(hp / Math.max(1, max), 0, 1));
+            g.fill(bx, hy, bx + fillW, hy + bh, hp / max < 0.3f ? 0xFFFF4A3C : 0xFFE0443A);
+            g.fill(bx, hy, bx + fillW, hy + 2, 0x50FFFFFF);
+            for (int seg = 1; seg < 10; seg++) g.fill(bx + bw * seg / 10, hy, bx + bw * seg / 10 + 1, hy + bh, 0x60000000);
+            String num = String.format(Locale.ROOT, "%.0f / %.0f", hp, max);
+            small(g, font, num, bx + bw + 4, hy + 2, 0xFFE8DCC0);
+            int armor = p.getArmorValue();
+            int food = p.getFoodData().getFoodLevel();
+            small(g, font, "GUARD " + armor + "   FOOD " + food, bx, hy + 11, 0xFF9AA4B0);
+        }
         bar(g, font, x, y, "STA", f.stamina() / f.rules.staminaMax, STAMINA);
         bar(g, font, x, y + 11, "AET", f.aether() / f.rules.aetherMax, AETHER);
         double gauge = f.gauge() / f.rules.gaugeMax;
@@ -57,7 +83,8 @@ public final class CombatHud {
             g.fill(bx - 1, sy - 1, bx + SLOT_W + 1, sy + SLOT_H + 1, ready ? (i == 3 ? GAUGE_FULL : READY) : FRAME);
             g.fill(bx, sy, bx + SLOT_W, sy + SLOT_H, BG);
             int color = ready ? (i == 3 ? GAUGE_FULL : 0xFFFFFFFF) : 0xFF7A808A;
-            g.text(font, SLOT_NAMES[i], bx + SLOT_W / 2 - font.width(SLOT_NAMES[i]) / 2, sy + 7, color, true);
+            String label = i == 3 ? "ULT" : SLOT_LABELS.getOrDefault(ids[i], "-");
+            g.text(font, label, bx + SLOT_W / 2 - font.width(label) / 2, sy + 7, color, true);
             small(g, font, SLOT_KEYS[i], bx + 2, sy + 2, 0xFFB8C0CC);
             if (cd > 0) {
                 int fillH = (int) Math.ceil((double) SLOT_H * cd / Math.max(1, m.cooldown));

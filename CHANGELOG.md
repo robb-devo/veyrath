@@ -22,6 +22,8 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   smoke puffs.
 - **Vesper Codex**, the grimoire (key 9): ranged Aether bolts, nova, meteor, Arcane Lance, Star Mine,
   Rift Pull and the ultimate Vesper Nova; own book model and violet spell effects.
+- Own stance HUD: vitals panel with HP bar replaces vanilla hearts, armour, food and air; ability
+  slots labelled per weapon. Weapon reach for the Duelist measured for every weapon (fists unchanged).
 - VEYRATH's own combat sounds (TD-033): 19 cues designed from CC0 recordings replace every
   vanilla sound in combat, tells and the arena; weapon swings whoosh.
 - The Duelist can wield the Oathcleaver (`/veyrath arena duelist <style> greatsword`); weapon

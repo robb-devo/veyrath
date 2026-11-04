@@ -83,10 +83,11 @@ public final class CombatClient {
         // Flashes and the slow-motion vignette sit under everything else, damage numbers included.
         HudElementRegistry.addFirst(VeyrathMod.id("screen_fx"), ScreenFx::extract);
         // In stance the ability slots take the hotbar's place (keys 1-4 are abilities there, and the
-        // held item is hidden); the crosshair means nothing with a free camera. Hearts, armour, food
-        // and air stay.
+        // held item is hidden); the crosshair means nothing with a free camera; hearts, armour, food
+        // and air are replaced by CombatHud's own vitals.
         for (var id : java.util.List.of(VanillaHudElements.CROSSHAIR, VanillaHudElements.HOTBAR, VanillaHudElements.INFO_BAR,
-                VanillaHudElements.EXPERIENCE_LEVEL, VanillaHudElements.HELD_ITEM_TOOLTIP)) {
+                VanillaHudElements.EXPERIENCE_LEVEL, VanillaHudElements.HELD_ITEM_TOOLTIP, VanillaHudElements.HEALTH_BAR,
+                VanillaHudElements.ARMOR_BAR, VanillaHudElements.FOOD_BAR, VanillaHudElements.AIR_BAR)) {
             HudElementRegistry.replaceElement(id, vanilla -> (g, delta) -> {
                 if (!LocalCombat.active()) vanilla.extractRenderState(g, delta);
             });

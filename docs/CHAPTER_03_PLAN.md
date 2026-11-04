@@ -38,7 +38,7 @@ animation, input buffered). Out of stance, weapons are items in VEYRATH's own mo
 | 6 Glaive | First playable version (key 8): thrusts, sweep, lunge, full sweep, air sweep and impaling dive, Vault Thrust, Crescent Sweep, Piercing Gale, Heavenfall; held along the arm's line; all land in the weapon test (`docs/media/weapons/skyreach_sheet.jpg`) |
 | 7 Grimoire | First playable version (key 9): bolts, nova, meteor, air bolt, Arcane Lance, Star Mine, Rift Pull, Vesper Nova; spells are server hit shapes, the client draws the bolts; all land in the weapon test (`docs/media/weapons/vesper_codex_sheet.jpg`) |
 | Death presentation | Done for the look: no red tint, the body fades to white as it falls, then dissolves into rising light and ash (`docs/media/vfx/death_dissolve.jpg`). Still vanilla: experience orbs and item drops (a loot and progression question for later) |
-| 8 Own HUD art | Open |
+| 8 Own HUD | First version: in stance our own vitals panel (weapon name, segmented HP bar with numbers, guard and food, stamina, Aether, gauge) replaces vanilla hearts, armour, food and air; ability slots are labelled per weapon. Still vanilla: the boss bar, effect icons, the hotbar outside stance |
 
 ## Work packages
 

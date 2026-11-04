@@ -33,8 +33,8 @@ public final class Reach {
         return m == null || m.hits.isEmpty() ? 0 : of(m, m.hits.getFirst());
     }
 
-    /** Bone shapes longer than this (pixels from the joint) are weapons, measured from their clips. */
-    static final double WEAPON_SHAPE = 20;
+    /** Bone shapes longer than this (pixels from the joint) are weapons, measured from their clips (fists stay on the estimate). */
+    static final double WEAPON_SHAPE = 18; // fists reach 16.5 px, the twin blades 19.8
 
     static double of(Move m, HitWindow w) {
         double travel = travel(m, w.to()), best = 0;
