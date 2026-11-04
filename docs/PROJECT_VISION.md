@@ -7,7 +7,9 @@ reasonably possible.
 This summarises the owner's Master Development Directive (2026-11-02), which remains the
 authority. The full original text is in [MASTER_DIRECTIVE.md](MASTER_DIRECTIVE.md). On
 2026-11-04 the owner restated the ambition: use Minecraft only as an engine and keep none of
-its original vibe. The owner may change the vision at any time. When that happens, update this file
+its original vibe. After playing Chapter 02 he made it a hard rule: no Minecraft effects,
+particles, sounds or anything else the player meets; all of it is made by VEYRATH. A pack that
+still feels like Minecraft means the mission failed. The owner may change the vision at any time. When that happens, update this file
 first.
 
 ## Core vision

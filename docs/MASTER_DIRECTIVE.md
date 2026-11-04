@@ -13,7 +13,13 @@ Later decisions by the owner that change its scope:
   Be smart with usage balance and do not overengineer meaningless things, but never rush or
   cut corners; be precise.
 
-Chapters 03, 04 and 05 still need his explicit approval.
+- 2026-11-04 (after playing Chapter 02): Chapter 02 is kept as the foundation, to be improved
+  alongside bosses, weapons, sounds and the HUD. Chapter 03 (weapons and audio) approved. The
+  no-vanilla rule, verbatim: "every aspect where we can get away from vanilla minecraft, we want. like, no minecraft effects or particles, sounds, whatever. we wanna do/have ALL of that, made by us. like, as i stated. minecraft is our engine. we dont want a modpack in the end, that still feels like minecraft. that would mean, mission failed if that happens."
+  Every effect, particle, sound, HUD element and model the player sees or hears is VEYRATH's own.
+  Minecraft's are placeholders to be replaced, never the final implementation.
+
+Chapters 04 and 05 still need his explicit approval.
 
 ---
 

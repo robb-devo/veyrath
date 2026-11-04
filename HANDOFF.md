@@ -30,12 +30,15 @@ Owner's standing rules (verbatim where quoted):
 - "Ask questions only when an actual decision cannot reasonably be made independently."
 - "Do not spend excessive time writing documentation instead of developing the actual product."
 - Chapters are gated: "Do not begin any future Chapter without explicit approval." Chapter 02
-  (Player Controller & Combat Engine) is approved and done (acceptance report presented 2026-11-04). Chapters 03 (weapons, audio),
-  04 (bosses), 05 (dragon) need his explicit go-ahead. Each chapter ends with its own acceptance
+  (Player Controller & Combat Engine) is approved and done (acceptance report presented 2026-11-04). Chapter 03 (weapons, audio) is
+  approved since 2026-11-04. Chapters 04 (bosses), 05 (dragon) need his explicit go-ahead. Each chapter ends with its own acceptance
   report, then stop and present.
 - 2026-11-04: "we wanna basically abuse minecraft as much as we can, and only use it as an
   engine ... our ambition, is to absolutely not keep any of the original minecraft vibes."
   Be smart with balance, no overengineering of meaningless things, but never rush; be precise.
+- **The no-vanilla rule (2026-11-04, the owner's words):** "every aspect where we can get away from vanilla minecraft, we want. like, no minecraft effects or particles, sounds, whatever. we wanna do/have ALL of that, made by us. like, as i stated. minecraft is our engine. we dont want a modpack in the end, that still feels like minecraft. that would mean, mission failed if that happens."
+  So: no vanilla particles, sounds, effects, HUD or models in anything the player meets. Vanilla
+  pieces still on screen are placeholders to replace, and new work never adds any.
 - Usage balance matters to him: keep replies short, build first. When balance runs low, stop
   cleanly: everything committed, pushed AND pulled into the laptop checkout, build current, and
   this file updated.
