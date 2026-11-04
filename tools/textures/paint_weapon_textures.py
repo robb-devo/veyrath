@@ -54,3 +54,37 @@ fill(16, 8, 24, 16, pommel)
 OUT.parent.mkdir(parents=True, exist_ok=True)
 img.save(OUT)
 print("wrote", OUT)
+
+# wren_thorn.png: the twin blades, same layout. Darker blued steel, crimson wrap, black guard.
+OUT2 = OUT.with_name("wren_thorn.png")
+img = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+
+def blued(x, y, w, h):
+    edge = x in (0, w - 1)
+    base = 150 + (y / h) * 24 + rng.uniform(-6, 6)
+    if edge: base = 232
+    return (clamp(base - 18), clamp(base - 4), clamp(base + 22), 255)
+
+def blued_fuller(x, y, w, h):
+    base = 92 + rng.uniform(-5, 5)
+    return (clamp(base - 10), clamp(base), clamp(base + 24), 255)
+
+def black_guard(x, y, w, h):
+    v = 1 - y / h
+    return (clamp(40 + 30 * v), clamp(34 + 24 * v), clamp(40 + 26 * v), 255)
+
+def crimson(x, y, w, h):
+    wrap = (x + y) % 3 == 0
+    return (clamp(120 if wrap else 168), clamp(18 if wrap else 32), clamp(28 if wrap else 40), 255)
+
+def ruby(x, y, w, h):
+    hi = x < w / 2 and y < h / 2
+    return (clamp(236 if hi else 170), clamp(70 if hi else 20), clamp(80 if hi else 36), 255)
+
+fill(0, 0, 16, 16, blued)
+fill(0, 16, 16, 32, blued_fuller)
+fill(16, 0, 24, 8, black_guard)
+fill(24, 0, 32, 8, crimson)
+fill(16, 8, 24, 16, ruby)
+img.save(OUT2)
+print("wrote", OUT2)

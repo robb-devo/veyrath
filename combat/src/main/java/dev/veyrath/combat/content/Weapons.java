@@ -17,15 +17,17 @@ public final class Weapons {
 
     public static final Weapon UNARMED = new Weapon("unarmed", "Unbound Fists", UnarmedMoves.moveSet(), "stance_idle");
     public static final Weapon GREATSWORD = new Weapon(Greatsword.ID, "Oathcleaver", Greatsword.moveSet(UNARMED.moves()), "gs_stance_idle");
+    public static final Weapon TWIN_BLADES = new Weapon(TwinBlades.ID, "Wren and Thorn", TwinBlades.moveSet(UNARMED.moves()), "tb_stance_idle");
 
     /** In swap order (keys 5, 6, ... in stance). */
-    public static final List<Weapon> ALL = List.of(UNARMED, GREATSWORD);
+    public static final List<Weapon> ALL = List.of(UNARMED, GREATSWORD, TWIN_BLADES);
 
     public static final ClipLibrary CLIPS = buildClips();
 
     private static ClipLibrary buildClips() {
         ClipLibrary lib = UnarmedClips.library();
         Greatsword.clips(lib);
+        TwinBlades.clips(lib);
         return lib;
     }
 

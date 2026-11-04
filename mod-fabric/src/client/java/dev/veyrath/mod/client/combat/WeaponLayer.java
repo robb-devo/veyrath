@@ -22,7 +22,8 @@ import net.minecraft.resources.Identifier;
  */
 public final class WeaponLayer<S extends HumanoidRenderState, M extends HumanoidModel<S>> extends RenderLayer<S, M> {
     static final Identifier OATHCLEAVER = VeyrathMod.id("textures/entity/weapon/oathcleaver.png");
-    private static RenderType oathcleaverType;
+    static final Identifier WREN_THORN = VeyrathMod.id("textures/entity/weapon/wren_thorn.png");
+    private static RenderType oathcleaverType, wrenThornType;
 
     public WeaponLayer(RenderLayerParent<S, M> parent) {
         super(parent);
@@ -31,6 +32,18 @@ public final class WeaponLayer<S extends HumanoidRenderState, M extends Humanoid
     @Override
     public void submit(PoseStack pose, SubmitNodeCollector collector, int light, S state, float yRot, float xRot) {
         String weapon = ((FlashState) state).veyrath$weapon();
+        if (dev.veyrath.combat.content.TwinBlades.ID.equals(weapon)) {
+            if (wrenThornType == null) wrenThornType = RenderTypes.entitySolid(WREN_THORN);
+            for (boolean leftHand : new boolean[]{false, true}) {
+                pose.pushPose();
+                getParentModel().root().translateAndRotate(pose);
+                (leftHand ? getParentModel().leftArm : getParentModel().rightArm).translateAndRotate(pose);
+                final float hx = leftHand ? 1 : -1;
+                collector.submitCustomGeometry(pose, wrenThornType, (p, vc) -> shortBlade(p, vc, light, hx));
+                pose.popPose();
+            }
+            return;
+        }
         if (!Greatsword.ID.equals(weapon)) return;
         if (oathcleaverType == null) oathcleaverType = RenderTypes.entitySolid(OATHCLEAVER);
         pose.pushPose();
@@ -54,6 +67,17 @@ public final class WeaponLayer<S extends HumanoidRenderState, M extends Humanoid
         box(p, vc, light, hx - 0.45f, hy - 2.4f, -31, hx + 0.45f, hy + 2.4f, -5.5f, 0, 0, 16, 16);
         box(p, vc, light, hx - 0.55f, hy - 0.8f, -29, hx + 0.55f, hy + 0.8f, -6, 0, 16, 16, 32);
         box(p, vc, light, hx - 0.35f, hy - 1.4f, -35, hx + 0.35f, hy + 1.4f, -31, 0, 0, 16, 16);
+    }
+
+    /** One of the twin blades in its hand's space: short grip, small guard, a 15 px blade. */
+    private static void shortBlade(PoseStack.Pose p, VertexConsumer vc, int light, float hx) {
+        float hy = 10.5f;
+        box(p, vc, light, hx - 0.7f, hy - 0.7f, -2.5f, hx + 0.7f, hy + 0.7f, 2.5f, 24, 0, 32, 8);
+        box(p, vc, light, hx - 1.0f, hy - 1.0f, 2.5f, hx + 1.0f, hy + 1.0f, 3.6f, 16, 8, 24, 16);
+        box(p, vc, light, hx - 0.8f, hy - 2.6f, -3.5f, hx + 0.8f, hy + 2.6f, -2.5f, 16, 0, 24, 8);
+        box(p, vc, light, hx - 0.3f, hy - 1.3f, -16, hx + 0.3f, hy + 1.3f, -3.5f, 0, 0, 16, 16);
+        box(p, vc, light, hx - 0.38f, hy - 0.4f, -15, hx + 0.38f, hy + 0.4f, -4, 0, 16, 16, 32);
+        box(p, vc, light, hx - 0.2f, hy - 0.7f, -18.5f, hx + 0.2f, hy + 0.7f, -16, 0, 0, 16, 16);
     }
 
     /** A box in pixels with one texture region (pixels of the 32 x 32 texture) on every face. */

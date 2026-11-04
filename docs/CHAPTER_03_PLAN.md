@@ -34,7 +34,9 @@ animation, input buffered). Out of stance, weapons are items in VEYRATH's own mo
 | 2 Own audio | Combat sounds done (TD-033): 19 own cues from CC0 recordings, no vanilla sound left in code. Still open: ambience, dynamic music, buses and ducking |
 | 3 Weapon framework | Done: swap keys 5 and 6, server agreement, held models, HUD name |
 | 4 Oathcleaver | First playable version: all moves land in the weapon test (`docs/media/weapons/`); own sounds and feel tuning still to come. `/veyrath arena duelist <style> greatsword` arms the Duelist, which draws and swings it, but its cuts rarely connect (1 hit in 10 s in the weapon test; its reach model was built for fists, open) |
-| 5-7 Twin blades, glaive, grimoire | Open |
+| 5 Twin blades | First playable version (key 7): four-cut string, lunge, cyclone, air spin and dive, Thousand Cuts, Shadow Step, Talon Spiral, Crimson Waltz; all land in the weapon test (`docs/media/weapons/wren_thorn_sheet.jpg`) |
+| 6-7 Glaive, grimoire | Open |
+| Also open | Mob deaths still use vanilla's red tint, poof particles, orbs and drops: an own death presentation is needed |
 | 8 Own HUD art | Open |
 
 ## Work packages

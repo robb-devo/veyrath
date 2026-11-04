@@ -80,6 +80,24 @@ public final class WeaponGameTest implements FabricClientGameTest {
             context.waitTicks(30);
             shot(context, "w09_ultimate_finisher");
 
+            // Twin blades on key 7.
+            context.getInput().pressKey(o -> o.keyHotbarSlots[6]);
+            context.waitTicks(10);
+            String twin = context.computeOnClient(mc -> Weapons.of(LocalCombat.fighter().set).id());
+            check(Weapons.TWIN_BLADES.id().equals(twin), "key 7 draws Wren and Thorn (" + twin + ")");
+            step(context, sp, y, "t01_string", 1.8, () -> {
+                tap(context, ATTACK, 4);
+                tap(context, ATTACK, 4);
+                tap(context, ATTACK, 4);
+                tap(context, ATTACK, 8);
+            });
+            step(context, sp, y, "t02_heavy", 2.2, () -> tap(context, USE, 6));
+            step(context, sp, y, "t03_thousand_cuts", 1.6, () -> tap(context, o -> o.keyHotbarSlots[0], 14));
+            step(context, sp, y, "t04_shadow_step", 3.0, () -> tap(context, o -> o.keyHotbarSlots[1], 8));
+            step(context, sp, y, "t05_talon_spiral", 1.6, () -> tap(context, o -> o.keyHotbarSlots[2], 8));
+            step(context, sp, y, "t06_crimson_waltz", 2.0, () -> tap(context, o -> o.keyHotbarSlots[3], 30));
+            context.waitTicks(40); // the ultimate's slow motion and recovery are over before swapping
+
             context.getInput().pressKey(o -> o.keyHotbarSlots[4]);
             context.waitTicks(10);
             String back = context.computeOnClient(mc -> Weapons.of(LocalCombat.fighter().set).id());
@@ -126,6 +144,8 @@ public final class WeaponGameTest implements FabricClientGameTest {
         server.runCommand("execute as @p run veyrath combat refill");
         server.runCommand(String.format(Locale.ROOT, "tp @p %.1f %d %.1f 0 12", PX, y, PZ));
         // A fresh group each step: a husk the previous step killed must not make this one miss.
+        // Removed without dying, so no corpses, drops or orbs clutter the next screenshot.
+        server.runCommand("tp @e[tag=vt_w] ~ -400 ~");
         server.runCommand("kill @e[tag=vt_w]");
         for (int g = 0; g < 3; g++) {
             server.runCommand(String.format(Locale.ROOT,
