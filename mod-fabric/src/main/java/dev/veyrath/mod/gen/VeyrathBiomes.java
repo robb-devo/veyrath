@@ -9,7 +9,6 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeGenerationSettings;
 import net.minecraft.world.level.biome.BiomeSpecialEffects;
 import net.minecraft.util.ARGB;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.attribute.AmbientParticle;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.level.biome.MobSpawnSettings;
@@ -43,23 +42,11 @@ public final class VeyrathBiomes {
     }
 
     /**
-     * Sparse ambient particles: atmosphere, never weather. Probabilities are per client particle
-     * attempt; for scale, vanilla basalt deltas use white ash at 0.118 and crimson forest spores at
-     * 0.025.
+     * No Minecraft ambient particles: biome atmosphere (ash, spores, pollen, Aether motes) is drawn
+     * by VEYRATH's own effects engine on the client ({@code AmbientVfx}).
      */
     private static List<AmbientParticle> ambientParticles(VBiome b) {
-        return switch (b) {
-            // Cinderwake: dark flecks of drifting ash (soul sand valley's particle at about twice its
-            // rate); the white ash of basalt deltas read as snow here.
-            case ASHEN_WASTES, CINDER_PEAKS, EMBERVEIN_FLATS, CHARWOOD -> AmbientParticle.of(ParticleTypes.ASH, 0.012f);
-            // Damp, shaded hollows and marshes: floating spores.
-            case MOSSDEEP_HOLLOWS, GLOWMIRE, GLOAMREED_MARSH -> AmbientParticle.of(ParticleTypes.SPORE_BLOSSOM_AIR, 0.008f);
-            // Sunlit meadows: the odd mote of pollen.
-            case SUNMANTLE_MEADOWS, SUNGLADE -> AmbientParticle.of(ParticleTypes.SPORE_BLOSSOM_AIR, 0.002f);
-            // High meadows and the floating isles: faint glowing motes.
-            case CLOUDMEADOW, AETHER_ISLES -> AmbientParticle.of(ParticleTypes.END_ROD, 0.0008f);
-            default -> List.of();
-        };
+        return List.of();
     }
 
     private static Biome create(VBiome b) {

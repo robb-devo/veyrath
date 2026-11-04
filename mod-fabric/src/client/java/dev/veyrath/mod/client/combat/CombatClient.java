@@ -26,6 +26,7 @@ public final class CombatClient {
     public static void init() {
         CombatSettings.load();
         dev.veyrath.mod.client.vfx.Vfx.init();
+        dev.veyrath.mod.client.vfx.AmbientVfx.init();
         STANCE_KEY = KeyMappingHelper.registerKeyMapping(
                 new KeyMapping("key.veyrath.stance", InputConstants.KEY_Z, CATEGORY));
 

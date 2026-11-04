@@ -7,14 +7,6 @@
       },
       "modifier": "overlay"
     },
-    "minecraft:visual/ambient_particles": [
-      {
-        "particle": {
-          "type": "minecraft:ash"
-        },
-        "probability": 0.012
-      }
-    ],
     "minecraft:visual/fog_color": "#7a4a3c",
     "minecraft:visual/sky_color": "#5c4446",
     "minecraft:visual/water_fog_color": "#1a2224"
