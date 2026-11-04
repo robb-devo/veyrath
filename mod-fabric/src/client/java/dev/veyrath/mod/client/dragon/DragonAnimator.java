@@ -42,6 +42,8 @@ public final class DragonAnimator {
         float time, prevTime, blend = 1;
         float lastAge = -1;
         float lastYaw, yawRate, bank, tailLag;
+        float lastClip = -1;
+        int breathIn = 80;
         SkinnedMesh.Pose out;
         DragonPoses.P scratch, scratchB;
     }
@@ -71,7 +73,9 @@ public final class DragonAnimator {
             tr.blend = 0;
         }
         float speed = clipSpeed(e, want);
+        float before = tr.time;
         tr.time += dt * speed;
+        beats(e, tr, before, tr.time);
         tr.prevTime += dt;
         tr.blend = Math.min(1, tr.blend + dt / 7f);
 
@@ -110,6 +114,33 @@ public final class DragonAnimator {
 
         write(p, tr.out);
         return tr.out;
+    }
+
+    /** Sound marks in the clips: downstrokes of the wings, footfalls, breaths at rest. */
+    private static void beats(DragonEntity e, Track tr, float from, float to) {
+        Clip c = CLIPS.get(tr.state);
+        if (c == null || to <= from) return;
+        float[] marks = switch (tr.state) {
+            case FLAP -> new float[]{11};
+            case TAKEOFF -> new float[]{16};
+            case HOVER -> new float[]{9};
+            case WALK -> new float[]{0, 18};
+            case RUN -> new float[]{0, 10};
+            default -> new float[0];
+        };
+        String what = tr.state == DragonState.WALK || tr.state == DragonState.RUN ? "step" : "wingbeat";
+        for (float m : marks) {
+            float a = c.loop() ? from % c.length() : from, b = c.loop() ? to % c.length() : to;
+            boolean crossed = b >= a ? (m > a && m <= b) : (m > a || m <= b);
+            if (crossed) DragonFx.event(e, what);
+        }
+        if (tr.state == DragonState.IDLE || tr.state == DragonState.CROUCH) {
+            tr.breathIn -= (int) Math.max(1, to - from);
+            if (tr.breathIn <= 0) {
+                tr.breathIn = 110 + e.getRandom().nextInt(80);
+                DragonFx.event(e, "breath");
+            }
+        }
     }
 
     private static float clipSpeed(DragonEntity e, DragonState s) {

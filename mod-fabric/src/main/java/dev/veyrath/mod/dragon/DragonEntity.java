@@ -187,6 +187,7 @@ public class DragonEntity extends PathfinderMob {
     private void land() {
         setFlying(false);
         landing = 16;
+        landed();
         setDeltaMovement(getDeltaMovement().multiply(0.3, 0, 0.3));
     }
 
@@ -199,8 +200,23 @@ public class DragonEntity extends PathfinderMob {
         setYHeadRot(yaw);
     }
 
-    /** She roars (an emote for now; later her call). */
-    public void roar() { roar = 50; }
+    /** She roars. */
+    public void roar() {
+        roar = 50;
+        if (level() instanceof net.minecraft.server.level.ServerLevel sl) {
+            sl.playSound(null, getX(), getY() + 5, getZ(), dev.veyrath.mod.combat.CombatSounds.event("dragon_roar"),
+                    net.minecraft.sounds.SoundSource.NEUTRAL, 3.0f, 1.0f);
+        }
+    }
+
+    /** The thud of touching down (server): sound and dust for everyone near. */
+    private void landed() {
+        if (level() instanceof net.minecraft.server.level.ServerLevel sl) {
+            sl.playSound(null, getX(), getY(), getZ(), dev.veyrath.mod.combat.CombatSounds.event("dragon_land"),
+                    net.minecraft.sounds.SoundSource.NEUTRAL, 2.5f, 1.0f);
+            dev.veyrath.mod.combat.CombatServer.vfx(this, "dragon_land", getX(), getY(), getZ());
+        }
+    }
 
     // ------------------------------------------------------------------ owner, calling, arrival
 
@@ -390,6 +406,7 @@ public class DragonEntity extends PathfinderMob {
         if (onGround() && flying() && takeoff == 0 && getControllingPassenger() != null) {
             setFlying(false);
             landing = 16;
+            landed();
         }
         setState(derive(vel));
     }

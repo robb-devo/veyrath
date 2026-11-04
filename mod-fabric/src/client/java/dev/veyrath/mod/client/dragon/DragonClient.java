@@ -44,6 +44,7 @@ public final class DragonClient {
             if (before != null) mc.options.setCameraType(before);
         }
         riding = now;
+        DragonFx.tickWind(mc, now ? (DragonEntity) p.getVehicle() : null);
     }
 
     /** The dragon the camera entity rides, or null. */

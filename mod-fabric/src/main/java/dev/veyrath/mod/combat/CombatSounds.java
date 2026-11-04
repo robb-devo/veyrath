@@ -23,7 +23,7 @@ public final class CombatSounds {
 
     static final String[] CUES = {"hit_light", "hit_heavy", "hit_charged", "barrage", "gale", "skybreaker", "quake", "slam", "ultimate",
             "block", "guard_break", "parry", "perfect_dodge", "blade_cut", "blade_swing", "tell_strike", "tell_heavy", "tell_unblockable",
-            "round_bell", "boss_roar", "boss_awaken", "boss_death", "boss_grunt", "boss_fire", "boss_slam"};
+            "round_bell", "boss_roar", "boss_awaken", "boss_death", "boss_grunt", "boss_fire", "boss_slam", "dragon_wingbeat", "dragon_wind", "dragon_roar", "dragon_land", "dragon_step", "dragon_breath", "dragon_horn"};
     private static final Map<String, SoundEvent> EVENTS = new HashMap<>();
 
     /** Registers the sound events (mod init). */

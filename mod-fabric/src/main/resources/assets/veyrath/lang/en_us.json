@@ -90,5 +90,12 @@
   "entity.veyrath.vaelith": "Vaelith",
   "item.veyrath.storm_horn": "Storm Horn",
   "veyrath.dragon.answers": "Far off, something vast answers the horn.",
-  "veyrath.dragon.dismissed": "Vaelith takes to the sky."
+  "veyrath.dragon.dismissed": "Vaelith takes to the sky.",
+  "subtitles.veyrath.combat.dragon_wingbeat": "Great wings beat",
+  "subtitles.veyrath.combat.dragon_wind": "Wind rushes past",
+  "subtitles.veyrath.combat.dragon_roar": "Vaelith roars",
+  "subtitles.veyrath.combat.dragon_land": "Vaelith lands",
+  "subtitles.veyrath.combat.dragon_step": "Heavy footsteps",
+  "subtitles.veyrath.combat.dragon_breath": "A great breath",
+  "subtitles.veyrath.combat.dragon_horn": "The Storm Horn sounds"
 }

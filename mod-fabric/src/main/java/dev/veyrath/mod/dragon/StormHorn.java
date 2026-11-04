@@ -25,7 +25,7 @@ public class StormHorn extends Item {
     public InteractionResult use(Level level, Player player, InteractionHand hand) {
         if (!(level instanceof ServerLevel sl) || !(player instanceof ServerPlayer sp)) return InteractionResult.SUCCESS;
         sp.getCooldowns().addCooldown(sp.getItemInHand(hand), 40);
-        sl.playSound(null, sp.getX(), sp.getY() + 1.5, sp.getZ(), CombatSounds.event("boss_awaken"), SoundSource.PLAYERS, 1.6f, 1.25f);
+        sl.playSound(null, sp.getX(), sp.getY() + 1.5, sp.getZ(), CombatSounds.event("dragon_horn"), SoundSource.PLAYERS, 2.0f, 1.0f);
         DragonEntity mine = null;
         for (DragonEntity d : sl.getEntitiesOfClass(DragonEntity.class, sp.getBoundingBox().inflate(256), d -> sp.getUUID().equals(d.owner()))) {
             mine = d;

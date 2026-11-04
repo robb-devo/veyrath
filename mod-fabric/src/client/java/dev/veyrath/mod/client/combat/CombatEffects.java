@@ -33,6 +33,7 @@ public final class CombatEffects {
 
     /** Effects that are not hits (Duelist tells), sent by the server by id. */
     public static void play(RandomSource r, String vfx, Vec3 at, double yaw) {
+        if (dev.veyrath.mod.client.dragon.DragonFx.play(r, vfx, at.x(), at.y(), at.z())) return;
         if (dev.veyrath.mod.client.boss.BossEffects.handles(vfx)) {
             dev.veyrath.mod.client.boss.BossEffects.play(r, vfx, at.x(), at.y(), at.z(), yaw);
             return;

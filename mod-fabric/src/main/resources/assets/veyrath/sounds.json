@@ -699,5 +699,120 @@
       }
     ],
     "subtitle": "subtitles.veyrath.combat.boss_slam"
+  },
+  "combat.dragon_wingbeat": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/dragon_wingbeat_1",
+        "volume": 0.9
+      },
+      {
+        "name": "veyrath:combat/dragon_wingbeat_2",
+        "volume": 0.9
+      },
+      {
+        "name": "veyrath:combat/dragon_wingbeat_3",
+        "volume": 0.9
+      },
+      {
+        "name": "veyrath:combat/dragon_wingbeat_4",
+        "volume": 0.9
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.dragon_wingbeat"
+  },
+  "combat.dragon_wind": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/dragon_wind_1",
+        "volume": 0.6
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.dragon_wind"
+  },
+  "combat.dragon_roar": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/dragon_roar_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/dragon_roar_2",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/dragon_roar_3",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.dragon_roar"
+  },
+  "combat.dragon_land": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/dragon_land_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/dragon_land_2",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/dragon_land_3",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.dragon_land"
+  },
+  "combat.dragon_step": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/dragon_step_1",
+        "volume": 0.8
+      },
+      {
+        "name": "veyrath:combat/dragon_step_2",
+        "volume": 0.8
+      },
+      {
+        "name": "veyrath:combat/dragon_step_3",
+        "volume": 0.8
+      },
+      {
+        "name": "veyrath:combat/dragon_step_4",
+        "volume": 0.8
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.dragon_step"
+  },
+  "combat.dragon_breath": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/dragon_breath_1",
+        "volume": 0.6
+      },
+      {
+        "name": "veyrath:combat/dragon_breath_2",
+        "volume": 0.6
+      },
+      {
+        "name": "veyrath:combat/dragon_breath_3",
+        "volume": 0.6
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.dragon_breath"
+  },
+  "combat.dragon_horn": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/dragon_horn_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/dragon_horn_2",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.dragon_horn"
   }
 }
