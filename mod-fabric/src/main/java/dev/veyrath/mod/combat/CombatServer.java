@@ -673,8 +673,7 @@ public final class CombatServer {
         Vec3 feet = feet(a);
         if (showShapes) drawShapes(level, e, feet);
         AABB search = a.getBoundingBox().inflate(8);
-        List<LivingEntity> near = level.getEntitiesOfClass(LivingEntity.class, search,
-                t -> canStrike(a, t) && LineOfSight.clear(level, a, t));
+        List<LivingEntity> near = level.getEntitiesOfClass(LivingEntity.class, search, t -> canStrike(a, t));
         if (near.isEmpty()) return;
         List<HitDetector.Target> targets = new ArrayList<>(near.size());
         Map<Integer, LivingEntity> byId = new HashMap<>();
@@ -688,7 +687,9 @@ public final class CombatServer {
         Move move = e.fighter.move();
         for (HitDetector.Strike s : HitDetector.detect(e.fighter, CombatContent.CLIPS, feet, e.fighter.yaw, a.getScale(), targets)) {
             LivingEntity d = byId.get(s.target().id());
-            if (d != null && d.isAlive()) applyStrike(level, e, d, s, move);
+            // Line of sight only for actual contacts: a few rays per strike, not per nearby entity
+            // and tick. A contact through a wall still uses up that window for that target.
+            if (d != null && d.isAlive() && LineOfSight.clear(level, a, d)) applyStrike(level, e, d, s, move);
         }
     }
 

@@ -11,8 +11,8 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Strikes do not pass through terrain: a target counts only if a straight line from the
  * attacker's chest reaches its centre, its head or its legs without crossing a block's collision
- * shape. Checked before hit detection on the server (which decides) and in the client's
- * prediction (so no impact is shown for a blow the server will not count).
+ * shape. Checked for each contact the hit detection finds, on the server (which decides) and in
+ * the client's prediction (so no impact is shown for a blow the server will not count).
  */
 public final class LineOfSight {
     private LineOfSight() {}

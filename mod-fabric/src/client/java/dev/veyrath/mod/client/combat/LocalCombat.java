@@ -321,8 +321,7 @@ public final class LocalCombat {
 
     private static void predictHits(Minecraft mc, LocalPlayer p) {
         if (fighter.activeWindows().length == 0) return;
-        List<LivingEntity> near = mc.level.getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(8),
-                e -> canTarget(p, e) && dev.veyrath.mod.combat.LineOfSight.clear(mc.level, p, e));
+        List<LivingEntity> near = mc.level.getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(8), e -> canTarget(p, e));
         if (near.isEmpty()) return;
         List<HitDetector.Target> targets = new ArrayList<>(near.size());
         for (LivingEntity e : near) {
@@ -331,6 +330,8 @@ public final class LocalCombat {
         }
         Move m = fighter.move();
         for (HitDetector.Strike s : HitDetector.detect(fighter, CombatContent.CLIPS, feet(p), fighter.yaw, p.getScale(), targets)) {
+            Entity struck = mc.level.getEntity(s.target().id());
+            if (!(struck instanceof LivingEntity le) || !dev.veyrath.mod.combat.LineOfSight.clear(mc.level, p, le)) continue;
             HitSpec spec = fighter.window(s.window()).spec();
             fighter.connect(Outcome.predictedHit(spec), spec);
             PREDICTED.put(key(m.id, s.window(), s.target().id()), ticks);
