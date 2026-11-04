@@ -16,6 +16,8 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
 - Game tests `vfx` (effects gallery) and `weapons`.
 - **Wren and Thorn**, the twin blades (key 7): fast four-cut string, lunge, cyclone, air spin and dive,
   Thousand Cuts, Shadow Step, Talon Spiral and the ultimate Crimson Waltz; own model and texture.
+- **Skyreach**, the glaive (key 8): longest reach, thrusts and sweeps, Vault Thrust, Crescent Sweep,
+  Piercing Gale and the ultimate Heavenfall; own model and texture.
 - VEYRATH's own combat sounds (TD-033): 19 cues designed from CC0 recordings replace every
   vanilla sound in combat, tells and the arena; weapon swings whoosh.
 - The Duelist can wield the Oathcleaver (`/veyrath arena duelist <style> greatsword`); weapon

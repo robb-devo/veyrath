@@ -88,3 +88,38 @@ fill(24, 0, 32, 8, crimson)
 fill(16, 8, 24, 16, ruby)
 img.save(OUT2)
 print("wrote", OUT2)
+
+# skyreach.png: the glaive. Pale silvered head, bronze collar, dark ash-wood shaft with grip bands.
+OUT3 = OUT.with_name("skyreach.png")
+img = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+
+def silver(x, y, w, h):
+    edge = x in (0, w - 1)
+    base = 210 + (y / h) * 16 + rng.uniform(-5, 5)
+    if edge: base = 248
+    return (clamp(base - 2), clamp(base + 2), clamp(base + 8), 255)
+
+def silver_groove(x, y, w, h):
+    base = 150 + rng.uniform(-5, 5)
+    return (clamp(base - 4), clamp(base), clamp(base + 10), 255)
+
+def bronze(x, y, w, h):
+    v = 1 - y / h
+    return (clamp(150 + 50 * v), clamp(96 + 36 * v), clamp(52 + 16 * v), 255)
+
+def ash(x, y, w, h):
+    band = y % 4 == 0
+    grain = rng.uniform(-6, 6)
+    b = 58 if band else 84
+    return (clamp(b + 14 + grain), clamp(b + 2 + grain), clamp(b - 10 + grain), 255)
+
+def cap(x, y, w, h):
+    return (clamp(120), clamp(84), clamp(48), 255)
+
+fill(0, 0, 16, 16, silver)
+fill(0, 16, 16, 32, silver_groove)
+fill(16, 0, 24, 8, bronze)
+fill(24, 0, 32, 8, ash)
+fill(16, 8, 24, 16, cap)
+img.save(OUT3)
+print("wrote", OUT3)

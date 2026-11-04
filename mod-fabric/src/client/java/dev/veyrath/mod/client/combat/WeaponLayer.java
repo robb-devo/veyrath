@@ -23,7 +23,8 @@ import net.minecraft.resources.Identifier;
 public final class WeaponLayer<S extends HumanoidRenderState, M extends HumanoidModel<S>> extends RenderLayer<S, M> {
     static final Identifier OATHCLEAVER = VeyrathMod.id("textures/entity/weapon/oathcleaver.png");
     static final Identifier WREN_THORN = VeyrathMod.id("textures/entity/weapon/wren_thorn.png");
-    private static RenderType oathcleaverType, wrenThornType;
+    static final Identifier SKYREACH = VeyrathMod.id("textures/entity/weapon/skyreach.png");
+    private static RenderType oathcleaverType, wrenThornType, skyreachType;
 
     public WeaponLayer(RenderLayerParent<S, M> parent) {
         super(parent);
@@ -42,6 +43,15 @@ public final class WeaponLayer<S extends HumanoidRenderState, M extends Humanoid
                 collector.submitCustomGeometry(pose, wrenThornType, (p, vc) -> shortBlade(p, vc, light, hx));
                 pose.popPose();
             }
+            return;
+        }
+        if (dev.veyrath.combat.content.Glaive.ID.equals(weapon)) {
+            if (skyreachType == null) skyreachType = RenderTypes.entitySolid(SKYREACH);
+            pose.pushPose();
+            getParentModel().root().translateAndRotate(pose);
+            getParentModel().rightArm.translateAndRotate(pose);
+            collector.submitCustomGeometry(pose, skyreachType, (p, vc) -> skyreach(p, vc, light));
+            pose.popPose();
             return;
         }
         if (!Greatsword.ID.equals(weapon)) return;
@@ -67,6 +77,22 @@ public final class WeaponLayer<S extends HumanoidRenderState, M extends Humanoid
         box(p, vc, light, hx - 0.45f, hy - 2.4f, -31, hx + 0.45f, hy + 2.4f, -5.5f, 0, 0, 16, 16);
         box(p, vc, light, hx - 0.55f, hy - 0.8f, -29, hx + 0.55f, hy + 0.8f, -6, 0, 16, 16, 32);
         box(p, vc, light, hx - 0.35f, hy - 1.4f, -35, hx + 0.35f, hy + 1.4f, -31, 0, 0, 16, 16);
+    }
+
+    /**
+     * Skyreach in the right hand's space. Unlike the swords it extends down the arm's own line
+     * (+y, beyond the hand), so a forward arm thrusts the point forward: an ash shaft, a bronze
+     * collar, a leaf head with a side crescent.
+     */
+    private static void skyreach(PoseStack.Pose p, VertexConsumer vc, int light) {
+        float hx = -1, hz = 0;
+        box(p, vc, light, hx - 0.6f, 6, hz - 0.6f, hx + 0.6f, 40, hz + 0.6f, 24, 0, 32, 8);       // shaft
+        box(p, vc, light, hx - 0.8f, 4.5f, hz - 0.8f, hx + 0.8f, 6, hz + 0.8f, 16, 8, 24, 16);    // butt cap
+        box(p, vc, light, hx - 0.9f, 40, hz - 0.9f, hx + 0.9f, 42, hz + 0.9f, 16, 0, 24, 8);      // collar
+        box(p, vc, light, hx - 1.6f, 42, hz - 0.3f, hx + 1.6f, 56, hz + 0.3f, 0, 0, 16, 16);      // leaf head
+        box(p, vc, light, hx - 0.5f, 43, hz - 0.35f, hx + 0.5f, 55, hz + 0.35f, 0, 16, 16, 32);
+        box(p, vc, light, hx - 0.8f, 56, hz - 0.2f, hx + 0.8f, 60, hz + 0.2f, 0, 0, 16, 16);      // point
+        box(p, vc, light, hx + 1.6f, 45, hz - 0.25f, hx + 4.2f, 49, hz + 0.25f, 0, 0, 16, 16);    // side crescent
     }
 
     /** One of the twin blades in its hand's space: short grip, small guard, a 15 px blade. */

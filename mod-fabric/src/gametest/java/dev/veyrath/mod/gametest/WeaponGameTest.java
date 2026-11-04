@@ -98,6 +98,23 @@ public final class WeaponGameTest implements FabricClientGameTest {
             step(context, sp, y, "t06_crimson_waltz", 2.0, () -> tap(context, o -> o.keyHotbarSlots[3], 30));
             context.waitTicks(40); // the ultimate's slow motion and recovery are over before swapping
 
+            // Skyreach glaive on key 8.
+            context.getInput().pressKey(o -> o.keyHotbarSlots[7]);
+            context.waitTicks(10);
+            String glaive = context.computeOnClient(mc -> Weapons.of(LocalCombat.fighter().set).id());
+            check(Weapons.GLAIVE.id().equals(glaive), "key 8 draws Skyreach (" + glaive + ")");
+            step(context, sp, y, "g01_thrusts", 2.6, () -> {
+                tap(context, ATTACK, 6);
+                tap(context, ATTACK, 10);
+                tap(context, ATTACK, 9);
+            });
+            step(context, sp, y, "g02_heavy", 3.2, () -> tap(context, USE, 7));
+            step(context, sp, y, "g03_vault_thrust", 2.4, () -> tap(context, o -> o.keyHotbarSlots[0], 21));
+            step(context, sp, y, "g04_crescent_sweep", 2.6, () -> tap(context, o -> o.keyHotbarSlots[1], 8));
+            step(context, sp, y, "g05_piercing_gale", 4.5, () -> tap(context, o -> o.keyHotbarSlots[2], 8));
+            step(context, sp, y, "g06_heavenfall", 2.8, () -> tap(context, o -> o.keyHotbarSlots[3], 40));
+            context.waitTicks(40);
+
             context.getInput().pressKey(o -> o.keyHotbarSlots[4]);
             context.waitTicks(10);
             String back = context.computeOnClient(mc -> Weapons.of(LocalCombat.fighter().set).id());
