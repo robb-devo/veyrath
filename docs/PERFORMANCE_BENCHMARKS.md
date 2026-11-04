@@ -133,21 +133,22 @@ adept Duelist and ten husks fight the standing player in combat stance for 10 s;
 the round, and once before the husks were summoned), and the time spent in VEYRATH combat code
 (`CombatServer`) per server tick. 1920x1080 window, render distance 16, `maxFps` 260 with vsync on
 in the test client's options: 240 FPS is the ceiling, so values at 236–240 mean "capped", not
-headroom. Builds `7f24d30` and the commits just before it on `ch02-combat`.
+headroom.
 
-| Setup | FPS avg (min–max) | Server tick, peak / before | Combat code per tick |
-|---|---|---|---|
-| Vanilla client (53 mods: Fabric API + VEYRATH) | 231 (166–240); earlier runs 236 (209–241), 236 (208–241) | 2.05 / 0.75 ms; 1.77 / 0.75; 1.75 / 1.27 | 113 µs; 96; 74 |
-| Full pack (92 mods), no shaders | 237 (216–240); earlier runs 236 (216–240), 236 (210–240), 221 (192–240) | 1.90 / 1.13 ms; 2.06 / 1.61; 3.46 / 3.11; 5.21 / 1.81 | 88 µs; 85; 118; 138 |
-| Full pack, Complementary Unbound r5.9.3 defaults | 136 (30–190); an earlier run 127 (40–179) | 2.49 / 1.80 ms; 4.34 / 2.02 | 126 µs; 147 |
-| Full pack before TD-025 (DH generated the void) | 75 (48–101) | 8.74 / 6.50 ms | 406 µs |
+| Setup | Final build `0.2.0-ch02` (`6ed1604`): FPS avg (min–max) · server tick peak / before · combat code | Earlier runs the same day |
+|---|---|---|
+| Vanilla client (53 mods: Fabric API + VEYRATH) | 236 (211–240) · 1.48 / 0.67 ms · 56 µs | 231 (166–240), 236 (209–241), 236 (208–241); tick peaks 1.75–2.05 ms; 74–113 µs |
+| Full pack (92 mods), no shaders | 237 (216–240) · 1.85 / 1.14 ms · 79 µs | 221–237 avg (192–240); tick peaks 1.90–5.21 ms; 84–138 µs; 218 (172–240) and 245 µs with line of sight checked per entity (TD-030) |
+| Full pack, Complementary Unbound r5.9.3 defaults | 210 (152–228) · 2.25 / 1.38 ms · 99 µs | 136 (30–190), 127 (40–179); tick peaks 2.49–4.34 ms; 126–147 µs |
+| Full pack before TD-025 (DH generated the void) | — | 75 (48–101) · 8.74 / 6.50 ms · 406 µs |
 
-**Reading it.** Combat itself is cheap: 74–147 µs of a 50 ms tick for 12 fighters (the player, the
-Duelist, ten husks), and the server tick stays at or under about 5 ms. Without shaders the arena
-holds the 240 FPS cap with the full pack. With Complementary it averages 127–136 FPS; the single
-low samples (30 and 40 FPS) were not investigated yet and may be shader warm-up in the first
-seconds of a new dimension. The one real problem found here, Distant Horizons generating LODs of
-the empty arena dimension, cost two thirds of the frame rate and is fixed (TD-025).
+**Reading it.** Combat itself is cheap: 56–147 µs of a 50 ms tick for 12 fighters (the player,
+the Duelist, ten husks), and the server tick stays at or under about 5 ms. Without shaders the
+arena holds the 240 FPS cap with the full pack. With Complementary the three runs averaged 127, 136
+and 210 FPS, with single low samples of 30 and 40 FPS in the first two; the spread between runs is
+large (Chapter 01 saw the same: first runs of a day about half as fast), so compare within one run.
+The one real problem found here, Distant Horizons generating LODs of the empty arena dimension,
+cost two thirds of the frame rate and is fixed (TD-025).
 
 **Not measured:** frame-time percentiles, a fight in VEYRATH terrain (not the void arena), many
 Duelists at once, memory over a long session.
