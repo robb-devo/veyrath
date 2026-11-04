@@ -8,7 +8,7 @@ final class GameTests {
 
     /**
      * Which tests run: system property {@code veyrath.tests}, a comma list of "tour", "combat" and "arena"
-     * (gradle: {@code -Pveyrath.tests=combat}); default "tour", the Chapter 01 seed tour.
+     * (gradle: {@code -Pveyrath.tests=combat}); "terrain" is the action camera on VEYRATH terrain; default "tour", the Chapter 01 seed tour.
      */
     static boolean selected(String name) {
         String list = System.getProperty("veyrath.tests", "tour");

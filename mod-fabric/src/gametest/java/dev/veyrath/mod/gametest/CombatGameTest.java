@@ -121,7 +121,10 @@ public final class CombatGameTest implements FabricClientGameTest {
         var server = sp.getServer();
         server.runCommand(String.format(Locale.ROOT, "tp @p %.1f %d %.1f 0 12", PX, y, PZ));
         context.waitTicks(10);
-        server.runCommand(summon("husk", PX, y, PZ + 1.4, "{Tags:[\"vt_air\"],PersistenceRequired:1b,Rotation:[180f,0f]}"));
+        // Summoned without AI: a husk 1.4 blocks away attacks on its first tick and sometimes flinched
+        // the player before the scripted string began (seen 2026-11-04). Its AI comes back once the
+        // jab has connected; from then on hitstun pauses it, as in play.
+        server.runCommand(summon("husk", PX, y, PZ + 1.4, "{Tags:[\"vt_air\"],PersistenceRequired:1b,NoAI:1b,Rotation:[180f,0f]}"));
         CombatTrace.step("wait 2 after summon");
         context.waitTicks(1);
         CombatTrace.start(42); // from the tick before the first ATTACK press until 40 ticks after it
@@ -130,6 +133,7 @@ public final class CombatGameTest implements FabricClientGameTest {
         double peak = 0;
         CombatTrace.step("tap ATTACK 1 (jab), wait 3");
         tap(context, ATTACK, 3);
+        server.runCommand("data merge entity @e[tag=vt_air,limit=1] {NoAI:0b}");
         CombatTrace.step("tap ATTACK 2 (cross), wait 4");
         tap(context, ATTACK, 4);
         int huskId = sp.getServer().computeOnServer(s -> tagged(s, "vt_air").getId());

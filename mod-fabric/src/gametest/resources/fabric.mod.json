@@ -10,7 +10,8 @@
     "fabric-client-gametest": [
       "dev.veyrath.mod.gametest.SeedTourGameTest",
       "dev.veyrath.mod.gametest.CombatGameTest",
-      "dev.veyrath.mod.gametest.ArenaGameTest"
+      "dev.veyrath.mod.gametest.ArenaGameTest",
+      "dev.veyrath.mod.gametest.TerrainCameraGameTest"
     ]
   },
   "depends": {
