@@ -60,6 +60,16 @@ public final class VeyrathHud {
     private static double shownCombo;
     private static float comboHold, comboPop;
 
+    private static String introName = "", introEpithet = "";
+    private static float introAge = 99;
+
+    /** A boss woke: its name card, centred in the upper screen. */
+    public static void bossIntro(String name, String epithet) {
+        introName = name.toUpperCase(Locale.ROOT);
+        introEpithet = epithet;
+        introAge = 0;
+    }
+
     public static void init() {
         // Vanilla pieces we draw ourselves: gone for good.
         for (var id : List.of(VanillaHudElements.HOTBAR, VanillaHudElements.HEALTH_BAR, VanillaHudElements.ARMOR_BAR,
@@ -96,6 +106,36 @@ public final class VeyrathHud {
         heldName(g, font, p, f, w, rowTop - 31);
         if (f == null) crosshair(g, mc, w, h);
         combo(g, font, f, w, h);
+        intro(g, font, w, h);
+    }
+
+    /** The boss name card: fades in, holds, fades out over five seconds. */
+    private static void intro(GuiGraphicsExtractor g, Font font, int w, int h) {
+        if (introAge > 5) return;
+        introAge += dt;
+        float a = introAge < 0.8f ? introAge / 0.8f : introAge > 4 ? 1 - (introAge - 4) : 1;
+        if (a <= 0) return;
+        float cy = h * 0.28f, cx = w / 2f;
+        float spread = 70 + 60 * Math.min(1, introAge / 1.2f);
+        // A soft dark band behind the text.
+        for (int i = 0; i < 12; i++) {
+            float k = i / 11f;
+            int alpha = Math.round(110 * a * (1 - k));
+            g.fill(0, (int) (cy - 16 - i * 2), w, (int) (cy - 14 - i * 2), alpha << 24);
+            g.fill(0, (int) (cy + 22 + i * 2), w, (int) (cy + 24 + i * 2), alpha << 24);
+        }
+        g.fill(0, (int) cy - 16, w, (int) cy + 22, Math.round(110 * a) << 24);
+        var pose = g.pose();
+        pose.pushMatrix();
+        pose.translate(cx, cy - 10);
+        float s = 1.9f + 0.1f * Math.min(1, introAge / 4f);
+        pose.scale(s, s);
+        HudArt.centered(g, font, HudArt.TITLE, introName, 0, 0, HudArt.alpha(0xFFF2E2B8, a), true);
+        pose.popMatrix();
+        g.fill((int) (cx - spread), (int) cy + 11, (int) (cx - 8), (int) cy + 12, HudArt.alpha(0xFFE2C27A, a));
+        g.fill((int) (cx + 8), (int) cy + 11, (int) (cx + spread), (int) cy + 12, HudArt.alpha(0xFFE2C27A, a));
+        HudArt.icon(g, HudArt.Icon.WAYPOINT, cx, cy + 11.5f, 9, HudArt.alpha(0xFFE2C27A, a));
+        HudArt.centered(g, font, HudArt.HEADING, introEpithet, cx, cy + 15, HudArt.alpha(0xFFC9B89A, a * 0.95f), true);
     }
 
     // ---------------------------------------------------------------- compass

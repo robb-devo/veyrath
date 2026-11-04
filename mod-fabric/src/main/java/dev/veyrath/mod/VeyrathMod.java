@@ -86,6 +86,7 @@ public final class VeyrathMod implements ModInitializer {
 
         // Proving Grounds: arena dimension (datapack), Duelist and training dummy, sparring rounds.
         ArenaEntities.register();
+        dev.veyrath.mod.boss.BossEntities.register();
         ProvingGrounds.init();
         ServerTickEvents.END_SERVER_TICK.register(ProvingGrounds::tick);
         ServerLivingEntityEvents.ALLOW_DEATH.register(ProvingGrounds::allowDeath);

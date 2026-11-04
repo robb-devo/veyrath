@@ -14,7 +14,8 @@
       "dev.veyrath.mod.gametest.TerrainCameraGameTest",
       "dev.veyrath.mod.gametest.VfxGalleryGameTest",
       "dev.veyrath.mod.gametest.WeaponGameTest",
-      "dev.veyrath.mod.gametest.HudGameTest"
+      "dev.veyrath.mod.gametest.HudGameTest",
+      "dev.veyrath.mod.gametest.BossGameTest"
     ]
   },
   "depends": {

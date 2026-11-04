@@ -29,6 +29,7 @@ public final class ClientWeapons {
             String id = Weapons.of(LocalCombat.fighter().set).id();
             return id.equals(Weapons.UNARMED.id()) ? null : id;
         }
+        if (e instanceof dev.veyrath.mod.boss.VarekEntity) return Weapons.GREATSWORD.id();
         String remote = e == mc.player ? null : REMOTE.get(e.getId());
         if (remote != null) return remote;
         return e instanceof net.minecraft.world.entity.LivingEntity le ? dev.veyrath.mod.item.VeyrathItems.weaponOf(le.getMainHandItem()) : null;

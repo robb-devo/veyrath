@@ -133,6 +133,23 @@ def vesper_codex():
     c.save_to(OUT / "vesper_codex.png")
 
 
+def oath_sigil():
+    """A gilded seal with the oath-brand burning in it (the key to the Oath Hall)."""
+    c = Canvas(N, N)
+    x, y = c.x, c.y
+    disc = sd_circle(x, y, 32, 32, 25)
+    part(c, disc, np.array([0.14, 0.13, 0.16]))
+    gilded(c, np.abs(disc + 2.2) - 2.0, 2.0)
+    gilded(c, np.abs(sd_circle(x, y, 32, 32, 16.5)) - 0.9, 1.0)
+    brand = np.minimum.reduce([sd_box(x, y, 32, 31, 2.6, 13, 0.8), sd_box(x, y, 32, 25, 9, 2.4, 0.8),
+                               np.abs(sd_circle(x, y, 32, 26, 7)) - 1.4])
+    glow = np.exp(-np.maximum(brand, 0) / 4) * (brand > 0) * (disc < -3)
+    c.over(np.array([1.0, 0.42, 0.12]), glow * 0.55)
+    c.over(np.array([1.0, 0.55, 0.18]), aa(brand))
+    c.over(np.array([1.0, 0.85, 0.55]), aa(brand + 1.0) * 0.6)
+    c.save_to(OUT / "oath_sigil.png")
+
+
 def save_to(self, path):
     path.parent.mkdir(parents=True, exist_ok=True)
     img = np.dstack([np.clip(self.rgb, 0, 1), np.clip(self.a, 0, 1)])
@@ -147,3 +164,4 @@ if __name__ == "__main__":
     wren_and_thorn()
     skyreach()
     vesper_codex()
+    oath_sigil()

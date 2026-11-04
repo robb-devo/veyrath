@@ -489,3 +489,16 @@ Alegreya Sans as TTF font providers (`assets/veyrath/font/`).
 **Why:** the owner asked for a full fantasy RPG HUD with a Skyrim-like compass; the vanilla font
 and sprites are the strongest "this is Minecraft" signal on screen.
 **Open:** chat, the pause menu, inventory screens and the title screen still use vanilla UI.
+
+## TD-036 — Boss framework: a pattern-book brain on our fighter
+
+**Decision:** a boss is a `BossEntity` (sleeps on its mark, wakes on approach with a name card,
+phases by health, boss bar that asks for boss music, resets when left alone, immune to room damage)
+whose fighter CombatServer drives like the Duelist's, through the generic `Brain` interface. The
+boss's mind is `BossBrain`: a list of attacks (move, range, cooldown, weight, phases, tell kind,
+recovery) picked by weight, with a transition move per phase and a shorter opening in later phases.
+Moves are ordinary combat moves (hit shapes, armour, motion, tracking), so parry, block, dodge,
+poise and hit-stop work against bosses for free. Each attack's windup is its tell; the boss shows it
+(glint, flare, ground mark) when the attack starts. A boss's window effects and sounds are sent when
+the window opens, so big blows read even when they miss.
+**Why:** one combat system for everything; bosses differ in data and presentation, not in rules.

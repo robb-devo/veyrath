@@ -71,5 +71,16 @@
   "item.veyrath.oathcleaver": "Oathcleaver",
   "item.veyrath.wren_and_thorn": "Wren and Thorn",
   "item.veyrath.skyreach": "Skyreach",
-  "item.veyrath.vesper_codex": "Vesper Codex"
+  "item.veyrath.vesper_codex": "Vesper Codex",
+  "item.veyrath.oath_sigil": "Oath Sigil",
+  "entity.veyrath.varek": "Varek, the Oathbound",
+  "veyrath.boss.varek": "Varek, the Oathbound",
+  "veyrath.boss.varek.epithet": "Who broke the oath he swore to guard",
+  "veyrath.boss.sigil_enter": "The sigil burns. The Oath Hall opens.",
+  "subtitles.veyrath.combat.boss_roar": "A giant roars",
+  "subtitles.veyrath.combat.boss_awaken": "Something vast stirs",
+  "subtitles.veyrath.combat.boss_death": "A giant falls",
+  "subtitles.veyrath.combat.boss_grunt": "A giant heaves",
+  "subtitles.veyrath.combat.boss_fire": "The brand ignites",
+  "subtitles.veyrath.combat.boss_slam": "The ground breaks"
 }

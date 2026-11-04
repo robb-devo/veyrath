@@ -43,5 +43,19 @@ public final class ArenaCommands {
                                         }))))
                 .then(Commands.literal("dummy").executes(ctx -> ProvingGrounds.dummy(ctx.getSource().getPlayerOrException())))
                 .then(Commands.literal("reset").executes(ctx -> ProvingGrounds.reset(ctx.getSource().getPlayerOrException())))));
+        // /veyrath boss <arena>: the same as using its sigil (tests, and players without one).
+        dispatcher.register(Commands.literal("veyrath").then(Commands.literal("boss")
+                .requires(src -> src.getServer() != null && src.getServer().isSingleplayer())
+                .then(Commands.argument("arena", StringArgumentType.word())
+                        .suggests((ctx, b) -> SharedSuggestionProvider.suggest(
+                                java.util.Arrays.stream(dev.veyrath.mod.boss.BossArenas.Arena.values()).map(a -> a.name().toLowerCase(java.util.Locale.ROOT)).toList(), b))
+                        .executes(ctx -> {
+                            var a = dev.veyrath.mod.boss.BossArenas.Arena.byId(StringArgumentType.getString(ctx, "arena"));
+                            if (a == null) {
+                                ctx.getSource().sendFailure(net.minecraft.network.chat.Component.literal("Unknown arena"));
+                                return 0;
+                            }
+                            return dev.veyrath.mod.boss.BossArenas.enter(ctx.getSource().getPlayerOrException(), a);
+                        }))));
     }
 }

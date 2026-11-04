@@ -29,7 +29,7 @@ public final class VeyrathItems {
     public static final List<Item> ALL = new ArrayList<>();
     private static final Map<Item, String> WEAPON_OF = new HashMap<>();
 
-    public static Item OATHCLEAVER, WREN_AND_THORN, SKYREACH, VESPER_CODEX;
+    public static Item OATHCLEAVER, WREN_AND_THORN, SKYREACH, VESPER_CODEX, OATH_SIGIL;
     public static ResourceKey<CreativeModeTab> TAB = ResourceKey.create(Registries.CREATIVE_MODE_TAB, VeyrathMod.id("veyrath"));
 
     public static void register() {
@@ -37,6 +37,8 @@ public final class VeyrathItems {
         WREN_AND_THORN = weapon("wren_and_thorn", Weapons.TWIN_BLADES);
         SKYREACH = weapon("skyreach", Weapons.GLAIVE);
         VESPER_CODEX = weapon("vesper_codex", Weapons.GRIMOIRE);
+        OATH_SIGIL = dev.veyrath.mod.boss.BossEntities.sigil("oath_sigil", dev.veyrath.mod.boss.BossArenas.Arena.OATH_HALL);
+        ALL.add(OATH_SIGIL);
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, TAB, FabricCreativeModeTab.builder()
                 .title(Component.translatable("itemGroup.veyrath"))
                 .icon(() -> new ItemStack(OATHCLEAVER))

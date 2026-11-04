@@ -37,7 +37,7 @@ import java.util.SplittableRandom;
  * body {@link #aim()} as its lock target, and forward its hit outcomes with {@link #connected} and
  * {@link #struck}. It is deterministic for a given seed and sequence of inputs.
  */
-public final class DuelistBrain {
+public final class DuelistBrain implements Brain {
     /** A visible warning before an attack. The owner shows it (a glint, a sound cue). */
     public record Telegraph(Kind kind, String move, int lead) {
         /** STRIKE: a light opener or dash; HEAVY: heavies and abilities; UNBLOCKABLE: the ultimate. */
@@ -128,7 +128,11 @@ public final class DuelistBrain {
     public DuelistBrain listener(Listener l) { listener = l == null ? new Listener() {} : l; return this; }
 
     /** Where the Duelist believes its opponent stands: its lock target. Null before the first think. */
+    @Override
     public Vec3 aim() { return aim; }
+
+    @Override
+    public double damageScale() { return style.damageScale; }
 
     /** The plan it is carrying out, or null. */
     public String planName() { return plan == null ? null : plan.name; }

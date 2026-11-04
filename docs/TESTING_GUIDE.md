@@ -229,6 +229,9 @@ selected there) and set it back afterwards.
 - **weapons** (`WeaponGameTest`, screenshots `w01`–`w10`): key 6 draws the Oathcleaver (client
   and server agree), its string, heavy, three abilities and ultimate land on three husks, key 5
   goes back to the fists, no input rejected.
+- **boss** (`BossGameTest`, screenshots `b*`): the Oath Hall is built, Varek sleeps until the
+  player walks in, wakes (name card, boss bar, boss music), runs at least three different attacks in
+  each of his three phases, lands blows on a sturdy player, the oath strike comes in phase 3, he dies.
 - **hud** (`HudGameTest`, screenshots `hud_01`–`hud_06`): our choir on the title screen, an
   explore piece once in the world and no vanilla music, tension music near hostiles, combat music
   after a hit; the HUD out of stance (items, hurt vitals, armour, XP, effects, compass with the

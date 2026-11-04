@@ -561,6 +561,20 @@ public final class Fighter {
         return null;
     }
 
+    /**
+     * A move started by a server-side mind that names it directly (bosses): accepted when this
+     * fighter is free to act (idle, guarding, or past the current move's free point), on the
+     * ground for a ground move, affordable and off cooldown.
+     */
+    public boolean perform(String moveId, Controls c) {
+        if (inHitstop() || phase == Phase.REACTION) return false;
+        if (phase == Phase.MOVE && t < move.freeFrom) return false;
+        Move m = affordable(set.get(moveId));
+        if (m == null) return false;
+        execute(m, c);
+        return true;
+    }
+
     /** Server side of a charged-heavy release: the client reports its charge level. */
     public boolean requestRelease(String moveId, double level) {
         if (phase != Phase.MOVE || move.kind != Kind.CHARGE) return false;

@@ -1,5 +1,6 @@
 package dev.veyrath.mod.combat;
 
+import dev.veyrath.combat.ai.Brain;
 import dev.veyrath.combat.ai.DuelistBrain;
 import dev.veyrath.combat.ai.Style;
 import dev.veyrath.combat.fighter.Controller;
@@ -117,8 +118,13 @@ public final class CombatServer {
      * windows are swept with everyone else's at the end.
      */
     static final class Mind {
-        final DuelistBrain brain;
+        final Brain brain;
+        /** The Duelist's style; null for bosses. */
         final Style style;
+        /** Bosses fight any player near them, in stance or not; Duelists only spar in stance. */
+        boolean anyFoe;
+        double range = DUEL_RANGE;
+        String idleClip = "stance_idle";
         final Controls controls = new Controls();
         final InputBuffer input = new InputBuffer();
         /** False between rounds: it stands in guard, turns to face the player and does nothing else. */
@@ -126,7 +132,7 @@ public final class CombatServer {
         String base = "";
         int baseTimer;
 
-        Mind(DuelistBrain brain, Style style) {
+        Mind(Brain brain, Style style) {
             this.brain = brain;
             this.style = style;
         }
@@ -168,6 +174,7 @@ public final class CombatServer {
         Entry en = ENTRIES.get(e.getId());
         if (en != null && en.entity == e) return en;
         if (e instanceof DuelistEntity d) return attachDuelist(d, Style.byId(d.styleId()), d.getRandom().nextLong());
+        if (e instanceof MindedBody b) return attachMinded(e, b);
         boolean player = e instanceof ServerPlayer;
         // The training dummy reacts to every hit (no super-armour despite its large health pool).
         Fighter f = new Fighter(e.getId(), player ? CombatContent.PLAYER : CombatContent.MOB,
@@ -219,6 +226,61 @@ public final class CombatServer {
         return en;
     }
 
+    /** Gives a minded entity (a boss) its fighter and a fresh mind. */
+    public static Entry attachMinded(LivingEntity e, MindedBody body) {
+        Fighter f = new Fighter(e.getId(), body.combatMoves(), body.combatRules());
+        f.yaw = e.getYRot();
+        Entry en = new Entry(e, f, false);
+        en.facing = e.getYRot();
+        en.mind = new Mind(body.newBrain(e.getRandom().nextLong()), null);
+        en.mind.anyFoe = true;
+        en.mind.range = body.fightRange();
+        en.mind.idleClip = body.idleClip();
+        f.events(new FighterEvents() {
+            @Override
+            public void moveStarted(Fighter fighter, Move m) {
+                en.shownClip = m.clip;
+                broadcastAnim(en, m.clip, (float) m.blendIn);
+            }
+        });
+        ENTRIES.put(e.getId(), en);
+        return en;
+    }
+
+    /** Called by every minded entity each server tick: one loaded from disk gets its mind back. */
+    public static void ensureMinded(LivingEntity e) {
+        Entry en = ENTRIES.get(e.getId());
+        if (en == null || en.entity != e) entryFor(e);
+    }
+
+    /** The minded entity's current brain (null if none yet). */
+    public static Brain brainOf(LivingEntity e) {
+        Entry en = ENTRIES.get(e.getId());
+        return en == null || en.entity != e || en.mind == null ? null : en.mind.brain;
+    }
+
+    /** Starts or pauses a minded entity's (or Duelist's) fighting. */
+    public static void setMindActive(LivingEntity e, boolean active) {
+        Entry en = entryFor(e);
+        if (en.mind == null) return;
+        en.mind.active = active;
+        if (!active) {
+            en.mind.input.clear();
+            en.mind.controls.moveX = en.mind.controls.moveZ = 0;
+            en.mind.controls.blockHeld = en.mind.controls.heavyHeld = en.mind.controls.sprintHeld = en.mind.controls.jumpHeld = false;
+        }
+    }
+
+    /** Drops an entity's fighter, so the next contact attaches a fresh one (a boss reset). */
+    public static void detach(LivingEntity e) {
+        ENTRIES.remove(e.getId());
+    }
+
+    /** A VEYRATH effect at a point, seen by everyone tracking the source. */
+    public static void vfx(LivingEntity source, String id, double x, double y, double z) {
+        broadcastVfx(source, id, x, y, z);
+    }
+
     /** Called by every Duelist each server tick: an entity loaded from disk gets its mind back. */
     public static void ensureDuelist(DuelistEntity d) {
         Entry en = ENTRIES.get(d.getId());
@@ -249,14 +311,7 @@ public final class CombatServer {
 
     /** Between rounds a Duelist only guards; in a round it fights. */
     public static void setDuelistActive(DuelistEntity d, boolean active) {
-        Entry en = entryFor(d);
-        if (en.mind == null) return;
-        en.mind.active = active;
-        if (!active) {
-            en.mind.input.clear();
-            en.mind.controls.moveX = en.mind.controls.moveZ = 0;
-            en.mind.controls.blockHeld = en.mind.controls.heavyHeld = en.mind.controls.sprintHeld = en.mind.controls.jumpHeld = false;
-        }
+        setMindActive(d, active);
     }
 
     /** A fresh fighter for a new round: full resources, no move, no cooldowns, same style. */
@@ -300,8 +355,8 @@ public final class CombatServer {
         Controls c = m.controls;
         boolean grounded = en.onGround();
         Vec3 feet = feet(en);
-        ServerPlayer near = nearestPlayer(en);
-        Entry foe = m.active && near != null && inStance(near) ? ENTRIES.get(near.getId()) : null;
+        ServerPlayer near = nearestPlayer(en, m.range);
+        Entry foe = m.active && near != null && (inStance(near) || m.anyFoe) ? entryFor(near) : null;
         Vec3 lock = null, soft = null;
         if (foe != null) {
             Vec3 foeFeet = feet(near);
@@ -336,7 +391,7 @@ public final class CombatServer {
             vz = in.vz();
         } else if (c.hasMove() && in.inputScale() > 0) {
             Vec3 dir = new Vec3(c.moveX, 0, c.moveZ).normalize();
-            double speed = Controller.WALK * in.inputScale();
+            double speed = Controller.WALK * in.inputScale() * m.brain.speedScale();
             if (grounded) {
                 vx = dir.x() * speed;
                 vz = dir.z() * speed;
@@ -371,10 +426,10 @@ public final class CombatServer {
         m.input.clear();
     }
 
-    private static ServerPlayer nearestPlayer(LivingEntity e) {
+    private static ServerPlayer nearestPlayer(LivingEntity e, double range) {
         if (!(e.level() instanceof ServerLevel level)) return null;
         ServerPlayer best = null;
-        double bestD = DUEL_RANGE * DUEL_RANGE;
+        double bestD = range * range;
         for (ServerPlayer p : level.players()) {
             if (!p.isAlive() || p.isSpectator()) continue;
             double d = p.distanceToSqr(e);
@@ -623,9 +678,29 @@ public final class CombatServer {
         LivingEntity en = e.entity;
         Fighter f = e.fighter;
         boolean grounded = en.onGround();
+        if (e.mind != null && e.mind.anyFoe && f.move() != null) {
+            // A boss's blows show where they land even when they miss: each window's effect
+            // goes out as the window opens (the hit itself then only adds a small impact).
+            Move mv = f.move();
+            for (var w : mv.hits) {
+                if (w.from() != f.moveTick() || w.spec().vfx() == null) continue;
+                Vec3 feet = feet(en);
+                double scale = en.getScale();
+                Vec3 at = null;
+                for (var sh : w.shapes()) {
+                    if (sh.bone() != null) continue;
+                    Vec3 mid = sh.a().lerp(sh.b(), 0.5);
+                    at = feet.add(dev.veyrath.combat.rig.Rig.characterToWorld(new Vec3(mid.x(), 0, mid.z()), f.yaw, scale));
+                    break;
+                }
+                if (at == null) at = feet.add(dev.veyrath.combat.rig.Rig.characterToWorld(new Vec3(0, 0, 1.4), f.yaw, scale));
+                broadcastVfx(en, w.spec().vfx(), at.x(), feet.y() + 1.0, at.z());
+                if (en.level() instanceof ServerLevel sl) playCues(sl, null, new net.minecraft.world.phys.Vec3(at.x(), feet.y() + 1.0, at.z()), w.spec().sfx());
+            }
+        }
         if (e.mind != null) {
             // Ticked and moved at the start of the tick (drive). Here: its base pose for viewers.
-            String base = f.phase() == Fighter.Phase.BLOCK ? "block_hold" : "stance_idle";
+            String base = f.phase() == Fighter.Phase.BLOCK ? "block_hold" : e.mind.idleClip;
             if (!base.equals(e.mind.base) || ++e.mind.baseTimer >= 20) {
                 e.mind.base = base;
                 e.mind.baseTimer = 0;
@@ -771,7 +846,7 @@ public final class CombatServer {
             DUELIST_STRUCK.merge(o.result(), 1, Integer::sum);
         }
         // The Duelist is a sparring partner: its hits deal a fraction of the player's.
-        double damage = o.damage() * (ae.mind != null ? ae.mind.style.damageScale : 1);
+        double damage = o.damage() * (ae.mind != null ? ae.mind.brain.damageScale() : 1);
 
         if (!de.player) {
             // Mobs face their attacker, stop at once for the hit-stop and take the push afterwards.
@@ -796,7 +871,8 @@ public final class CombatServer {
         Vec3 p = s.point();
         net.minecraft.world.phys.Vec3 at = new net.minecraft.world.phys.Vec3(p.x(), p.y(), p.z());
         // The attacking player's client already played its predicted impact sound.
-        playCues(level, a instanceof Player pl ? pl : null, at, o.sfx());
+        // A boss's blow already sounded when its window opened.
+        if (ae.mind == null || !ae.mind.anyFoe) playCues(level, a instanceof Player pl ? pl : null, at, o.sfx());
 
         if (o.perfect() && o.result() == Outcome.Result.DODGED) SlowMotion.trigger(level.getServer(), 10, 12);
         if ("ultimate".equals(spec.sfx()) && o.result() == Outcome.Result.HIT) SlowMotion.trigger(level.getServer(), 6, 14);

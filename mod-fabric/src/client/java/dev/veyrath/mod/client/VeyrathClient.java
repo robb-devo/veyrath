@@ -15,6 +15,7 @@ public final class VeyrathClient implements ClientModInitializer {
     public void onInitializeClient() {
         CombatClient.init();
         ArenaRenderers.init();
+        dev.veyrath.mod.client.boss.BossClient.init();
         dev.veyrath.mod.client.audio.VeyrathMusic.init();
         VeyrathMod.LOG.info("VEYRATH client initialised");
     }

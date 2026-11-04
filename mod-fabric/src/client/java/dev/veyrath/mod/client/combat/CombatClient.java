@@ -37,6 +37,7 @@ public final class CombatClient {
         ClientTickEvents.START_CLIENT_TICK.register(LocalCombat::startTick);
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
             LocalCombat.endTick(mc);
+            if (!mc.isPaused()) dev.veyrath.mod.client.boss.BossEffects.tick();
             if (mc.level != null && !mc.isPaused()) CombatAnimations.tick(mc.level);
         });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, mc) -> {
@@ -46,6 +47,7 @@ public final class CombatClient {
             ScreenFx.clear();
             HitFlash.clear();
             dev.veyrath.mod.client.vfx.Vfx.clear();
+            dev.veyrath.mod.client.boss.BossEffects.clear();
             ClientWeapons.clear();
             ActionCamera.reset();
         });

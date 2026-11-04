@@ -285,11 +285,14 @@ public final class ProvingGrounds {
 
     private static void rescueFallen(ServerLevel arena) {
         for (ServerPlayer p : List.copyOf(arena.players())) {
-            if (p.getY() < RESCUE_Y) teleport(p, arena, PLAYER_MARK, 0, 5);
+            if (p.getY() < RESCUE_Y && !dev.veyrath.mod.boss.BossArenas.rescue(p, arena)) teleport(p, arena, PLAYER_MARK, 0, 5);
         }
         List<Entity> fallen = new ArrayList<>();
         for (Entity e : arena.getAllEntities()) {
             if (e.getY() < RESCUE_Y && (e instanceof DuelistEntity || e instanceof TrainingDummyEntity)) fallen.add(e);
+        }
+        for (Entity e : arena.getAllEntities()) {
+            if (e.getY() < RESCUE_Y && e instanceof dev.veyrath.mod.boss.BossEntity b) b.backHome();
         }
         for (Entity e : fallen) {
             e.teleportTo(DUELIST_MARK.x, DUELIST_MARK.y, DUELIST_MARK.z);
@@ -308,7 +311,12 @@ public final class ProvingGrounds {
         p.connection.send(new ClientboundSetTitleTextPacket(title));
     }
 
-    static void teleport(ServerPlayer p, ServerLevel level, Vec3 pos, float yaw, float pitch) {
+    /** Remembers where a player came from, unless they are already in this dimension. */
+    public static void rememberReturn(ServerPlayer p) {
+        if (!p.level().dimension().equals(LEVEL)) p.setAttached(RETURN, new Return(p.level().dimension(), p.position(), p.getYRot(), p.getXRot()));
+    }
+
+    public static void teleport(ServerPlayer p, ServerLevel level, Vec3 pos, float yaw, float pitch) {
         p.teleportTo(level, pos.x, pos.y, pos.z, Set.of(), yaw, pitch, true);
         p.setDeltaMovement(Vec3.ZERO);
         p.resetFallDistance();

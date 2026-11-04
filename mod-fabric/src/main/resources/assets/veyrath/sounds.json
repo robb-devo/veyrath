@@ -597,5 +597,107 @@
         "stream": true
       }
     ]
+  },
+  "combat.boss_roar": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/boss_roar_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/boss_roar_2",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/boss_roar_3",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.boss_roar"
+  },
+  "combat.boss_awaken": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/boss_awaken_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/boss_awaken_2",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.boss_awaken"
+  },
+  "combat.boss_death": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/boss_death_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/boss_death_2",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.boss_death"
+  },
+  "combat.boss_grunt": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/boss_grunt_1",
+        "volume": 0.8
+      },
+      {
+        "name": "veyrath:combat/boss_grunt_2",
+        "volume": 0.8
+      },
+      {
+        "name": "veyrath:combat/boss_grunt_3",
+        "volume": 0.8
+      },
+      {
+        "name": "veyrath:combat/boss_grunt_4",
+        "volume": 0.8
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.boss_grunt"
+  },
+  "combat.boss_fire": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/boss_fire_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/boss_fire_2",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/boss_fire_3",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.boss_fire"
+  },
+  "combat.boss_slam": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/boss_slam_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/boss_slam_2",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/boss_slam_3",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/boss_slam_4",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.boss_slam"
   }
 }

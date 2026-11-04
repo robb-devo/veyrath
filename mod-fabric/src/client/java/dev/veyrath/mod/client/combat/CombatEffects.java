@@ -26,11 +26,17 @@ public final class CombatEffects {
      */
     public static void impact(ClientLevel level, String vfx, Vec3 at, double yaw) {
         if (level == null || vfx == null) return;
+        // A boss's blow was already drawn where it landed; the hit itself adds a plain impact.
+        if (dev.veyrath.mod.client.boss.BossEffects.handles(vfx)) vfx = "impact_heavy";
         play(level.getRandom(), vfx, at, yaw);
     }
 
     /** Effects that are not hits (Duelist tells), sent by the server by id. */
     public static void play(RandomSource r, String vfx, Vec3 at, double yaw) {
+        if (dev.veyrath.mod.client.boss.BossEffects.handles(vfx)) {
+            dev.veyrath.mod.client.boss.BossEffects.play(r, vfx, at.x(), at.y(), at.z(), yaw);
+            return;
+        }
         Vec3 fwd = Angles.forward(yaw);
         double x = at.x(), y = at.y(), z = at.z();
         switch (vfx) {

@@ -32,6 +32,7 @@ public final class Weapons {
         TwinBlades.clips(lib);
         Glaive.clips(lib);
         Grimoire.clips(lib);
+        Varek.clips(lib);
         return lib;
     }
 

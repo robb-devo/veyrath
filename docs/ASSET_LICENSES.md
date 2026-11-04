@@ -62,6 +62,23 @@ Modification: loudness-normalised to -18 LUFS, short fades, re-encoded to Ogg Vo
 | `victory` | Victory Theme for RPG | cynicmusic | victory | [victory-theme-for-rpg](https://opengameart.org/content/victory-theme-for-rpg) |
 | `legend_will_rise` | A Legend Will Rise (orchestral) | CodeManu | victory | [a-legend-will-rise-orchestral](https://opengameart.org/content/a-legend-will-rise-orchestral) |
 
+## Boss audio (Chapter 04)
+
+CC0 recordings from OpenGameArt.org, downloaded with the owner's OK on 2026-11-04, layered with
+the Kenney CC0 impacts by `tools/audio/build_boss_sounds.py` into the `boss_*` cues
+(`sounds/combat/boss_*.ogg`): slowed, filtered, layered with low rumbles and normalised.
+
+| Source | Author (OGA user) | Licence | Page |
+|---|---|---|---|
+| CC0 Deep Monster Roar | trazzz123 | CC0 | [cc0-deep-monster-roar](https://opengameart.org/content/cc0-deep-monster-roar) |
+| 80 CC0 creature SFX | rubberduck | CC0 | [80-cc0-creature-sfx](https://opengameart.org/content/80-cc0-creature-sfx) |
+| Monster Sound Effects Pack | Ogrebane | CC0 | [monster-sound-effects-pack](https://opengameart.org/content/monster-sound-effects-pack) |
+
+## Boss art (Chapter 04)
+
+Own work: Varek's texture (`textures/entity/varek.png`) is painted by `tools/textures/paint_varek.py`;
+his model is code (`client/boss/BossClient`); the item icons by `tools/textures/paint_item_icons.py`.
+
 ## Fonts (Chapter 03)
 
 | Font | Use | Licence | Source | Modification |

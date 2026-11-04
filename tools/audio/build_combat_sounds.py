@@ -139,7 +139,8 @@ def build(src: Path):
     var("tell_unblockable", lambda i: mix((pitch(S(f"impactBell_heavy_00{i}"), 0.7), 1.0), (lp(pitch(S(f"impactMetal_heavy_00{i}"), 0.6), 1500), 0.5)), count=2)
     var("round_bell", lambda i: pitch(S(f"impactBell_heavy_00{i}"), 1.0), count=1)
 
-    sounds = {}
+    # Merge: other builders (music, boss cues) own their own entries.
+    sounds = json.loads(SOUNDS_JSON.read_text(encoding="utf-8")) if SOUNDS_JSON.exists() else {}
     for name, (count, volume) in cues.items():
         sounds["combat." + name] = {
             "sounds": [{"name": f"veyrath:combat/{name}_{i + 1}", "volume": volume} for i in range(count)],
