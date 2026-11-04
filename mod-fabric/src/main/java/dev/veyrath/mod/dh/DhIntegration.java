@@ -6,7 +6,9 @@ import com.seibel.distanthorizons.api.methods.events.DhApiEventRegister;
 import com.seibel.distanthorizons.api.methods.events.abstractEvents.DhApiLevelLoadEvent;
 import com.seibel.distanthorizons.api.methods.events.sharedParameterObjects.DhApiEventParam;
 import com.seibel.distanthorizons.api.objects.DhApiResult;
+import com.seibel.distanthorizons.api.interfaces.override.worldGenerator.IDhApiWorldGenerator;
 import dev.veyrath.mod.VeyrathMod;
+import dev.veyrath.mod.arena.ProvingGrounds;
 import dev.veyrath.mod.gen.VeyrathChunkGenerator;
 import net.minecraft.server.level.ServerLevel;
 
@@ -36,18 +38,30 @@ public final class DhIntegration {
                             mc == null ? "null" : mc.getClass().getName());
                     return;
                 }
-                if (!(serverLevel.getChunkSource().getGenerator() instanceof VeyrathChunkGenerator)) return;
-                try {
-                    DhApiResult<Void> result = DhApi.worldGenOverrides.registerWorldGeneratorOverride(level, new VeyrathLodGenerator(level));
-                    if (result.success) {
-                        VeyrathMod.LOG.info("VEYRATH LOD generator registered for {}", level.getDimensionName());
-                    } else {
-                        VeyrathMod.LOG.warn("Distant Horizons refused the VEYRATH LOD generator for {}: {}", level.getDimensionName(), result.message);
-                    }
-                } catch (Throwable t) {
-                    VeyrathMod.LOG.error("Could not register the VEYRATH LOD generator; DH falls back to generating chunks", t);
+                if (serverLevel.dimension().equals(ProvingGrounds.LEVEL)) {
+                    register(level, () -> new EmptyLodGenerator(level, serverLevel.getHeight(), "minecraft:the_void"), "empty");
+                    return;
                 }
+                if (!(serverLevel.getChunkSource().getGenerator() instanceof VeyrathChunkGenerator)) return;
+                register(level, () -> new VeyrathLodGenerator(level), "VEYRATH");
             }
         });
+    }
+
+    private interface GeneratorFactory {
+        IDhApiWorldGenerator create() throws Exception;
+    }
+
+    private static void register(IDhApiLevelWrapper level, GeneratorFactory factory, String what) {
+        try {
+            DhApiResult<Void> result = DhApi.worldGenOverrides.registerWorldGeneratorOverride(level, factory.create());
+            if (result.success) {
+                VeyrathMod.LOG.info("{} LOD generator registered for {}", what, level.getDimensionName());
+            } else {
+                VeyrathMod.LOG.warn("Distant Horizons refused the {} LOD generator for {}: {}", what, level.getDimensionName(), result.message);
+            }
+        } catch (Throwable t) {
+            VeyrathMod.LOG.error("Could not register the " + what + " LOD generator; DH falls back to generating chunks", t);
+        }
     }
 }
