@@ -1,5 +1,7 @@
 package dev.veyrath.combat.ai;
 
+import dev.veyrath.combat.math.Vec3;
+
 import dev.veyrath.combat.move.HitShape;
 import dev.veyrath.combat.move.HitWindow;
 import dev.veyrath.combat.move.Move;
@@ -31,13 +33,40 @@ public final class Reach {
         return m == null || m.hits.isEmpty() ? 0 : of(m, m.hits.getFirst());
     }
 
+    /** Bone shapes longer than this (pixels from the joint) are weapons, measured from their clips. */
+    static final double WEAPON_SHAPE = 20;
+
     static double of(Move m, HitWindow w) {
         double travel = travel(m, w.to()), best = 0;
         for (HitShape s : w.shapes()) {
+            if (s.bone() != null && Math.max(s.a().length(), s.b().length()) > WEAPON_SHAPE) {
+                best = Math.max(best, travel + swept(m, w) + TARGET_HALF);
+                continue;
+            }
             double ext = s.bone() != null
                     ? Math.max(s.a().length(), s.b().length()) / 16.0 + JOINT_SLACK
                     : Math.max(Math.hypot(s.a().x(), s.a().z()), Math.hypot(s.b().x(), s.b().z()));
             best = Math.max(best, travel + ext + s.radius() + TARGET_HALF);
+        }
+        return best;
+    }
+
+    /**
+     * A weapon's real reach in front: the swept blade capsules of the window, placed by the
+     * move's own clip at every active tick (feet at the origin, facing +Z), and the farthest point
+     * ahead that lies within a body width or so of the centre line. A blade swung beside or above
+     * the body does not count as reach. Fists keep the joint estimate above (tuned and tested).
+     */
+    static double swept(Move m, HitWindow w) {
+        double best = 0;
+        for (int t = w.from(); t <= w.to(); t++) {
+            for (dev.veyrath.combat.hit.HitDetector.Capsule c
+                    : dev.veyrath.combat.hit.HitDetector.sweep(m, w, t, dev.veyrath.combat.content.Weapons.CLIPS, Vec3.ZERO, 0, 1)) {
+                for (Vec3 p : new Vec3[]{c.a(), c.b(), c.a().lerp(c.b(), 0.5)}) {
+                    if (Math.abs(p.x()) > 1.0 || p.y() < 0.1 || p.y() > 2.4) continue;
+                    best = Math.max(best, p.z() + c.radius());
+                }
+            }
         }
         return best;
     }

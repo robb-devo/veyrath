@@ -33,4 +33,12 @@ class WeaponTest {
         assertTrue(f.request(Action.LIGHT, "gs_slash_1", c), "the greatsword's light is its first cut");
         assertEquals("gs_slash_1", f.move().id);
     }
+
+    @Test
+    void greatswordReachIsMeasuredFromItsSwing() {
+        for (String id : new String[]{"gs_slash_1", "gs_slash_2", "gs_slash_3", "gs_heavy"}) {
+            double r = dev.veyrath.combat.ai.Reach.of(Weapons.GREATSWORD.moves().require(id));
+            assertTrue(r > 1.2 && r < 5.5, id + " reach " + r);
+        }
+    }
 }
