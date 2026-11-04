@@ -132,6 +132,11 @@ public final class ProvingGrounds {
     }
 
     public static int duelist(ServerPlayer p, Style style) {
+        return duelist(p, style, dev.veyrath.combat.content.Weapons.UNARMED);
+    }
+
+    /** A Duelist with a weapon (its own move set and AI over it). */
+    public static int duelist(ServerPlayer p, Style style, dev.veyrath.combat.content.Weapons.Weapon weapon) {
         if (enter(p) == 0) return 0;
         MinecraftServer server = p.level().getServer();
         ServerLevel arena = server.getLevel(LEVEL);
@@ -142,6 +147,7 @@ public final class ProvingGrounds {
         arena.addFreshEntity(d);
         CombatServer.attachDuelist(d, style, arena.getRandom().nextLong());
         CombatServer.setDuelistActive(d, false);
+        if (weapon != null) CombatServer.armDuelist(d, weapon);
         ServerBossEvent bar = new ServerBossEvent(java.util.UUID.randomUUID(), Component.translatable("veyrath.arena.bar", styleName(style)),
                 BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.NOTCHED_10);
         bar.addPlayer(p);

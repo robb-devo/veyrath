@@ -28,7 +28,19 @@ public final class ArenaCommands {
                         .then(Commands.argument("style", StringArgumentType.word())
                                 .suggests((ctx, b) -> SharedSuggestionProvider.suggest(List.of("apprentice", "adept", "master"), b))
                                 .executes(ctx -> ProvingGrounds.duelist(ctx.getSource().getPlayerOrException(),
-                                        Style.byId(StringArgumentType.getString(ctx, "style"))))))
+                                        Style.byId(StringArgumentType.getString(ctx, "style"))))
+                                .then(Commands.argument("weapon", StringArgumentType.word())
+                                        .suggests((ctx, b) -> SharedSuggestionProvider.suggest(
+                                                dev.veyrath.combat.content.Weapons.ALL.stream().map(dev.veyrath.combat.content.Weapons.Weapon::id).toList(), b))
+                                        .executes(ctx -> {
+                                            var w = dev.veyrath.combat.content.Weapons.byId(StringArgumentType.getString(ctx, "weapon"));
+                                            if (w == null) {
+                                                ctx.getSource().sendFailure(net.minecraft.network.chat.Component.literal("Unknown weapon"));
+                                                return 0;
+                                            }
+                                            return ProvingGrounds.duelist(ctx.getSource().getPlayerOrException(),
+                                                    Style.byId(StringArgumentType.getString(ctx, "style")), w);
+                                        }))))
                 .then(Commands.literal("dummy").executes(ctx -> ProvingGrounds.dummy(ctx.getSource().getPlayerOrException())))
                 .then(Commands.literal("reset").executes(ctx -> ProvingGrounds.reset(ctx.getSource().getPlayerOrException())))));
     }

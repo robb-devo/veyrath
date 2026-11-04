@@ -223,7 +223,29 @@ public final class CombatServer {
     /** Called by every Duelist each server tick: an entity loaded from disk gets its mind back. */
     public static void ensureDuelist(DuelistEntity d) {
         Entry en = ENTRIES.get(d.getId());
-        if (en == null || en.entity != d) entryFor(d);
+        if (en == null || en.entity != d) en = entryFor(d);
+        // Viewers that start tracking it later learn its weapon too.
+        if (d.tickCount % 20 == 0 && dev.veyrath.combat.content.Weapons.of(en.fighter.set) != dev.veyrath.combat.content.Weapons.UNARMED) broadcastWeapon(en);
+    }
+
+    /** Weapon ids of all Duelist fighters (tests). */
+    public static String duelistWeapons() {
+        StringBuilder sb = new StringBuilder();
+        for (Entry e : ENTRIES.values()) {
+            if (e.entity instanceof DuelistEntity) sb.append(dev.veyrath.combat.content.Weapons.of(e.fighter.set).id()).append(' ');
+        }
+        return sb.toString().trim();
+    }
+
+    /** Draws a weapon for a Duelist (arena command) and shows it to viewers. */
+    public static void armDuelist(DuelistEntity d, dev.veyrath.combat.content.Weapons.Weapon w) {
+        Entry en = entryFor(d);
+        if (en.fighter.equip(w.moves())) broadcastWeapon(en);
+    }
+
+    private static void broadcastWeapon(Entry e) {
+        CombatNet.WeaponS2C msg = new CombatNet.WeaponS2C(e.entity.getId(), dev.veyrath.combat.content.Weapons.of(e.fighter.set).id());
+        for (ServerPlayer viewer : PlayerLookup.tracking(e.entity)) ServerPlayNetworking.send(viewer, msg);
     }
 
     /** Between rounds a Duelist only guards; in a round it fights. */
@@ -243,8 +265,10 @@ public final class CombatServer {
         Entry old = ENTRIES.get(d.getId());
         Style style = old != null && old.mind != null ? old.mind.style : Style.byId(d.styleId());
         boolean active = old == null || old.mind == null || old.mind.active;
+        var weapon = old == null ? dev.veyrath.combat.content.Weapons.UNARMED : dev.veyrath.combat.content.Weapons.of(old.fighter.set);
         Entry en = attachDuelist(d, style, d.getRandom().nextLong());
         en.mind.active = active;
+        en.fighter.equip(weapon.moves());
         removeModifier(d, Attributes.GRAVITY, GRAVITY_ID);
         broadcastAnim(en, "", 2);
     }

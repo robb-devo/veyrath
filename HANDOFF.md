@@ -90,7 +90,8 @@ framework (TD-032), the Oathcleaver greatsword (playable, all moves land in the 
 
 1. Audio: waiting for the owner's OK to download CC0 sound libraries (asked 2026-11-04: Kenney
    Impact Sounds, Kenney RPG Audio). Then an own audio engine replacing `CombatSounds`.
-2. Oathcleaver: Duelist support (the Duelist still uses fists), feel tuning, own sounds.
+2. Oathcleaver: `/veyrath arena duelist adept greatsword` arms the Duelist, but its cuts rarely
+   connect (DuelistBrain/Reach were built for fists): fix that; feel tuning; own sounds.
 3. Next weapons: twin blades, glaive, grimoire (roster in the plan).
 4. Own combat HUD art (vanilla hearts and hunger still show in stance).
 5. Keep the companion board card current: in the claude-companion folder run
