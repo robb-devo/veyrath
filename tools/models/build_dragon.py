@@ -230,6 +230,10 @@ def blade(points, height, thick, region, weights_of, lean=v(0, 0, 0)):
                 tri(base[i], top[i], top[i + 1])
 
 
+def grid_center(edge_a, edge_b):
+    return (np.mean(edge_a, axis=0) + np.mean(edge_b, axis=0)) / 2
+
+
 def membrane(edge_a, edge_b, region, weights_of, rows=10, sag=0.25, u0=0.0, u1=1.0):
     """A double-sided membrane between two edges (lists of points of equal length)."""
     n = len(edge_a)
@@ -240,6 +244,10 @@ def membrane(edge_a, edge_b, region, weights_of, rows=10, sag=0.25, u0=0.0, u1=1
             t = j / rows
             p = edge_a[i] * (1 - t) + edge_b[i] * t
             p = p + v(0, -1, 0) * sag * math.sin(math.pi * t) * (0.3 + 0.7 * i / max(1, n - 1))
+            # Scalloped trailing edge: the panel's far rows pull in between the fingers.
+            if i == n - 1 or i >= n - 3:
+                inset = 0.35 * math.sin(math.pi * t) * (1 - (n - 1 - i) / 3)
+                p = p + (grid_center(edge_a, edge_b) - p) * inset * 0.25
             row.append(p)
         grid.append(row)
     for face in (1, -1):
@@ -290,9 +298,9 @@ def build():
          squash=lambda s: (1.0, 1.1), cap_end=True, belly=0.1)
     # Tail fin: a double blade on the last two segments.
     fin_pts = [HEAD["tail6"] * (1 - t) + HEAD["tail8"] * t + v(0, 0, -0.8 * t) for t in np.linspace(0, 1, 10)]
-    blade(fin_pts, lambda s: 0.5 * math.sin(math.pi * min(1, s * 1.1)) ** 0.7 + 0.03, 0.03, "plate", lambda p, s: chain_weights(p, tail[5:]))
+    blade(fin_pts, lambda s: 0.55 * math.sin(math.pi * min(1, s * 1.05)) ** 2 * (0.35 + 0.65 * s) + 0.02, 0.03, "plate", lambda p, s: chain_weights(p, tail[5:]))
     fin2 = [p + v(0, 0, 0) for p in fin_pts]
-    blade(fin2, lambda s: -0.35 * math.sin(math.pi * min(1, s * 1.1)) ** 0.7, 0.03, "plate", lambda p, s: chain_weights(p, tail[5:]))
+    blade(fin2, lambda s: -0.4 * math.sin(math.pi * min(1, s * 1.05)) ** 2 * (0.35 + 0.65 * s), 0.03, "plate", lambda p, s: chain_weights(p, tail[5:]))
 
     # Head: a swept profile, skull to snout; jaw separate.
     skull = HEAD["head"]
@@ -323,6 +331,13 @@ def build():
         tube([eye + v(-0.04 * side, 0, -0.08), eye + v(0.02 * side, 0, 0.0), eye + v(-0.04 * side, 0, 0.1)], lambda s: 0.08 * math.sin(math.pi * s) + 0.01,
              "eye", lambda p, s: {"head": 1.0}, ring=8, cap_end=True)
 
+    # Brow ridges over the eyes and nostril bumps on the snout.
+    for side in (1, -1):
+        brow = [skull + v(0.25 * side, 0.3, 0.2), skull + v(0.36 * side, 0.3, 0.6), skull + v(0.3 * side, 0.22, 0.95)]
+        tube(catmull(brow, 10), lambda s: 0.09 * math.sin(math.pi * s) + 0.02, "head", lambda p, s: {"head": 1.0}, ring=8, cap_end=True)
+        nos = skull + v(0.11 * side, 0.02, 1.78)
+        tube([nos + v(0, 0, -0.08), nos, nos + v(0, -0.02, 0.06)], lambda s: 0.05 * math.sin(math.pi * s) + 0.01, "head",
+             lambda p, s: {"head": 1.0}, ring=6, cap_end=True)
     # The whole head a size larger than first sculpted (it read small on the long neck).
     for i in range(head_from, len(POS)):
         POS[i] = skull + (POS[i] - skull) * 1.3
@@ -424,7 +439,7 @@ def resample(points, n):
 
 
 # ---------------------------------------------------------------- texture
-def paint(size=1024):
+def paint(size=2048):
     from PIL import Image
     img = np.zeros((size, size, 3))
     yy, xx = np.mgrid[0:size, 0:size] / size
@@ -442,32 +457,51 @@ def paint(size=1024):
         return m, lu, lv
 
     def scales(lu, lv, nu, nv):
-        """Overlapping scale cells: rows offset by half, darker at each scale's lower edge."""
-        gu = lu * nu
-        gv = lv * nv
-        row = np.floor(gv)
-        gu = gu + 0.5 * (row % 2)
-        fu = gu % 1 - 0.5
-        fv = gv % 1
-        d = np.sqrt(fu ** 2 * 1.6 + (fv - 0.15) ** 2)
-        edge = np.clip((d - 0.38) / 0.12, 0, 1)
-        sheen = np.clip(1 - fv, 0, 1) * 0.25
-        return edge, sheen
+        """Jittered scale cells (Voronoi): a dark seam between scales, a lit upper rim on each,
+        and each scale a slightly different shade. Returns (seam, rim, variation)."""
+        gu, gv = lu * nu, lv * nv
+        iu, iv = np.floor(gu), np.floor(gv)
+        best = np.full(gu.shape, 9.0)
+        second = np.full(gu.shape, 9.0)
+        cell = np.zeros(gu.shape)
+        rim_dv = np.zeros(gu.shape)
+        for du in (-1, 0, 1):
+            for dv in (-1, 0, 1):
+                cu, cv = iu + du, iv + dv
+                h = np.sin(cu * 127.1 + cv * 311.7) * 43758.5453
+                jx = (h - np.floor(h)) * 0.7 + 0.15
+                h2 = np.sin(cu * 269.5 + cv * 183.3) * 43758.5453
+                jy = (h2 - np.floor(h2)) * 0.7 + 0.15
+                px, py = cu + jx, cv + jy
+                d = np.sqrt((gu - px) ** 2 * 1.3 + (gv - py) ** 2)
+                closer = d < best
+                second = np.where(closer, best, np.minimum(second, d))
+                cell = np.where(closer, h - np.floor(h), cell)
+                rim_dv = np.where(closer, gv - py, rim_dv)
+                best = np.where(closer, d, best)
+        seam = np.clip(1 - (second - best) / 0.12, 0, 1)
+        rim = np.clip(-rim_dv * 1.6, 0, 1) * (1 - seam)
+        return seam, rim, cell
 
     for name in ("body", "neck", "tail", "leg", "arm", "head", "jaw"):
         m, lu, lv = region(name)
         # Around the tube: u = 0 is the side, 0.25 the top, 0.75 the belly.
         belly = np.clip(-np.sin(lu * 2 * np.pi), 0, 1) ** 1.5
         top = np.clip(np.sin(lu * 2 * np.pi), 0, 1)
-        nu = {"body": 48, "neck": 36, "tail": 40, "leg": 24, "arm": 20, "head": 28, "jaw": 20}[name]
-        nv = {"body": 40, "neck": 50, "tail": 70, "leg": 30, "arm": 30, "head": 22, "jaw": 16}[name]
-        edge, sheen = scales(lu, lv, nu, nv)
-        base = slate[None, None, :] * (1 - belly[..., None]) + bone[None, None, :] * belly[..., None]
-        base = base * (0.85 + 0.25 * top[..., None])
-        base = base * (1 - 0.45 * edge[..., None]) + sheen[..., None] * 0.15
-        # Belly plates instead of scales.
-        plates = (np.abs(((lv * nv * 0.5) % 1) - 0.5) < 0.04) & (belly > 0.4)
-        base[plates] *= 0.7
+        nu = {"body": 72, "neck": 52, "tail": 56, "leg": 36, "arm": 28, "head": 40, "jaw": 30}[name]
+        nv = {"body": 60, "neck": 78, "tail": 110, "leg": 44, "arm": 44, "head": 32, "jaw": 24}[name]
+        seam, rim, var = scales(lu, lv, nu, nv)
+        back = slate_dark * 0.9 + (slate - slate_dark) * 0.4
+        flank = slate * (1 - top[..., None] * 0.35) + back * top[..., None] * 0.35
+        base = flank * (1 - belly[..., None]) + bone[None, None, :] * belly[..., None]
+        base = base * (0.88 + 0.24 * var[..., None]) * (1 - 0.5 * seam[..., None]) + rim[..., None] * 0.09
+        # A cold blue sheen along the back.
+        base += np.array([0.02, 0.04, 0.09]) * top[..., None] * (1 - seam[..., None])
+        # Belly: broad horizontal plates (scutes) where it faces down.
+        bv = (lv * nv * 0.35) % 1
+        scute = np.clip((belly - 0.35) / 0.3, 0, 1)
+        plate_col = bone * (0.82 + 0.25 * (1 - bv)[..., None]) * (1 - 0.55 * (bv < 0.06)[..., None])
+        base = base * (1 - scute[..., None]) + plate_col * scute[..., None]
         base += rng.normal(0, 0.02, base.shape)
         img[m] = np.clip(base[m], 0, 1)
     m, lu, lv = region("horn")
@@ -481,13 +515,15 @@ def paint(size=1024):
     m, lu, lv = region("membrane")
     # Membrane: dusk blue, veins radiating from the wrist (u along the span, v towards the trailing edge).
     veins = np.exp(-((np.sin(lu * 70 + np.sin(lv * 6) * 1.5)) ** 2) / 0.01) * 0.6
-    mem = blue * (0.7 + 0.3 * lv[..., None]) + np.array([0.08, 0.05, 0.1]) * (1 - lv[..., None])
-    mem = mem * (1 - 0.35 * veins[..., None])
+    fine = np.exp(-((np.sin(lu * 210 + np.sin(lv * 17 + lu * 9) * 2.5)) ** 2) / 0.02) * 0.25 * lv
+    mem = blue * (0.55 + 0.35 * lv[..., None]) + np.array([0.12, 0.06, 0.08]) * (1 - lv[..., None]) ** 2
+    mem = mem * (1 - 0.4 * veins[..., None] - 0.25 * fine[..., None])
+    mem = mem * (1 - 0.35 * np.clip((lv - 0.85) / 0.15, 0, 1)[..., None])
     mem += rng.normal(0, 0.015, mem.shape)
     img[m] = np.clip(mem[m], 0, 1)
     out = (img * 255 + 0.5).astype(np.uint8)
     OUT_TEX.parent.mkdir(parents=True, exist_ok=True)
-    Image.fromarray(out, "RGB").convert("RGBA").save(OUT_TEX)
+    Image.fromarray(out, "RGB").save(OUT_TEX, optimize=True)
 
 
 # ---------------------------------------------------------------- export

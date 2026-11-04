@@ -122,7 +122,9 @@ framework (TD-032), the Oathcleaver greatsword (playable, all moves land in the 
    DragonEntity.clientKeys set in client/dragon/DragonClient), WP6 camera DONE (DragonClient.view,
    hooked in CameraMixin). WP7 Storm Horn DONE first version (dragon/StormHorn, DragonEntity modes STAY/ARRIVE/DEPART,
    owner UUID saved). WP8 audio+fx DONE first version (client/dragon/DragonFx, sound marks in DragonAnimator.beats,
-   build_dragon_sounds.py). Next: WP2 art passes, unridden AI (follow, idle wander), FPS numbers.
+   build_dragon_sounds.py). WP2 art pass 1 DONE. Next: more art (gait on wing knuckles, frills, eye glow), unridden
+   behaviour (follow the owner, wander, sit), shader check with Complementary, FPS with her in
+   view, the Chapter 05 acceptance report (and the Chapter 04 report after the owner's boss test), unridden AI (follow, idle wander), FPS numbers.
    Game test `dragon` = turntable + state gallery + ride (takeoff, flight, glide, dive, land).
 7. Keep the companion board card current: in the claude-companion folder run
    node scripts/board.js thread veyrath-ch03 --title ... --state ... --where pc --checklist "...".
