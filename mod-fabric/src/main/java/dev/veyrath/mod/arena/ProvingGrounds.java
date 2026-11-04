@@ -22,7 +22,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.damagesource.DamageSource;
@@ -202,7 +201,7 @@ public final class ProvingGrounds {
                 else if (round.timer == 41) title(p, Component.literal("1"), sub);
                 else if (round.timer >= COUNTDOWN_TICKS) {
                     title(p, Component.translatable("veyrath.arena.fight").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), Component.empty());
-                    arena.playSound(null, p.getX(), p.getY(), p.getZ(), CombatSounds.ev(SoundEvents.BELL_BLOCK), SoundSource.PLAYERS, 1.0f, 1.2f);
+                    arena.playSound(null, p.getX(), p.getY(), p.getZ(), CombatSounds.event("round_bell"), SoundSource.PLAYERS, 1.0f, 1.0f);
                     round.phase = Phase.FIGHT;
                     round.timer = 0;
                     CombatServer.setDuelistActive(d, true);

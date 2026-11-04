@@ -233,14 +233,14 @@ public final class Greatsword {
         // ------------------------------------------------ light string: three big cuts
         s.add(Move.builder("gs_slash_1", Kind.ATTACK, 16)
                 .hit(4, 6, HitSpec.of(6).reaction(Reaction.STAGGER).stun(14, 9).push(0.35).hitstop(4).shake(0.3).guard(18).poise(30)
-                        .gauge(3).fx("blade_light", "hit_heavy").build(), blade)
+                        .gauge(3).fx("blade_light", "blade_cut").build(), blade)
                 .branch(Action.LIGHT, "gs_slash_2", 6, 16).branch(Action.HEAVY, "gs_heavy", 6, 16)
                 .armor(3, 6).dodgeFrom(9).onHitCancel(2).abilityFrom(8).freeFrom(14)
                 .motion(new Motion(16).dash(2, 5, 0.22, 0.05).steer(0.1))
                 .tracking(10, 3).blend(1.5).build());
         s.add(Move.builder("gs_slash_2", Kind.ATTACK, 16)
                 .hit(3, 5, HitSpec.of(6.5).reaction(Reaction.STAGGER).stun(14, 9).push(0.4).lift(0.15).hitstop(4).shake(0.32).guard(20)
-                        .poise(32).gauge(3).fx("blade_light", "hit_heavy").build(), blade)
+                        .poise(32).gauge(3).fx("blade_light", "blade_cut").build(), blade)
                 .branch(Action.LIGHT, "gs_slash_3", 5, 16).branch(Action.HEAVY, "gs_heavy", 5, 16)
                 .armor(2, 5).dodgeFrom(8).onHitCancel(2).abilityFrom(7).freeFrom(14)
                 .motion(new Motion(16).dash(1, 4, 0.2, 0.05).steer(0.1))
@@ -256,7 +256,7 @@ public final class Greatsword {
                 .motion(new Motion(44).steer(0.2)).tracking(14, 44).next("gs_heavy_charged").blend(2).build());
         s.add(Move.builder("gs_heavy", Kind.ATTACK, 20)
                 .hit(5, 8, HitSpec.of(9).reaction(Reaction.KNOCKBACK).stun(18, 10).push(1.0).lift(0.2).hitstop(6).shake(0.5).guard(40)
-                        .poise(60).gauge(5).fx("blade_sweep", "hit_charged").build(), blade)
+                        .poise(60).gauge(5).fx("blade_sweep", "blade_cut").build(), blade)
                 .armor(3, 8).dodgeFrom(12).onHitCancel(2).abilityFrom(11).freeFrom(18)
                 .motion(new Motion(20).dash(3, 7, 0.3, 0.05)).tracking(8, 4).blend(1.5).build());
         s.add(Move.builder("gs_heavy_charged", Kind.ATTACK, 26)
@@ -268,7 +268,7 @@ public final class Greatsword {
         // ------------------------------------------------ air
         s.add(Move.builder("gs_air_cleave", Kind.ATTACK, 14).air()
                 .hit(2, 4, HitSpec.of(6).reaction(Reaction.SPIKE).stun(14, 8).push(0.1).hitstop(5).shake(0.4).guard(24).poise(40)
-                        .gauge(3).fx("blade_cleave", "hit_heavy").build(), blade)
+                        .gauge(3).fx("blade_cleave", "blade_cut").build(), blade)
                 .branch(Action.HEAVY, "gs_plunge", 4, 14).dodgeFrom(7).abilityFrom(7).freeFrom(12)
                 .motion(new Motion(14).holdVertical(0, 5, 0.0).gravity(0.4)).tracking(12, 2).blend(1).build());
         s.add(Move.builder("gs_plunge", Kind.ATTACK, 30).air()
@@ -286,7 +286,7 @@ public final class Greatsword {
                 .dodgeFrom(2).abilityFrom(2).freeFrom(10).blend(0.5).build());
         s.add(Move.builder("gs_riposte", Kind.ATTACK, 16)
                 .hit(2, 4, HitSpec.of(12).reaction(Reaction.KNOCKBACK).stun(20, 12).push(1.0).lift(0.25).hitstop(7).shake(0.6).guard(50)
-                        .poise(60).gauge(6).unparryable().fx("blade_cleave", "hit_heavy").build(), blade)
+                        .poise(60).gauge(6).unparryable().fx("blade_cleave", "blade_cut").build(), blade)
                 .dodgeFrom(9).abilityFrom(8).freeFrom(14).motion(new Motion(16).dash(0, 3, 0.45, 0.05))
                 .tracking(30, 1).blend(0.5).build());
         // ------------------------------------------------ abilities

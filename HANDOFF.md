@@ -88,8 +88,9 @@ Chapter 03 is approved and under way; plan and status in docs/CHAPTER_03_PLAN.md
 Done so far: own effects engine for all combat effects and biome atmosphere (TD-031), weapon
 framework (TD-032), the Oathcleaver greatsword (playable, all moves land in the weapon test).
 
-1. Audio: waiting for the owner's OK to download CC0 sound libraries (asked 2026-11-04: Kenney
-   Impact Sounds, Kenney RPG Audio). Then an own audio engine replacing `CombatSounds`.
+1. Audio: combat sounds done (TD-033, owner OK'd the Kenney CC0 downloads). Rebuild with
+   `python tools/audio/build_combat_sounds.py <folder>` (sources not committed; re-download from
+   kenney.nl). Next: ambience, dynamic music, buses and ducking.
 2. Oathcleaver: `/veyrath arena duelist adept greatsword` arms the Duelist, but its cuts rarely
    connect (DuelistBrain/Reach were built for fists): fix that; feel tuning; own sounds.
 3. Next weapons: twin blades, glaive, grimoire (roster in the plan).

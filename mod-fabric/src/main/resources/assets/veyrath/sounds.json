@@ -1,0 +1,353 @@
+{
+  "combat.hit_light": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/hit_light_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/hit_light_2",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/hit_light_3",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/hit_light_4",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.hit_light"
+  },
+  "combat.hit_heavy": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/hit_heavy_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/hit_heavy_2",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/hit_heavy_3",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/hit_heavy_4",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.hit_heavy"
+  },
+  "combat.hit_charged": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/hit_charged_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/hit_charged_2",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/hit_charged_3",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/hit_charged_4",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.hit_charged"
+  },
+  "combat.barrage": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/barrage_1",
+        "volume": 0.7
+      },
+      {
+        "name": "veyrath:combat/barrage_2",
+        "volume": 0.7
+      },
+      {
+        "name": "veyrath:combat/barrage_3",
+        "volume": 0.7
+      },
+      {
+        "name": "veyrath:combat/barrage_4",
+        "volume": 0.7
+      },
+      {
+        "name": "veyrath:combat/barrage_5",
+        "volume": 0.7
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.barrage"
+  },
+  "combat.gale": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/gale_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/gale_2",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/gale_3",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/gale_4",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.gale"
+  },
+  "combat.skybreaker": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/skybreaker_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/skybreaker_2",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/skybreaker_3",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/skybreaker_4",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.skybreaker"
+  },
+  "combat.quake": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/quake_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/quake_2",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/quake_3",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/quake_4",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.quake"
+  },
+  "combat.slam": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/slam_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/slam_2",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/slam_3",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/slam_4",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.slam"
+  },
+  "combat.ultimate": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/ultimate_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/ultimate_2",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/ultimate_3",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.ultimate"
+  },
+  "combat.block": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/block_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/block_2",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/block_3",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/block_4",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.block"
+  },
+  "combat.guard_break": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/guard_break_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/guard_break_2",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/guard_break_3",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.guard_break"
+  },
+  "combat.parry": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/parry_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/parry_2",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/parry_3",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.parry"
+  },
+  "combat.perfect_dodge": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/perfect_dodge_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/perfect_dodge_2",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/perfect_dodge_3",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.perfect_dodge"
+  },
+  "combat.blade_cut": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/blade_cut_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/blade_cut_2",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/blade_cut_3",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/blade_cut_4",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.blade_cut"
+  },
+  "combat.blade_swing": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/blade_swing_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/blade_swing_2",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/blade_swing_3",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/blade_swing_4",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.blade_swing"
+  },
+  "combat.tell_strike": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/tell_strike_1",
+        "volume": 0.8
+      },
+      {
+        "name": "veyrath:combat/tell_strike_2",
+        "volume": 0.8
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.tell_strike"
+  },
+  "combat.tell_heavy": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/tell_heavy_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/tell_heavy_2",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.tell_heavy"
+  },
+  "combat.tell_unblockable": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/tell_unblockable_1",
+        "volume": 1.0
+      },
+      {
+        "name": "veyrath:combat/tell_unblockable_2",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.tell_unblockable"
+  },
+  "combat.round_bell": {
+    "sounds": [
+      {
+        "name": "veyrath:combat/round_bell_1",
+        "volume": 1.0
+      }
+    ],
+    "subtitle": "subtitles.veyrath.combat.round_bell"
+  }
+}

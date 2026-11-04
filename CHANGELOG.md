@@ -14,6 +14,10 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   cleave and plunge, parry riposte, Rending Arc, Grave Drop, Guard Crush and the ultimate
   Sundering Verdict; its own model and texture, blade trail and slash effects.
 - Game tests `vfx` (effects gallery) and `weapons`.
+- VEYRATH's own combat sounds (TD-033): 19 cues designed from CC0 recordings replace every
+  vanilla sound in combat, tells and the arena; weapon swings whoosh.
+- The Duelist can wield the Oathcleaver (`/veyrath arena duelist <style> greatsword`); weapon
+  reach for its AI is measured from the blade's swing.
 
 ### Changed
 - The server's copy of a fighter waits through its own hit-stop before rejecting an input.

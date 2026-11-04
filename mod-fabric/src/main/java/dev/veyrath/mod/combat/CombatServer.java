@@ -29,7 +29,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
@@ -397,15 +396,15 @@ public final class CombatServer {
         switch (t.kind()) {
             case STRIKE -> {
                 broadcastVfx(d, "tell_strike", x, y, z);
-                level.playSound(null, x, y, z, CombatSounds.ev(SoundEvents.AMETHYST_BLOCK_CHIME), SoundSource.HOSTILE, 1.0f, 1.8f);
+                level.playSound(null, x, y, z, CombatSounds.event("tell_strike"), SoundSource.HOSTILE, 1.0f, 1.0f);
             }
             case HEAVY -> {
                 broadcastVfx(d, "tell_heavy", x, y, z);
-                level.playSound(null, x, y, z, CombatSounds.ev(SoundEvents.AMETHYST_BLOCK_CHIME), SoundSource.HOSTILE, 1.2f, 1.1f);
+                level.playSound(null, x, y, z, CombatSounds.event("tell_heavy"), SoundSource.HOSTILE, 1.1f, 1.0f);
             }
             case UNBLOCKABLE -> {
                 broadcastVfx(d, "tell_unblockable", x, y, z);
-                level.playSound(null, x, y, z, CombatSounds.ev(SoundEvents.AMETHYST_BLOCK_RESONATE), SoundSource.HOSTILE, 1.4f, 0.7f);
+                level.playSound(null, x, y, z, CombatSounds.event("tell_unblockable"), SoundSource.HOSTILE, 1.3f, 1.0f);
             }
         }
     }

@@ -19,7 +19,12 @@ with its origin and licence. So is every external resource the project uses. Add
 | `docs/media/arena/*` | In-game screenshots of the Proving Grounds test | Taken by `ArenaGameTest` on the owner's PC; `*_shaders.jpg` show Complementary Unbound's rendering | Project-owned screenshots of the owner's game | — |
 | `docs/media/terrain_camera/*.jpg` | Combat stance camera on VEYRATH terrain | Taken by `TerrainCameraGameTest` on the owner's PC | Project-owned screenshots of the owner's game | — |
 
-No third-party image, model, texture, font or sound is in the repository.
+| `mod-fabric/src/main/resources/assets/veyrath/sounds/combat/*.ogg` | 19 combat sound cues, 64 variants (hits, blades, abilities, block, parry, tells, round bell) | Designed for VEYRATH by `tools/audio/build_combat_sounds.py` (layering, filtering, pitch, envelopes, a synthesised low thump and air noise) from CC0 recordings: Kenney "Impact Sounds" 1.0 and Kenney "RPG Audio" (kenney.nl, downloaded 2026-11-04 with the owner's OK; the source files are not committed) | Derived work of CC0 sources; project-owned | None required (CC0); credited here |
+| `mod-fabric/src/main/resources/assets/veyrath/textures/vfx/atlas.png` | Effect atlas, 12 shapes | Painted by `tools/textures/paint_vfx_atlas.py` (no source image) | Project-owned | — |
+| `mod-fabric/src/main/resources/assets/veyrath/textures/entity/weapon/oathcleaver.png` | Greatsword texture | Painted by `tools/textures/paint_weapon_textures.py` | Project-owned | — |
+
+No third-party image, model, texture or font is in the repository. Sounds are derived from the CC0
+libraries listed above.
 
 ## Assets used at runtime but not redistributed
 

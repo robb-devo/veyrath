@@ -110,6 +110,12 @@ public final class LocalCombat {
         @Override
         public void moveStarted(Fighter f, Move m) {
             ANIM.play(m.clip, f.clock(), m.blendIn);
+            boolean armed = dev.veyrath.combat.content.Weapons.of(f.set) != dev.veyrath.combat.content.Weapons.UNARMED;
+            if (armed && !m.hits.isEmpty() && owner != null && owner.level() != null) {
+                var r = owner.level().getRandom();
+                owner.level().playLocalSound(owner.getX(), owner.getY() + 1, owner.getZ(), dev.veyrath.mod.combat.CombatSounds.event("blade_swing"),
+                        net.minecraft.sounds.SoundSource.PLAYERS, 0.7f, 0.92f + r.nextFloat() * 0.16f, false);
+            }
         }
 
         @Override

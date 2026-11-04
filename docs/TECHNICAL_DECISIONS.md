@@ -444,3 +444,19 @@ window plus the total hit-stop of the move it is still in (at most 12 ticks).
 whole difference. The greatsword's long hit-stops (4 to 10 ticks) held the server's copy back
 further than the 3-tick retry window: the weapon test saw a cross-string cut rejected with the
 server 5 ticks behind (`rejected LIGHT gs_slash_3 ... gs_slash_2 t=3`).
+
+## TD-033 — Own combat sounds designed from CC0 recordings
+
+**Status:** Accepted · 2026-11-04
+
+**Decision.** Combat plays only VEYRATH sound events (`veyrath:combat.<cue>`, 19 cues, 64
+variants). Each is built by `tools/audio/build_combat_sounds.py` from CC0 recordings (Kenney
+Impact Sounds and RPG Audio): several sources layered per cue, filtered, pitched, enveloped,
+with a short synthesised low thump under heavy blows and band-limited air noise for swings,
+soft-limited and normalised to a -2 dB peak, mono 44.1 kHz Ogg. Weapon swings get a whoosh when
+the move starts; Duelist tells and the round bell use their own cues. No vanilla sound is left
+in the mod's code (`SoundEvents` no longer referenced).
+
+**Why.** The owner's no-vanilla rule. CC0 sources need no attribution and are safe for the public
+repository; layering and processing them gives VEYRATH its own sound rather than a library's.
+Better recordings (licensed Foley, own recordings) can replace sources later without code changes.

@@ -35,6 +35,7 @@ public final class VeyrathMod implements ModInitializer {
     @Override
     public void onInitialize() {
         Registry.register(BuiltInRegistries.CHUNK_GENERATOR, id("veyrath"), VeyrathChunkGenerator.CODEC);
+        dev.veyrath.mod.combat.CombatSounds.register();
         Registry.register(BuiltInRegistries.BIOME_SOURCE, id("veyrath"), VeyrathBiomeSource.CODEC);
 
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
