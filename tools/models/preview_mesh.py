@@ -30,7 +30,7 @@ def load(path):
     return bones, verts, tris
 
 
-def render(mesh, tex, out, yaw=35, pitch=-20, W=1400, H=900):
+def render(mesh, tex, out, yaw=35, pitch=-20, W=1400, H=900, ground=False):
     bones, verts, tris = mesh
     texture = np.asarray(Image.open(tex).convert("RGB"), dtype=np.float64) / 255
     th, tw = texture.shape[:2]
@@ -41,10 +41,28 @@ def render(mesh, tex, out, yaw=35, pitch=-20, W=1400, H=900):
     cp, sp = math.cos(math.radians(pitch)), math.sin(math.radians(pitch))
     R = np.array([[cy, 0, sy], [0, 1, 0], [-sy, 0, cy]]) @ np.eye(3)
     R = np.array([[1, 0, 0], [0, cp, -sp], [0, sp, cp]]) @ R
-    c = p.mean(axis=0)
+    if ground:
+        # Fixed framing, so poses compare; a ground plane of solid quads under her.
+        c = np.array([0.0, 3.0, 0.0])
+        g = []
+        for gx in range(-12, 12, 2):
+            for gz in range(-14, 12, 2):
+                g += [[gx, 0, gz], [gx + 2, 0, gz], [gx + 2, 0, gz + 2], [gx, 0, gz + 2]]
+        gp = np.array(g, dtype=np.float64)
+        base = len(p)
+        p = np.concatenate([p, gp])
+        n = np.concatenate([n, np.tile([0, 1, 0], (len(gp), 1))])
+        uv = np.concatenate([uv, np.full((len(gp), 2), -1.0)])
+        gt = []
+        for k in range(len(gp) // 4):
+            a = base + 4 * k
+            gt += [[a, a + 1, a + 2], [a, a + 2, a + 3]]
+        tris = np.concatenate([tris, np.array(gt)])
+    else:
+        c = p.mean(axis=0)
     q = (p - c) @ R.T
     nn = n @ R.T
-    scale = min(W, H) / (np.ptp(q[:, :2], axis=0).max() * 1.05)
+    scale = min(W, H) / 17 if ground else min(W, H) / (np.ptp(q[:, :2], axis=0).max() * 1.05)
     sx = W / 2 + q[:, 0] * scale
     sy_ = H / 2 - q[:, 1] * scale
     z = q[:, 2]
@@ -77,6 +95,9 @@ def render(mesh, tex, out, yaw=35, pitch=-20, W=1400, H=900):
         u = w0 * uv[a, 0] + w1 * uv[b_, 0] + w2 * uv[c_, 0]
         vv = w0 * uv[a, 1] + w1 * uv[b_, 1] + w2 * uv[c_, 1]
         col = texture[np.clip((vv * th).astype(int), 0, th - 1), np.clip((u * tw).astype(int), 0, tw - 1)]
+        if uv[a, 0] < 0:
+            chk = ((np.floor(gx / 20) + np.floor(gy / 20)) % 2)[..., None]
+            col = np.broadcast_to(np.array([0.36, 0.5, 0.3]), col.shape) * (0.92 + 0.08 * chk)
         nrm = w0[..., None] * nn[a] + w1[..., None] * nn[b_] + w2[..., None] * nn[c_]
         nrm /= np.linalg.norm(nrm, axis=-1, keepdims=True) + 1e-9
         lam = np.clip(np.abs(nrm @ light), 0, 1) * 0.75 + 0.3

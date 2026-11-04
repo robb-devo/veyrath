@@ -30,6 +30,8 @@ public class DragonRenderer extends EntityRenderer<DragonEntity, DragonRenderer.
         public float yaw;
         public int id;
         public float partial;
+        public float lookYaw, lookPitch;
+        public DragonEntity entity;
     }
 
     public DragonRenderer(EntityRendererProvider.Context ctx) {
@@ -59,6 +61,9 @@ public class DragonRenderer extends EntityRenderer<DragonEntity, DragonRenderer.
         s.yaw = Mth.rotLerp(partialTick, e.yRotO, e.getYRot());
         s.id = e.getId();
         s.partial = partialTick;
+        s.lookYaw = Mth.rotLerp(partialTick, e.yHeadRotO, e.getYHeadRot());
+        s.lookPitch = e.getXRot(partialTick);
+        s.entity = e;
     }
 
     @Override
@@ -71,7 +76,8 @@ public class DragonRenderer extends EntityRenderer<DragonEntity, DragonRenderer.
     public void submit(State s, PoseStack poses, SubmitNodeCollector collector, CameraRenderState camera) {
         SkinnedMesh m = mesh();
         if (m == null) return;
-        SkinnedMesh.Pose pose = DragonAnimator.pose(m, s.id, s.ageInTicks);
+        if (s.entity == null) return;
+        SkinnedMesh.Pose pose = DragonAnimator.pose(m, s.entity, s.ageInTicks, s.yaw, s.lookYaw, s.lookPitch);
         m.skin(pose);
         poses.pushPose();
         poses.mulPose(new org.joml.Matrix4f().rotationY((float) Math.toRadians(-s.yaw)));

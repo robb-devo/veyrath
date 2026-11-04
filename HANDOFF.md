@@ -114,7 +114,12 @@ framework (TD-032), the Oathcleaver greatsword (playable, all moves land in the 
    Done: WP1 pipeline (client/dragon: SkinnedMesh, DragonRenderer, DragonAnimator procedural
    placeholder; main/dragon: DragonEntity, DragonEntities "veyrath:vaelith"), model v1 from
    `python tools/models/build_dragon.py`, game test `dragon`. Bone frames: local +Z along the bone,
-   rotate about X to bend/lift. Next: WP3 clip system + WP2 art passes, then movement and riding.
+   rotate about X to bend/lift (+pitch lowers the tip), +yaw swings toward local +X; _L poses
+   mirror to _R with yaw/roll negated. WP3 first version done: poses.json + DragonPoses +
+   DragonAnimator (clips per DragonState, cross-fades, procedural layers); DragonEntity syncs a
+   DragonState (force() for tests). Next: WP4 flight physics on DragonEntity (state derived from
+   motion), WP5 riding (getControllingPassenger/tickRidden, client-controlled vehicle), WP6 camera,
+   WP7 Storm Horn arrival, WP8 audio, WP2 art passes. Game test `dragon` = turntable + state gallery.
 7. Keep the companion board card current: in the claude-companion folder run
    node scripts/board.js thread veyrath-ch03 --title ... --state ... --where pc --checklist "...".
 

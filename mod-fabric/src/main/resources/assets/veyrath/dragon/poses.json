@@ -1,0 +1,597 @@
+{
+ "_doc": "Vaelith's key poses. Per bone [pitch, yaw, roll] in degrees in the bone's own frame (local +Z along the bone): +pitch lowers the bone's tip, +yaw swings it toward the bone's local +X (back for left-side limbs), roll twists. *_L entries drive *_R mirrored unless *_R is given. 'root' moves the whole body (blocks), rootPitch/rootRoll tilt it. 'base' adds onto another pose. Preview: python tools/models/pose_preview.py <name> <out.png>.",
+ "poses": {
+  "rest": {
+   "bones": {}
+  },
+  "stand": {
+   "root": [
+    0,
+    -0.35,
+    0
+   ],
+   "rootPitch": -6,
+   "bones": {
+    "shoulder_L": [
+     35,
+     30,
+     0
+    ],
+    "upper_L": [
+     55,
+     40,
+     0
+    ],
+    "fore_L": [
+     -60,
+     -160,
+     0
+    ],
+    "wrist_L": [
+     -10,
+     170,
+     10
+    ],
+    "finger1a_L": [
+     0,
+     5,
+     0
+    ],
+    "finger2a_L": [
+     0,
+     10,
+     0
+    ],
+    "finger3a_L": [
+     0,
+     15,
+     0
+    ],
+    "neck1": [
+     -10,
+     0,
+     0
+    ],
+    "neck2": [
+     -8,
+     0,
+     0
+    ],
+    "neck3": [
+     5,
+     0,
+     0
+    ],
+    "neck4": [
+     8,
+     0,
+     0
+    ],
+    "neck5": [
+     6,
+     0,
+     0
+    ],
+    "head": [
+     12,
+     0,
+     0
+    ],
+    "tail1": [
+     -10,
+     0,
+     0
+    ],
+    "tail2": [
+     -4,
+     0,
+     0
+    ],
+    "tail3": [
+     2,
+     0,
+     0
+    ],
+    "tail4": [
+     3,
+     0,
+     0
+    ],
+    "tail5": [
+     3,
+     0,
+     0
+    ]
+   }
+  },
+  "glide": {
+   "bones": {
+    "thigh_L": [
+     -55,
+     0,
+     0
+    ],
+    "shin_L": [
+     70,
+     0,
+     0
+    ],
+    "foot_L": [
+     40,
+     0,
+     0
+    ],
+    "toes_L": [
+     30,
+     0,
+     0
+    ],
+    "shoulder_L": [
+     -6,
+     -4,
+     0
+    ],
+    "fore_L": [
+     3,
+     0,
+     0
+    ],
+    "wrist_L": [
+     4,
+     8,
+     0
+    ],
+    "neck1": [
+     4,
+     0,
+     0
+    ],
+    "neck2": [
+     6,
+     0,
+     0
+    ],
+    "neck3": [
+     6,
+     0,
+     0
+    ],
+    "neck4": [
+     4,
+     0,
+     0
+    ],
+    "neck5": [
+     2,
+     0,
+     0
+    ],
+    "head": [
+     -4,
+     0,
+     0
+    ],
+    "tail1": [
+     -6,
+     0,
+     0
+    ],
+    "tail2": [
+     -3,
+     0,
+     0
+    ]
+   },
+   "root": [
+    0,
+    0,
+    0
+   ]
+  },
+  "flap_up": {
+   "base": "glide",
+   "bones": {
+    "shoulder_L": [
+     -38,
+     -8,
+     0
+    ],
+    "upper_L": [
+     -10,
+     0,
+     0
+    ],
+    "fore_L": [
+     20,
+     0,
+     0
+    ],
+    "wrist_L": [
+     25,
+     10,
+     0
+    ],
+    "finger1a_L": [
+     15,
+     0,
+     0
+    ],
+    "finger2a_L": [
+     12,
+     0,
+     0
+    ],
+    "finger3a_L": [
+     10,
+     0,
+     0
+    ]
+   }
+  },
+  "flap_down": {
+   "base": "glide",
+   "bones": {
+    "shoulder_L": [
+     34,
+     -12,
+     0
+    ],
+    "upper_L": [
+     10,
+     -5,
+     0
+    ],
+    "fore_L": [
+     -14,
+     0,
+     0
+    ],
+    "wrist_L": [
+     -22,
+     -5,
+     0
+    ],
+    "finger1a_L": [
+     -10,
+     0,
+     0
+    ],
+    "finger2a_L": [
+     -8,
+     0,
+     0
+    ],
+    "finger3a_L": [
+     -6,
+     0,
+     0
+    ]
+   }
+  },
+  "dive": {
+   "base": "glide",
+   "rootPitch": 28,
+   "bones": {
+    "shoulder_L": [
+     10,
+     50,
+     0
+    ],
+    "upper_L": [
+     10,
+     30,
+     0
+    ],
+    "fore_L": [
+     0,
+     -60,
+     0
+    ],
+    "wrist_L": [
+     0,
+     90,
+     0
+    ],
+    "neck2": [
+     -6,
+     0,
+     0
+    ],
+    "neck3": [
+     -6,
+     0,
+     0
+    ],
+    "head": [
+     -10,
+     0,
+     0
+    ]
+   }
+  },
+  "hover": {
+   "base": "glide",
+   "rootPitch": -35,
+   "bones": {
+    "thigh_L": [
+     20,
+     0,
+     0
+    ],
+    "shin_L": [
+     -60,
+     0,
+     0
+    ],
+    "foot_L": [
+     -40,
+     0,
+     0
+    ],
+    "toes_L": [
+     -30,
+     0,
+     0
+    ],
+    "neck1": [
+     20,
+     0,
+     0
+    ],
+    "neck2": [
+     12,
+     0,
+     0
+    ],
+    "neck3": [
+     10,
+     0,
+     0
+    ],
+    "head": [
+     25,
+     0,
+     0
+    ],
+    "tail1": [
+     25,
+     0,
+     0
+    ],
+    "tail2": [
+     8,
+     0,
+     0
+    ]
+   }
+  },
+  "land": {
+   "base": "hover",
+   "bones": {
+    "shoulder_L": [
+     -45,
+     -25,
+     0
+    ],
+    "upper_L": [
+     -10,
+     -15,
+     0
+    ],
+    "thigh_L": [
+     -20,
+     0,
+     0
+    ],
+    "shin_L": [
+     -10,
+     0,
+     0
+    ]
+   }
+  },
+  "roar": {
+   "base": "stand",
+   "bones": {
+    "neck1": [
+     -25,
+     0,
+     0
+    ],
+    "neck2": [
+     -15,
+     0,
+     0
+    ],
+    "neck3": [
+     -8,
+     0,
+     0
+    ],
+    "neck4": [
+     -6,
+     0,
+     0
+    ],
+    "neck5": [
+     -10,
+     0,
+     0
+    ],
+    "head": [
+     -30,
+     0,
+     0
+    ],
+    "jaw": [
+     38,
+     0,
+     0
+    ],
+    "shoulder_L": [
+     -50,
+     -25,
+     0
+    ],
+    "upper_L": [
+     -20,
+     -30,
+     0
+    ],
+    "fore_L": [
+     50,
+     140,
+     0
+    ],
+    "wrist_L": [
+     0,
+     -120,
+     0
+    ]
+   },
+   "rootPitch": -10
+  },
+  "crouch": {
+   "base": "stand",
+   "root": [
+    0,
+    -1.3,
+    0
+   ],
+   "bones": {
+    "thigh_L": [
+     -45,
+     0,
+     0
+    ],
+    "shin_L": [
+     60,
+     0,
+     0
+    ],
+    "foot_L": [
+     -20,
+     0,
+     0
+    ],
+    "neck1": [
+     12,
+     0,
+     0
+    ],
+    "neck2": [
+     10,
+     0,
+     0
+    ],
+    "head": [
+     10,
+     0,
+     0
+    ]
+   }
+  },
+  "walk_a": {
+   "base": "stand",
+   "bones": {
+    "thigh_L": [
+     -28,
+     0,
+     0
+    ],
+    "shin_L": [
+     18,
+     0,
+     0
+    ],
+    "foot_L": [
+     8,
+     0,
+     0
+    ],
+    "thigh_R": [
+     22,
+     0,
+     0
+    ],
+    "shin_R": [
+     -6,
+     0,
+     0
+    ],
+    "foot_R": [
+     -15,
+     0,
+     0
+    ],
+    "tail2": [
+     0,
+     8,
+     0
+    ],
+    "tail4": [
+     0,
+     6,
+     0
+    ],
+    "neck2": [
+     0,
+     -4,
+     0
+    ]
+   },
+   "additive": true
+  },
+  "walk_b": {
+   "base": "stand",
+   "bones": {
+    "thigh_L": [
+     22,
+     0,
+     0
+    ],
+    "shin_L": [
+     -6,
+     0,
+     0
+    ],
+    "foot_L": [
+     -15,
+     0,
+     0
+    ],
+    "thigh_R": [
+     -28,
+     0,
+     0
+    ],
+    "shin_R": [
+     18,
+     0,
+     0
+    ],
+    "foot_R": [
+     8,
+     0,
+     0
+    ],
+    "tail2": [
+     0,
+     -8,
+     0
+    ],
+    "tail4": [
+     0,
+     -6,
+     0
+    ],
+    "neck2": [
+     0,
+     4,
+     0
+    ]
+   },
+   "additive": true
+  }
+ }
+}
