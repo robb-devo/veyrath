@@ -407,3 +407,22 @@ dust (red limb shapes, amber area shapes) for debugging.
 capsule (or Quake Palm's 6.5-block cone) reached through a wall. Verified by the combat game
 test: three jabs at a husk behind a one-block stone wall do nothing; the same jab lands once the
 wall is gone.
+
+## TD-031 — VEYRATH's own effects engine instead of Minecraft particles
+
+**Status:** Accepted · 2026-11-04
+
+**Decision.** All combat effects are drawn by `client/vfx/Vfx`: a pooled CPU particle system
+(billboards, velocity streaks, ground rings, vertical arcs) submitted through Fabric's
+`LevelRenderEvents.COLLECT_SUBMITS` and `submitCustomGeometry`, with our own texture atlas
+(`textures/vfx/atlas.png`, painted by `tools/textures/paint_vfx_atlas.py`) and two own GPU
+pipelines: `veyrath:pipeline/vfx_additive` (Minecraft's emissive entity shader, blend
+SRC_ALPHA/ONE, no depth write) for light, `veyrath:pipeline/vfx_soft` (alpha blend, no cutout) for
+smoke and dust, which is darkened on the CPU by the light at the particle. With Iris the two
+pipelines are assigned to the pack's emissive-entity and translucent-particle programs through
+the Iris API (reflective); without that they were not drawn at all. Effect time follows the tick
+rate. Duelist tells reach clients as `veyrath:vfx` payloads.
+
+**Why.** The owner's no-vanilla rule. Alpha-blended light looked muddy (orange over blue sky
+turned brown); additive light reads as light. Verified by the `vfx` gallery game test
+(15 effects, with and without Complementary Unbound; `docs/media/vfx/`).

@@ -228,6 +228,9 @@ public final class CombatGameTest implements FabricClientGameTest {
         shot(context, "c12_ultimate_finisher", true);
         context.waitTicks(60);
         LOG.info("ultimate: group health {}", groupHealth(sp));
+        String vfx = context.computeOnClient(mc -> "spawned " + dev.veyrath.mod.client.vfx.Vfx.spawned + ", frames "
+                + dev.veyrath.mod.client.vfx.Vfx.submittedFrames + ", quads " + dev.veyrath.mod.client.vfx.Vfx.quadsDrawn);
+        LOG.info("own effects: {}", vfx);
         server.runCommand("kill @e[tag=vt_group]");
     }
 

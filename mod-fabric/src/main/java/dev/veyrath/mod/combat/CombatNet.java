@@ -161,6 +161,24 @@ public final class CombatNet {
         @Override public Type<AnimS2C> type() { return TYPE; }
     }
 
+    /** A VEYRATH effect by id at a point (Duelist tells and other non-hit effects); drawn by the client's own engine. */
+    public record VfxS2C(String id, float x, float y, float z, float yaw) implements CustomPacketPayload {
+        public static final Type<VfxS2C> TYPE = payloadType("vfx");
+        public static final StreamCodec<FriendlyByteBuf, VfxS2C> CODEC = CustomPacketPayload.codec(VfxS2C::write, VfxS2C::new);
+
+        private VfxS2C(FriendlyByteBuf b) { this(b.readUtf(64), b.readFloat(), b.readFloat(), b.readFloat(), b.readFloat()); }
+
+        private void write(FriendlyByteBuf b) {
+            b.writeUtf(id, 64);
+            b.writeFloat(x);
+            b.writeFloat(y);
+            b.writeFloat(z);
+            b.writeFloat(yaw);
+        }
+
+        @Override public Type<VfxS2C> type() { return TYPE; }
+    }
+
     /** Another player's stance changed (shown with the guard pose). */
     public record StanceS2C(int entity, boolean on) implements CustomPacketPayload {
         public static final Type<StanceS2C> TYPE = payloadType("stance_of");
@@ -229,6 +247,7 @@ public final class CombatNet {
         PayloadTypeRegistry.serverboundPlay().register(StanceC2S.TYPE, StanceC2S.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(HitS2C.TYPE, HitS2C.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(AnimS2C.TYPE, AnimS2C.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(VfxS2C.TYPE, VfxS2C.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(StanceS2C.TYPE, StanceS2C.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(StateS2C.TYPE, StateS2C.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(RejectS2C.TYPE, RejectS2C.CODEC);

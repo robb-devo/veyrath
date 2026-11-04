@@ -25,6 +25,7 @@ public final class CombatClient {
 
     public static void init() {
         CombatSettings.load();
+        dev.veyrath.mod.client.vfx.Vfx.init();
         STANCE_KEY = KeyMappingHelper.registerKeyMapping(
                 new KeyMapping("key.veyrath.stance", InputConstants.KEY_Z, CATEGORY));
 
@@ -39,6 +40,7 @@ public final class CombatClient {
             DamageNumbers.clear();
             ScreenFx.clear();
             HitFlash.clear();
+            dev.veyrath.mod.client.vfx.Vfx.clear();
             ActionCamera.reset();
         });
 
@@ -47,6 +49,9 @@ public final class CombatClient {
         ClientPlayNetworking.registerGlobalReceiver(CombatNet.StanceS2C.TYPE, (msg, ctx) -> {
             Animator a = CombatAnimations.remote(msg.entity());
             a.setBase(msg.on() ? "stance_idle" : null, a.clock, 4);
+        });
+        ClientPlayNetworking.registerGlobalReceiver(CombatNet.VfxS2C.TYPE, (msg, ctx) -> {
+            if (ctx.client().level != null) CombatEffects.play(ctx.client().level.getRandom(), msg.id(), new Vec3(msg.x(), msg.y(), msg.z()), msg.yaw());
         });
         ClientPlayNetworking.registerGlobalReceiver(CombatNet.StateS2C.TYPE, (msg, ctx) -> LocalCombat.state(msg));
         ClientPlayNetworking.registerGlobalReceiver(CombatNet.RejectS2C.TYPE, (msg, ctx) -> LocalCombat.rejected(msg.seq()));

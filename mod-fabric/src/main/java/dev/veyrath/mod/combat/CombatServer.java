@@ -25,8 +25,6 @@ import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.core.Holder;
-import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -374,15 +372,15 @@ public final class CombatServer {
         double x = d.getX() - Math.sin(yawR) * 0.3, y = d.getY() + d.getBbHeight() * 0.9, z = d.getZ() + Math.cos(yawR) * 0.3;
         switch (t.kind()) {
             case STRIKE -> {
-                level.sendParticles(ParticleTypes.END_ROD, x, y, z, 4, 0.06, 0.06, 0.06, 0.01);
+                broadcastVfx(d, "tell_strike", x, y, z);
                 level.playSound(null, x, y, z, CombatSounds.ev(SoundEvents.AMETHYST_BLOCK_CHIME), SoundSource.HOSTILE, 1.0f, 1.8f);
             }
             case HEAVY -> {
-                level.sendParticles(ParticleTypes.END_ROD, x, y, z, 10, 0.15, 0.15, 0.15, 0.03);
+                broadcastVfx(d, "tell_heavy", x, y, z);
                 level.playSound(null, x, y, z, CombatSounds.ev(SoundEvents.AMETHYST_BLOCK_CHIME), SoundSource.HOSTILE, 1.2f, 1.1f);
             }
             case UNBLOCKABLE -> {
-                level.sendParticles(new DustParticleOptions(0xE8302A, 1.6f), x, y, z, 16, 0.25, 0.25, 0.25, 0);
+                broadcastVfx(d, "tell_unblockable", x, y, z);
                 level.playSound(null, x, y, z, CombatSounds.ev(SoundEvents.AMETHYST_BLOCK_RESONATE), SoundSource.HOSTILE, 1.4f, 0.7f);
             }
         }
@@ -769,6 +767,13 @@ public final class CombatServer {
         if (attacker instanceof ServerPlayer sp) to.add(sp);
         if (target instanceof ServerPlayer sp) to.add(sp);
         for (ServerPlayer sp : to) ServerPlayNetworking.send(sp, msg);
+    }
+
+    /** A VEYRATH effect seen by everyone tracking the entity, and by the entity itself if it is a player. */
+    private static void broadcastVfx(LivingEntity source, String id, double x, double y, double z) {
+        CombatNet.VfxS2C msg = new CombatNet.VfxS2C(id, (float) x, (float) y, (float) z, source.getYRot());
+        for (ServerPlayer viewer : PlayerLookup.tracking(source)) ServerPlayNetworking.send(viewer, msg);
+        if (source instanceof ServerPlayer sp) ServerPlayNetworking.send(sp, msg);
     }
 
     private static void broadcastAnim(Entry e, String clip, float fade) {
