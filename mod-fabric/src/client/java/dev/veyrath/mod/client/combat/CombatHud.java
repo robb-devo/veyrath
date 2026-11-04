@@ -36,6 +36,8 @@ public final class CombatHud {
         int w = mc.getWindow().getGuiScaledWidth(), h = mc.getWindow().getGuiScaledHeight();
 
         int x = 8, y = h - 44;
+        String weapon = dev.veyrath.combat.content.Weapons.of(f.set).name().toUpperCase(Locale.ROOT);
+        g.text(font, weapon, x, y - 13, 0xFFE8DCC0, true);
         bar(g, font, x, y, "STA", f.stamina() / f.rules.staminaMax, STAMINA);
         bar(g, font, x, y + 11, "AET", f.aether() / f.rules.aetherMax, AETHER);
         double gauge = f.gauge() / f.rules.gaugeMax;

@@ -75,6 +75,7 @@ public final class VeyrathMod implements ModInitializer {
         ServerPlayNetworking.registerGlobalReceiver(CombatNet.ReleaseC2S.TYPE, (msg, ctx) -> CombatServer.onRelease(ctx.player(), msg));
         ServerPlayNetworking.registerGlobalReceiver(CombatNet.HeldC2S.TYPE, (msg, ctx) -> CombatServer.onHeld(ctx.player(), msg));
         ServerPlayNetworking.registerGlobalReceiver(CombatNet.StanceC2S.TYPE, (msg, ctx) -> CombatServer.onStance(ctx.player(), msg.on()));
+        ServerPlayNetworking.registerGlobalReceiver(CombatNet.WeaponC2S.TYPE, (msg, ctx) -> CombatServer.onWeapon(ctx.player(), msg));
         ServerTickEvents.START_SERVER_TICK.register(CombatServer::startTick);
         ServerTickEvents.END_SERVER_TICK.register(CombatServer::tick);
         ServerLivingEntityEvents.ALLOW_DAMAGE.register(CombatServer::allowDamage);

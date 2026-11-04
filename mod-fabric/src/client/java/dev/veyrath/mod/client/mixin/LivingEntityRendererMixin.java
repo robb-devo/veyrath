@@ -24,6 +24,7 @@ public abstract class LivingEntityRendererMixin {
         CombatAnimations.extract(entity, state, partialTick);
         int id = entity.getId();
         ((FlashState) state).veyrath$setFlash(HitFlash.progress(id));
+        ((FlashState) state).veyrath$setWeapon(dev.veyrath.mod.client.combat.ClientWeapons.drawn(entity));
         if (HitFlash.suppressRed(id)) state.hasRedOverlay = false;
     }
 

@@ -27,6 +27,10 @@ public final class CombatClient {
         CombatSettings.load();
         dev.veyrath.mod.client.vfx.Vfx.init();
         dev.veyrath.mod.client.vfx.AmbientVfx.init();
+        // The drawn weapon on every humanoid renderer (players, the Duelist).
+        net.fabricmc.fabric.api.client.rendering.v1.LivingEntityRenderLayerRegistrationCallback.EVENT.register((type, renderer, helper, context) -> {
+            if (renderer.getModel() instanceof net.minecraft.client.model.HumanoidModel<?>) registerWeaponLayer(renderer, helper);
+        });
         STANCE_KEY = KeyMappingHelper.registerKeyMapping(
                 new KeyMapping("key.veyrath.stance", InputConstants.KEY_Z, CATEGORY));
 
@@ -42,6 +46,7 @@ public final class CombatClient {
             ScreenFx.clear();
             HitFlash.clear();
             dev.veyrath.mod.client.vfx.Vfx.clear();
+            ClientWeapons.clear();
             ActionCamera.reset();
         });
 
@@ -50,6 +55,18 @@ public final class CombatClient {
         ClientPlayNetworking.registerGlobalReceiver(CombatNet.StanceS2C.TYPE, (msg, ctx) -> {
             Animator a = CombatAnimations.remote(msg.entity());
             a.setBase(msg.on() ? "stance_idle" : null, a.clock, 4);
+        });
+        ClientPlayNetworking.registerGlobalReceiver(CombatNet.WeaponS2C.TYPE, (msg, ctx) -> {
+            var mc = ctx.client();
+            if (mc.player != null && msg.entity() == mc.player.getId()) LocalCombat.weaponFromServer(msg.weapon());
+            else {
+                ClientWeapons.set(msg.entity(), msg.weapon());
+                var w = dev.veyrath.combat.content.Weapons.byId(msg.weapon());
+                if (w != null) {
+                    Animator a = CombatAnimations.remote(msg.entity());
+                    a.setBase(w.stanceClip(), a.clock, 4);
+                }
+            }
         });
         ClientPlayNetworking.registerGlobalReceiver(CombatNet.VfxS2C.TYPE, (msg, ctx) -> {
             if (ctx.client().level != null) CombatEffects.play(ctx.client().level.getRandom(), msg.id(), new Vec3(msg.x(), msg.y(), msg.z()), msg.yaw());
@@ -74,6 +91,12 @@ public final class CombatClient {
                 if (!LocalCombat.active()) vanilla.extractRenderState(g, delta);
             });
         }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static void registerWeaponLayer(net.minecraft.client.renderer.entity.LivingEntityRenderer renderer,
+                                            net.fabricmc.fabric.api.client.rendering.v1.LivingEntityRenderLayerRegistrationCallback.RegistrationHelper helper) {
+        helper.register(new WeaponLayer(renderer));
     }
 
     private static void onHit(Minecraft mc, CombatNet.HitS2C h) {

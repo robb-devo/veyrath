@@ -155,6 +155,10 @@ public final class LocalCombat {
         p.setSprinting(false);
         setModifier(p, Attributes.STEP_HEIGHT, STEP_ID, 0.45, AttributeModifier.Operation.ADD_VALUE);
         send(new CombatNet.StanceC2S(true));
+        if (lastWeapon != dev.veyrath.combat.content.Weapons.UNARMED && fighter.equip(lastWeapon.moves())) {
+            ANIM.setBase(lastWeapon.stanceClip(), ANIM.clock, 4);
+            send(new CombatNet.WeaponC2S(lastWeapon.id()));
+        }
         p.sendOverlayMessage(Component.translatable("veyrath.combat.stance_on"));
     }
 
@@ -210,7 +214,7 @@ public final class LocalCombat {
         applyIntent(mc, p);
         ANIM.clock = fighter.clock();
         ANIM.hold = fighter.inHitstop();
-        ANIM.setBase(fighter.phase() == Fighter.Phase.BLOCK ? "block_hold" : "stance_idle", fighter.clock(), 2);
+        ANIM.setBase(fighter.phase() == Fighter.Phase.BLOCK ? "block_hold" : stanceClip(), fighter.clock(), 2);
     }
 
     public static void endTick(Minecraft mc) {
@@ -240,6 +244,10 @@ public final class LocalCombat {
             while (o.keyHotbarSlots[i].consumeClick()) INPUT.press(slots[i], now);
         }
         while (o.keyPickItem.consumeClick()) cycleLock(mc, p);
+        // Keys 5 onward draw the weapons in order (5 = fists, 6 = Oathcleaver, ...).
+        for (int i = 0; i < dev.veyrath.combat.content.Weapons.ALL.size() && 4 + i < o.keyHotbarSlots.length; i++) {
+            while (o.keyHotbarSlots[4 + i].consumeClick()) draw(dev.veyrath.combat.content.Weapons.ALL.get(i));
+        }
 
         CONTROLS.blockHeld = o.keyShift.isDown();
         CONTROLS.heavyHeld = o.keyUse.isDown();
@@ -263,6 +271,31 @@ public final class LocalCombat {
     }
 
     /** Facing and velocity from the fighter, like the headless sim's body step. */
+    /** Weapon remembered across stance changes, drawn again on the next stance. */
+    private static dev.veyrath.combat.content.Weapons.Weapon lastWeapon = dev.veyrath.combat.content.Weapons.UNARMED;
+
+    /** Draws a weapon now if the fighter is between actions (predicted; the server confirms). */
+    static void draw(dev.veyrath.combat.content.Weapons.Weapon w) {
+        if (!active() || w == null) return;
+        if (fighter.set == w.moves() || !fighter.equip(w.moves())) return;
+        lastWeapon = w;
+        INPUT.clear();
+        ANIM.setBase(w.stanceClip(), fighter.clock(), 4);
+        send(new CombatNet.WeaponC2S(w.id()));
+        if (owner != null) owner.sendOverlayMessage(Component.literal(w.name()));
+    }
+
+    /** The server's word on the local fighter's weapon (confirmation or correction). */
+    static void weaponFromServer(String id) {
+        dev.veyrath.combat.content.Weapons.Weapon w = dev.veyrath.combat.content.Weapons.byId(id);
+        if (!active() || w == null || fighter.set == w.moves()) return;
+        if (fighter.equip(w.moves())) lastWeapon = w;
+    }
+
+    static String stanceClip() {
+        return fighter == null ? "stance_idle" : dev.veyrath.combat.content.Weapons.of(fighter.set).stanceClip();
+    }
+
     private static void applyIntent(Minecraft mc, LocalPlayer p) {
         Vec3 feet = feet(p);
         Entity lock = lockTarget();
@@ -321,6 +354,7 @@ public final class LocalCombat {
 
     private static void predictHits(Minecraft mc, LocalPlayer p) {
         if (fighter.activeWindows().length == 0) return;
+        bladeTrail(p);
         List<LivingEntity> near = mc.level.getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(8), e -> canTarget(p, e));
         if (near.isEmpty()) return;
         List<HitDetector.Target> targets = new ArrayList<>(near.size());
@@ -340,6 +374,19 @@ public final class LocalCombat {
             ActionCamera.addTrauma(spec.shake());
             ScreenFx.impact(spec.vfx());
             HitFlash.mark(s.target().id(), spec.hitstop());
+        }
+    }
+
+    /** Light along every bone-attached capsule of the live windows (weapon swings; fists too, faintly). */
+    private static void bladeTrail(LocalPlayer p) {
+        boolean armed = dev.veyrath.combat.content.Weapons.of(fighter.set) != dev.veyrath.combat.content.Weapons.UNARMED;
+        if (!armed) return;
+        Move m = fighter.move();
+        for (int wi : fighter.activeWindows()) {
+            var w = m.hits.get(wi);
+            for (HitDetector.Capsule c : HitDetector.sweep(m, w, fighter.moveTick(), CombatContent.CLIPS, feet(p), fighter.yaw, p.getScale())) {
+                if (c.radius() <= 0.6) CombatEffects.bladeTrail(c.a(), c.b(), 0xB0E8F2FF); // blades, not area shapes
+            }
         }
     }
 

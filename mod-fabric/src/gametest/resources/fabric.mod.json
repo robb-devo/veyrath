@@ -12,7 +12,8 @@
       "dev.veyrath.mod.gametest.CombatGameTest",
       "dev.veyrath.mod.gametest.ArenaGameTest",
       "dev.veyrath.mod.gametest.TerrainCameraGameTest",
-      "dev.veyrath.mod.gametest.VfxGalleryGameTest"
+      "dev.veyrath.mod.gametest.VfxGalleryGameTest",
+      "dev.veyrath.mod.gametest.WeaponGameTest"
     ]
   },
   "depends": {

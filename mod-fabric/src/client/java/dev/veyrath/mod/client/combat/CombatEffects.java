@@ -104,6 +104,34 @@ public final class CombatEffects {
                 groundRing(x, y - 0.95, z, 0.6, 6.0, 0.6, 0xC0FFD27A);
                 dust(r, x, y - 0.9, z, 16, 3.0);
             }
+            // ---- Oathcleaver: steel-white arcs that read the swing, embers on the heavy blows
+            case "blade_light" -> {
+                slash(x, y, z, -0.6, 2.2, 0.18, STEEL);
+                flash(x, y, z, 0.8, 0xC0FFF6E8, 0.12);
+                sparks(r, x, y, z, fwd, 10, 8.0, 0.12, WHITE, 0.25);
+            }
+            case "blade_cleave" -> {
+                slash(x, y + 0.3, z, 0.0, 2.8, 0.22, WHITE);
+                flash(x, y, z, 1.2, 0xC0FFF6E8, 0.16);
+                sparks(r, x, y, z, fwd, 18, 10.0, 0.14, EMBER, 0.35);
+                groundRing(x, y - 0.95, z, 0.3, 2.4, 0.4, 0xB0FFD27A);
+                dust(r, x, y - 0.9, z, 8, 1.6);
+            }
+            case "blade_sweep" -> {
+                Vfx.at(x, y, z).shape(Shape.GROUND).sprite(Sprite.SLASH).rot(Math.toRadians(yaw) + Math.PI).size(1.6, 2.8).life(0.22).fadeIn(0)
+                        .color(0xE0CFE4FF).spawn();
+                flash(x, y, z, 1.0, 0xC0FFF6E8, 0.14);
+                sparks(r, x, y, z, fwd, 16, 10.0, 0.13, GOLD, 0.3);
+            }
+            case "blade_spin" -> {
+                for (int i = 0; i < 4; i++) {
+                    Vfx.at(x, y, z).shape(Shape.GROUND).sprite(Sprite.SLASH).rot(i * Math.PI / 2).size(1.8, 3.4).life(0.3).fadeIn(0)
+                            .color(0xC0CFE4FF).spawn();
+                }
+                flash(x, y, z, 1.4, 0xB0FFF6E8, 0.18);
+                groundRing(x, y - 0.95, z, 0.5, 3.6, 0.45, 0xA0FFD27A);
+                sparks(r, x, y, z, fwd, 20, 11.0, 0.14, EMBER, 0.35);
+            }
             case "block" -> {
                 flash(x, y, z, 0.5, STEEL, 0.08);
                 sparks(r, x, y, z, fwd.scale(-1), 8, 7.0, 0.08, STEEL, 0.2);
@@ -166,6 +194,23 @@ public final class CombatEffects {
             double vz = dir.z() * s * 0.7 + r.nextGaussian() * s * 0.45;
             Vfx.at(x, y, z).vel(vx, vy, vz).sprite(Sprite.SPARK).shape(Shape.STREAK).stretch(0.9).size(size, size * 0.3).drag(5).gravity(6)
                     .life(life * (0.6 + r.nextDouble() * 0.6)).fadeIn(0).color(color).spawn();
+        }
+    }
+
+    /** A camera-facing slash arc, tilted by {@code roll} radians. */
+    private static void slash(double x, double y, double z, double roll, double size, double life, int color) {
+        Vfx.at(x, y, z).sprite(Sprite.SLASH).rot(roll).size(size * 0.8, size).life(life).fadeIn(0).color(color).spawn();
+    }
+
+    /**
+     * The blade's trail while a swing is live: soft light along the outer half of each swept
+     * capsule (several per tick, so a fast arc reads as a ribbon).
+     */
+    public static void bladeTrail(dev.veyrath.combat.math.Vec3 a, dev.veyrath.combat.math.Vec3 b, int color) {
+        for (int i = 0; i < 4; i++) {
+            double t = 0.45 + 0.55 * i / 3.0;
+            dev.veyrath.combat.math.Vec3 p = a.lerp(b, t);
+            Vfx.at(p.x(), p.y(), p.z()).sprite(Sprite.GLOW).size(0.28 + 0.1 * t, 0.05).life(0.14).fadeIn(0).color(color).spawn();
         }
     }
 

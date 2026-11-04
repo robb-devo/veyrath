@@ -60,31 +60,31 @@ public final class Greatsword {
 
     /** High over the right shoulder, ready to cut down. */
     static final PoseSpec HIGH_RIGHT = PoseSpec.REST
-            .with(ROOT, r(0, -26, 0).offset(0, -1, -0.5))
-            .with(BODY, r(-6, -26, 0))
-            .with(HEAD, r(-2, 30, 0))
-            .with(RIGHT_ARM, r(-160, -38, 0))
-            .with(LEFT_ARM, r(-150, 6, 0))
+            .with(ROOT, r(0, 26, 0).offset(0, -1, -0.5))
+            .with(BODY, r(-6, 26, 0))
+            .with(HEAD, r(-2, -30, 0))
+            .with(RIGHT_ARM, r(-160, 38, 0))
+            .with(LEFT_ARM, r(-150, -6, 0))
             .with(RIGHT_LEG, r(18, 0, 8))
             .with(LEFT_LEG, r(-16, 0, -8));
 
     /** End of the downward diagonal cut: low on the left. */
     static final PoseSpec LOW_LEFT = PoseSpec.REST
-            .with(ROOT, r(0, 24, 0).offset(0, -2.5, 2))
-            .with(BODY, r(18, 30, 0))
-            .with(HEAD, r(-14, -24, 0))
-            .with(RIGHT_ARM, r(-28, 44, 0))
-            .with(LEFT_ARM, r(-34, 62, 0))
+            .with(ROOT, r(0, -24, 0).offset(0, -2.5, 2))
+            .with(BODY, r(18, -30, 0))
+            .with(HEAD, r(-14, 24, 0))
+            .with(RIGHT_ARM, r(-28, -44, 0))
+            .with(LEFT_ARM, r(-34, -62, 0))
             .with(RIGHT_LEG, r(22, 0, 8))
             .with(LEFT_LEG, r(-24, 0, -8));
 
     /** End of the rising backhand: high on the right again, body opened. */
     static final PoseSpec RISEN = PoseSpec.REST
-            .with(ROOT, r(0, -30, 0).offset(0, -1, 1))
-            .with(BODY, r(-8, -34, 0))
-            .with(HEAD, r(0, 30, 0))
-            .with(RIGHT_ARM, r(-150, -60, 0))
-            .with(LEFT_ARM, r(-136, -24, 0))
+            .with(ROOT, r(0, 30, 0).offset(0, -1, 1))
+            .with(BODY, r(-8, 34, 0))
+            .with(HEAD, r(0, -30, 0))
+            .with(RIGHT_ARM, r(-150, 60, 0))
+            .with(LEFT_ARM, r(-136, 24, 0))
             .with(RIGHT_LEG, r(14, 0, 8))
             .with(LEFT_LEG, r(-18, 0, -8));
 
@@ -110,30 +110,30 @@ public final class Greatsword {
 
     /** Blade drawn back low on the right, coiled: the charge and the sweep's wind-up. */
     static final PoseSpec COIL = PoseSpec.REST
-            .with(ROOT, r(0, -36, 0).offset(0, -2.5, -0.5))
-            .with(BODY, r(10, -40, 0))
-            .with(HEAD, r(-8, 40, 0))
-            .with(RIGHT_ARM, r(-24, -76, 0))
-            .with(LEFT_ARM, r(-34, -40, 0))
+            .with(ROOT, r(0, 36, 0).offset(0, -2.5, -0.5))
+            .with(BODY, r(10, 40, 0))
+            .with(HEAD, r(-8, -40, 0))
+            .with(RIGHT_ARM, r(-24, 76, 0))
+            .with(LEFT_ARM, r(-34, 40, 0))
             .with(RIGHT_LEG, r(22, 0, 10))
             .with(LEFT_LEG, r(-20, 0, -10));
 
     /** Through the horizontal sweep: arms swung across to the left. */
     static final PoseSpec SWEPT = PoseSpec.REST
-            .with(ROOT, r(0, 40, 0).offset(0, -2.5, 1.5))
-            .with(BODY, r(10, 44, 0))
-            .with(HEAD, r(-8, -40, 0))
-            .with(RIGHT_ARM, r(-84, 80, 0))
-            .with(LEFT_ARM, r(-80, 96, 0))
+            .with(ROOT, r(0, -40, 0).offset(0, -2.5, 1.5))
+            .with(BODY, r(10, -44, 0))
+            .with(HEAD, r(-8, 40, 0))
+            .with(RIGHT_ARM, r(-84, -80, 0))
+            .with(LEFT_ARM, r(-80, -96, 0))
             .with(RIGHT_LEG, r(22, 0, 10))
             .with(LEFT_LEG, r(-22, 0, -10));
 
     /** Arms out to the right side, blade level: held through a full turn. */
     static final PoseSpec SPIN = PoseSpec.REST
             .with(ROOT, r(0, 0, 0).offset(0, -3, 0))
-            .with(BODY, r(8, -20, 0))
-            .with(RIGHT_ARM, r(-86, -84, 0))
-            .with(LEFT_ARM, r(-84, -60, 0))
+            .with(BODY, r(8, 20, 0))
+            .with(RIGHT_ARM, r(-86, 84, 0))
+            .with(LEFT_ARM, r(-84, 60, 0))
             .with(RIGHT_LEG, r(18, 0, 12))
             .with(LEFT_LEG, r(-18, 0, -12));
 
@@ -299,7 +299,7 @@ public final class Greatsword {
                 .hit(21, 22, HitSpec.of(15).reaction(Reaction.LAUNCH).stun(24, 14).push(0.9).lift(0.7).hitstop(8).shake(0.9).guard(70)
                         .poise(110).gauge(6).fx("shockwave_ring", "slam").build(), HitShape.sphere(0, 0.4, 1.6, 4.0))
                 .dodgeFrom(27).abilityFrom(27).freeFrom(30)
-                .motion(new Motion(34).rise(3, 0.95).dash(4, 18, 0.55, 0.3).gravity(1.6).plant(21, 34)).tracking(12, 16).blend(0.5).build());
+                .motion(new Motion(34).rise(3, 0.95).dash(4, 18, 0.24, 0.14).gravity(1.6).plant(21, 34)).tracking(12, 16).blend(0.5).build());
         s.add(Move.builder("gs_guard_crush", Kind.ABILITY, 22).cost(0, 25, 0).cooldown(100).armor(2, 12)
                 .hit(7, 10, HitSpec.of(7).reaction(Reaction.STAGGER).stun(26, 14).push(1.2).hitstop(6).shake(0.5).guard(140).poise(90)
                         .gauge(4).fx("guard_break", "hit_heavy").build(), HitShape.area(new Vec3(0, 1.0, 0.4), new Vec3(0, 1.0, 1.6), 1.0))

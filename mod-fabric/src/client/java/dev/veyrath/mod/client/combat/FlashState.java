@@ -5,4 +5,9 @@ public interface FlashState {
     float veyrath$flash();
 
     void veyrath$setFlash(float flash);
+
+    /** Weapon id drawn in the hands ("unarmed" or null draws nothing). */
+    String veyrath$weapon();
+
+    void veyrath$setWeapon(String weapon);
 }

@@ -161,6 +161,33 @@ public final class CombatNet {
         @Override public Type<AnimS2C> type() { return TYPE; }
     }
 
+    /** The player draws another weapon (in stance, between actions). */
+    public record WeaponC2S(String weapon) implements CustomPacketPayload {
+        public static final Type<WeaponC2S> TYPE = payloadType("weapon_select");
+        public static final StreamCodec<FriendlyByteBuf, WeaponC2S> CODEC = CustomPacketPayload.codec(WeaponC2S::write, WeaponC2S::new);
+
+        private WeaponC2S(FriendlyByteBuf b) { this(b.readUtf(32)); }
+
+        private void write(FriendlyByteBuf b) { b.writeUtf(weapon, 32); }
+
+        @Override public Type<WeaponC2S> type() { return TYPE; }
+    }
+
+    /** A fighter's drawn weapon, for viewers and (as confirmation or correction) for its owner. */
+    public record WeaponS2C(int entity, String weapon) implements CustomPacketPayload {
+        public static final Type<WeaponS2C> TYPE = payloadType("weapon");
+        public static final StreamCodec<FriendlyByteBuf, WeaponS2C> CODEC = CustomPacketPayload.codec(WeaponS2C::write, WeaponS2C::new);
+
+        private WeaponS2C(FriendlyByteBuf b) { this(b.readVarInt(), b.readUtf(32)); }
+
+        private void write(FriendlyByteBuf b) {
+            b.writeVarInt(entity);
+            b.writeUtf(weapon, 32);
+        }
+
+        @Override public Type<WeaponS2C> type() { return TYPE; }
+    }
+
     /** A VEYRATH effect by id at a point (Duelist tells and other non-hit effects); drawn by the client's own engine. */
     public record VfxS2C(String id, float x, float y, float z, float yaw) implements CustomPacketPayload {
         public static final Type<VfxS2C> TYPE = payloadType("vfx");
@@ -245,9 +272,11 @@ public final class CombatNet {
         PayloadTypeRegistry.serverboundPlay().register(ReleaseC2S.TYPE, ReleaseC2S.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(HeldC2S.TYPE, HeldC2S.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(StanceC2S.TYPE, StanceC2S.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(WeaponC2S.TYPE, WeaponC2S.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(HitS2C.TYPE, HitS2C.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(AnimS2C.TYPE, AnimS2C.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(VfxS2C.TYPE, VfxS2C.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(WeaponS2C.TYPE, WeaponS2C.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(StanceS2C.TYPE, StanceS2C.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(StateS2C.TYPE, StateS2C.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(RejectS2C.TYPE, RejectS2C.CODEC);

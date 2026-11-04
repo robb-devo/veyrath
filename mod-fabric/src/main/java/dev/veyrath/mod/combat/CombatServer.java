@@ -405,6 +405,28 @@ public final class CombatServer {
         for (ServerPlayer viewer : PlayerLookup.tracking(p)) ServerPlayNetworking.send(viewer, msg);
     }
 
+    /**
+     * Weapon swap. Accepted when the server's fighter is between actions, like the client's; the
+     * result goes to everyone tracking the player and back to the player (a refusal names the
+     * weapon still drawn, and the client switches back).
+     */
+    public static void onWeapon(ServerPlayer p, CombatNet.WeaponC2S msg) {
+        Entry e = ENTRIES.get(p.getId());
+        if (e == null || !e.stance || e.entity != p) return;
+        dev.veyrath.combat.content.Weapons.Weapon w = dev.veyrath.combat.content.Weapons.byId(msg.weapon());
+        if (w != null) e.fighter.equip(w.moves());
+        String now = dev.veyrath.combat.content.Weapons.of(e.fighter.set).id();
+        CombatNet.WeaponS2C out = new CombatNet.WeaponS2C(p.getId(), now);
+        ServerPlayNetworking.send(p, out);
+        for (ServerPlayer viewer : PlayerLookup.tracking(p)) ServerPlayNetworking.send(viewer, out);
+    }
+
+    /** The weapon a player has drawn in stance (tests), or "unarmed". */
+    public static String weaponOf(ServerPlayer p) {
+        Entry e = ENTRIES.get(p.getId());
+        return e == null ? "unarmed" : dev.veyrath.combat.content.Weapons.of(e.fighter.set).id();
+    }
+
     public static void onAction(ServerPlayer p, CombatNet.ActionC2S msg) {
         Entry e = ENTRIES.get(p.getId());
         if (e == null || !e.stance || e.entity != p) return;
@@ -449,6 +471,19 @@ public final class CombatServer {
         return ok;
     }
 
+    /**
+     * Extra ticks a request may wait while the server's copy is still in a move: its total
+     * hit-stop. A hit the server resolved with hit-stop the client did not predict holds the
+     * server's copy back by that much (the mirror case of the late branch, TD-028).
+     */
+    private static int heldMargin(Fighter f) {
+        Move m = f.move();
+        if (m == null || f.phase() != Fighter.Phase.MOVE) return 0;
+        int hold = 0;
+        for (var w : m.hits) hold += w.spec().hitstop();
+        return Math.min(hold, 12);
+    }
+
     private static void processPending(Entry e) {
         Pending head;
         while ((head = e.pending.peek()) != null) {
@@ -456,7 +491,7 @@ public final class CombatServer {
                 e.pending.poll();
                 continue;
             }
-            if (++head.age > RETRY_TICKS) {
+            if (++head.age > RETRY_TICKS + heldMargin(e.fighter)) {
                 Fighter f = e.fighter;
                 VeyrathMod.LOG.info("combat: rejected {} {} (seq {}) for {}: server fighter {} {} t={} grounded={}",
                         head.release ? "release" : head.action, head.move, head.seq, e.entity.getName().getString(),

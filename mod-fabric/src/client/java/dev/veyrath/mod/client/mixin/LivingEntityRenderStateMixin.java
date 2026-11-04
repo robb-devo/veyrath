@@ -10,6 +10,15 @@ public abstract class LivingEntityRenderStateMixin implements FlashState {
     @Unique
     private float veyrath$flash;
 
+    @Unique
+    private String veyrath$weapon;
+
+    @Override
+    public String veyrath$weapon() { return veyrath$weapon; }
+
+    @Override
+    public void veyrath$setWeapon(String weapon) { veyrath$weapon = weapon; }
+
     @Override
     public float veyrath$flash() { return veyrath$flash; }
 
