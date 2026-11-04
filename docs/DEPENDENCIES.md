@@ -73,3 +73,11 @@ where they differ.
   once 26.4 is out. Pin the last working build.
 - **Fabric API in 26.x** renamed and removed several registries. VEYRATH uses only registration,
   lifecycle events, commands and data generation.
+
+## Chapter 02 (combat)
+
+No new dependencies. The combat core (`combat/`) is plain Java 25. The Minecraft adapter uses only
+Fabric API (networking, key mappings, HUD elements, entity registration, client game tests), the
+fastutil collections that ship with Minecraft, and the DH API already listed above (for the empty
+Proving Grounds LODs). Player Animation Library, GeckoLib and Shoulder Surfing Reloaded were
+evaluated and not used (TD-020, CHAPTER_02_PLAN.md).

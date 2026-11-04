@@ -316,3 +316,77 @@ there: a lethal hit ends the round, a fall is caught. The return point is stored
 
 **Why.** Training must never change the player's own world, and a separate dimension needs no
 world-type choice when the world is created.
+
+## TD-025 — Empty LODs for the Proving Grounds
+
+**Status:** Accepted · 2026-11-04
+
+**Decision.** For `veyrath:proving_grounds` the mod registers its own Distant Horizons generator
+(`EmptyLodGenerator`) that answers every LOD request at once with a single run of air.
+
+**Why.** Without it DH generated real chunks of the empty void out to its full distance on its
+world generator threads. In the arena game test with the full pack that cost the client 236 → 75
+FPS and the server tick 3.5 → 8.7 ms; with the empty generator the same test measured 236 FPS
+again. Any later void or arena dimension (boss arenas in Chapter 04) should register the same.
+
+## TD-026 — Nothing of the ultimate can be blocked
+
+**Status:** Accepted · 2026-11-04
+
+**Decision.** Every hit of Unbound Fist is unblockable and unparryable (before, only the
+finisher was unblockable). The attacker is invulnerable throughout, so the defender's only answer
+is to dodge the dash in; the Duelist already moves its block share to dodging when a threat is
+unblockable.
+
+**Why.** A full gauge is the most expensive thing the player can spend. In the first shader run of
+the arena test the Duelist held block through the whole barrage (12 blocked hits, 0 landed), which
+made the ultimate feel like a waste. An ultimate should be decided by whether it connects, not
+ground down by a held key.
+
+## TD-027 — Combat accents replace vanilla's hurt look
+
+**Status:** Accepted · 2026-11-04
+
+**Decision.** A struck body flashes white for 0.12 s (Minecraft's white overlay, scaled by the
+hit's hit-stop) and vanilla's red hurt tint stays off for the hurt time after a VEYRATH hit.
+Hits of under 8 damage in quick succession on one target add up into one rising damage number.
+Screen accents (impact flash, slow-motion vignette, impact zoom, the ultimate's camera path) are
+drawn by the mod and can each be turned down or off in `config/veyrath-client.properties`.
+
+**Why.** During a barrage the red tint stayed on permanently and a dozen "1.2" numbers stacked into
+an unreadable block (seen in the combat test screenshots). The red tint is also one of the most
+recognisably vanilla things on screen. Flashes and shake need an off switch for players who are
+sensitive to them.
+
+## TD-028 — Late string follow-ups within the hit-stop margin
+
+**Status:** Accepted · 2026-11-04
+
+**Decision.** The server's fighter copy accepts a string follow-up (for example jab → cross) for
+a short time after its own copy of the move ran out, as long as the branch would still have been
+open on the client. The margin is the move's total hit-stop, the most the client can have been
+held back by hits it predicted. Inputs the server rejects while its fighter is reeling from a hit
+are counted separately (`rejected (n of them while struck)` in `/veyrath combat stats`).
+
+**Why.** The client holds a move through the hit-stop of every hit it predicts. When the server
+resolves that hit differently (the Duelist dodged, a mob was not where the client saw it), its
+copy ends a few ticks earlier and rejected the follow-up, and the client's move was cut off
+mid-string. Seen once in the full-pack arena test (`rejected LIGHT cross ... server fighter IDLE`).
+An input pressed on the tick an enemy hit lands, by contrast, is a fair loss and not a desync
+(seen once in the vanilla combat test: Skybreaker pressed as a husk's hit arrived).
+
+## TD-029 — The action camera cranes up over terrain behind the player
+
+**Status:** Accepted · 2026-11-04
+
+**Decision.** Each frame the stance camera probes two placements with vanilla's collision check:
+as aimed, and craned up (pivot 0.7 blocks higher, 22° more pitch). When terrain allows less than
+half the wanted distance as aimed and the craned view is clearly freer, the camera eases into the
+craned view, and back once the way behind is free (hysteresis between 50 % and 80 %). Setting
+`cameraCrane` in `config/veyrath-client.properties`.
+
+**Why.** VEYRATH's world is mountains and slopes. On the Great Rift rim and on a summit the camera
+collapsed onto the player's head whenever the slope rose behind it. Measured by
+`TerrainCameraGameTest` (seed 1, 72 views per spot): views closer than 1.6 blocks to the eyes
+went from 16 to 7 on the rift rim and from 32 to 17 on the summit; none in the hoodoo grove or the
+Elderbough forest either way. The camera was never inside terrain in any of the 576 views.

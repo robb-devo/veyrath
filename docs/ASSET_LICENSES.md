@@ -15,7 +15,9 @@ with its origin and licence. So is every external resource the project uses. Add
 | `mod-fabric/src/main/resources/assets/veyrath/lang/en_us.json` | Text | Written for VEYRATH | Project-owned | — |
 | `mod-fabric/src/main/resources/assets/veyrath/textures/entity/duelist.png` | Duelist skin, 64 × 64, vanilla humanoid UV layout (indigo gi, crimson sash and headband, wrapped forearms and shins) | Painted pixel by pixel for VEYRATH by `tools/textures/paint_arena_textures.py` (no source image) | Project-owned | — |
 | `mod-fabric/src/main/resources/assets/veyrath/textures/entity/training_dummy.png` | Training dummy skin, 64 × 64 (burlap, rope, a painted target, wooden stand) | Painted by the same script | Project-owned | — |
-| `docs/media/combat/*.png` | In-game screenshots of the combat test | Taken in Minecraft by `CombatGameTest` on the owner's PC; they show Mojang's vanilla textures and husks | Project-owned screenshots of the owner's game | — |
+| `docs/media/combat/*.png`, `*.jpg` | In-game screenshots of the combat test | Taken in Minecraft by `CombatGameTest` on the owner's PC; they show Mojang's vanilla textures and husks | Project-owned screenshots of the owner's game | — |
+| `docs/media/arena/*` | In-game screenshots of the Proving Grounds test | Taken by `ArenaGameTest` on the owner's PC; `*_shaders.jpg` show Complementary Unbound's rendering | Project-owned screenshots of the owner's game | — |
+| `docs/media/terrain_camera/*.jpg` | Combat stance camera on VEYRATH terrain | Taken by `TerrainCameraGameTest` on the owner's PC | Project-owned screenshots of the owner's game | — |
 
 No third-party image, model, texture, font or sound is in the repository.
 

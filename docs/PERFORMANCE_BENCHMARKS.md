@@ -123,3 +123,31 @@ distance, 1920x1080 window, `maxFps` 260. FPS values are 10-second averages per 
 The same stops ran about twice as fast in later runs than in the first run of a day (87–139 FPS
 without shaders, cause unknown), so compare numbers within one run only. 225–238 FPS is close to
 the 240 the game seems to cap at, so the true headroom without shaders is not known.
+
+## Chapter 02: combat in the Proving Grounds
+
+**Machine:** as above (`robbs-strix`, Ryzen 9 9955HX, RTX 5070 Laptop GPU, 32 GB, Temurin 25.0.4).
+**Measured by** the performance phase of `ArenaGameTest` (TESTING_GUIDE.md §11), 2026-11-04: the
+adept Duelist and ten husks fight the standing player in combat stance for 10 s; FPS sampled every
+10 ticks (20 samples), the server's vanilla 100-tick mean tick time read at each sample (peak during
+the round, and once before the husks were summoned), and the time spent in VEYRATH combat code
+(`CombatServer`) per server tick. 1920x1080 window, render distance 16, `maxFps` 260 with vsync on
+in the test client's options: 240 FPS is the ceiling, so values at 236–240 mean "capped", not
+headroom. Builds `7f24d30` and the commits just before it on `ch02-combat`.
+
+| Setup | FPS avg (min–max) | Server tick, peak / before | Combat code per tick |
+|---|---|---|---|
+| Vanilla client (53 mods: Fabric API + VEYRATH) | 231 (166–240); earlier runs 236 (209–241), 236 (208–241) | 2.05 / 0.75 ms; 1.77 / 0.75; 1.75 / 1.27 | 113 µs; 96; 74 |
+| Full pack (92 mods), no shaders | 237 (216–240); earlier runs 236 (216–240), 236 (210–240), 221 (192–240) | 1.90 / 1.13 ms; 2.06 / 1.61; 3.46 / 3.11; 5.21 / 1.81 | 88 µs; 85; 118; 138 |
+| Full pack, Complementary Unbound r5.9.3 defaults | 136 (30–190); an earlier run 127 (40–179) | 2.49 / 1.80 ms; 4.34 / 2.02 | 126 µs; 147 |
+| Full pack before TD-025 (DH generated the void) | 75 (48–101) | 8.74 / 6.50 ms | 406 µs |
+
+**Reading it.** Combat itself is cheap: 74–147 µs of a 50 ms tick for 12 fighters (the player, the
+Duelist, ten husks), and the server tick stays at or under about 5 ms. Without shaders the arena
+holds the 240 FPS cap with the full pack. With Complementary it averages 127–136 FPS; the single
+low samples (30 and 40 FPS) were not investigated yet and may be shader warm-up in the first
+seconds of a new dimension. The one real problem found here, Distant Horizons generating LODs of
+the empty arena dimension, cost two thirds of the frame rate and is fixed (TD-025).
+
+**Not measured:** frame-time percentiles, a fight in VEYRATH terrain (not the void arena), many
+Duelists at once, memory over a long session.

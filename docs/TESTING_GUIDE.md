@@ -187,6 +187,47 @@ CHAPTER_STATUS.md:
 - Geographic coherence.
 - Vegetation and underground, once they exist.
 
+## 11. Combat and Proving Grounds game tests (Chapter 02)
+
+Both open a game window on the development PC and need no sign-in. Leave the window alone while
+they run. Screenshots go to `mod-fabric/build/run/clientGameTest/screenshots/` (the folder is not
+cleared between runs; delete old files first), the log to `.../logs/latest.log`.
+
+```
+gradlew :mod-fabric:runClientGameTest -Pveyrath.tests=combat
+gradlew :mod-fabric:runClientGameTest -Pveyrath.tests=arena
+gradlew :mod-fabric:runClientGameTest -Pveyrath.tests=terrain
+```
+
+Add `-Pveyrath.fullPack=true` for the 92-mod pack. For a shader run, set `enableShaders=true`
+in `mod-fabric/build/run/clientGameTest/config/iris.properties` (Complementary Unbound r5.9.3 is
+selected there) and set it back afterwards.
+
+- **combat** (`CombatGameTest`, screenshots `c01`–`c12`): ground strings kill a husk, the
+  launcher lifts it more than 1.5 blocks, block stops a husk's attacks, the three abilities and
+  the ultimate hit a group of three, no input is rejected, the stance turns off again. A per-tick
+  trace of client and server fighter is logged for the launcher and air string.
+- **arena** (`ArenaGameTest`, screenshots `a01`–`a08`): enters the Proving Grounds, reads the
+  training dummy's DPS, spars a round with the adept Duelist (it must close in, tell and land
+  hits on a standing player; then it is set to 1 health and beaten), checks the next round starts
+  at full health, lands every hit of the ultimate on the Duelist (its mind paused for that step),
+  then measures the round with ten husks. The `performance:` log line has FPS (average, lowest,
+  highest of 20 samples over 10 s), the server's 100-tick mean tick time (peak during the round
+  and before it) and the time spent in VEYRATH combat code per tick.
+
+- **terrain** (`TerrainCameraGameTest`, screenshots `t_*`): creates a VEYRATH world on seed 1
+  and, at the Great Rift rim, a summit, a hoodoo grove and in the Elderbough forest, swings the
+  stance camera round at three heights (72 views per spot), once without and once with the crane
+  (TD-029). The camera must never be inside a block; the log gives how often it came closer than
+  1.6 blocks to the player's eyes. Then the player runs uphill in stance for three seconds. Not at
+  a waterfall: the stance does not open in water.
+
+What the tests cannot judge and needs hands on the keyboard: how readable the Duelist's tells
+are, whether each style feels fair, camera comfort in mountains, and how the effects feel.
+Effect strength is set in `config/veyrath-client.properties` (written on first start):
+`screenShake` (0–2), `screenFlash`, `cinematicCamera`, `slowMotionVignette`, `impactZoom`,
+`cameraCrane`.
+
 ## Performance measurement
 
 Hardware first: record CPU, GPU, RAM, OS, GPU driver and the profile's `-Xmx`. Then, for each

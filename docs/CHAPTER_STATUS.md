@@ -38,12 +38,12 @@ not yet in game), **Written** (not yet compiled or run), **Open**.
 | 2 Animation runtime and clips | Clips, layers, crossfades, root motion; pose contact sheets from the `preview` tool (`poses`, not in game) | Done |
 | 3 Device bring-up | Stance key Z, payloads, server fighters, damage type, reactions on vanilla mobs | Done. Combat game test: ground strings kill a husk, 0 rejected inputs |
 | 4 Animation in game | Render-state hook and pose applier for players and humanoid mobs | Done (screenshots `docs/media/combat/`) |
-| 5 Action camera | Orbit camera, collision, lock-on, camera-relative movement | Done in the flat test world; VEYRATH mountains not yet checked in a test |
-| 6 Movement | Dodge, dash, sprint, air jump, air dash, step-up | Done in the test world |
-| 7 Feel and effects | Hit-stop, slow motion, shake, impact particles, shockwaves, HUD, damage numbers | Done except damage numbers (written) and polish |
-| 8 Abilities and ultimate | Gale Step, Skybreaker, Quake Palm, Unbound Fist | Done on husk groups; on the Duelist: written |
-| 9 Proving Grounds | Arena dimension, training dummy (damage, DPS), Duelist rounds | Written; Duelist mind tested headless (`DuelistTest`) |
-| 10 Tests and performance | Game tests, FPS and tick time in the arena | Combat test done; arena test written; numbers open |
+| 5 Action camera | Orbit camera, collision, crane over terrain, lock-on, camera-relative movement | Done: on VEYRATH terrain (rift rim, summit, hoodoo grove, Elderbough) the camera is never inside a block in 576 views (`TerrainCameraGameTest`); close-ups on slopes halved by the crane (TD-029) |
+| 6 Movement | Dodge, dash, sprint, air jump, air dash, step-up | Done in the test world; running uphill in stance on VEYRATH terrain without "moved too quickly" warnings. The stance does not open in water (by design) |
+| 7 Feel and effects | Hit-stop, slow motion, shake, impact particles, shockwaves, HUD, damage numbers, impact flash, slow-motion vignette, impact zoom, white hit flash, comfort settings | Done (screenshots `docs/media/combat/`, `docs/media/arena/`); feel still to be judged by hand |
+| 8 Abilities and ultimate | Gale Step, Skybreaker, Quake Palm, Unbound Fist with its own camera path | Done on husk groups and on the Duelist (13 of 13 ultimate hits in the arena test) |
+| 9 Proving Grounds | Arena dimension, training dummy (damage, DPS), Duelist rounds | Done: arena test passes vanilla, with the full pack and with Complementary Unbound. Tell readability and fairness per style need hands on the keyboard |
+| 10 Tests and performance | Game tests, FPS and tick time in the arena | Done: numbers in [PERFORMANCE_BENCHMARKS.md](PERFORMANCE_BENCHMARKS.md#chapter-02-combat-in-the-proving-grounds) |
 | 11 Acceptance | Report | Open |
 
 ## Chapter 00 deliverables

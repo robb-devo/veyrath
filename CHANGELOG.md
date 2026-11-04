@@ -3,6 +3,48 @@
 All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follow
 `<semver>-ch<chapter>`.
 
+## [Unreleased] — 0.2.0-ch02
+
+### Added
+- **Combat core** (`combat/`, pure Java, headless tests): fighter state machine, input buffer,
+  moves with frame data and cancel windows, bone-attached swept hit shapes, block, parry, dodge
+  with invulnerability and perfect dodge, reactions (flinch, stagger, launch with juggle decay,
+  knockdown, guard break), stamina, Aether, Unbound gauge, poise, reaction grace against
+  stun-lock, unarmed moveset (ground and air strings, charged heavy, dash strike, Meteor Drop),
+  three abilities (Gale Step, Skybreaker, Quake Palm) and the ultimate Unbound Fist.
+- **Duelist AI**: perceives with a reaction delay, telegraphs every opener, defends only against
+  what it has seen, three styles (apprentice, adept, master).
+- **In game**: combat stance on Z, action camera with lock-on (middle mouse), camera-relative
+  movement, client prediction with a server-authoritative copy, poses on players and humanoid
+  mobs, hit-stop, slow motion, camera shake, impact particles, combat HUD (bars, ability slots in
+  the hotbar's place, combo counter), damage numbers.
+- **Proving Grounds**: `/veyrath arena` opens a floating arena in its own dimension with a
+  training dummy (damage and DPS) and Duelist rounds (countdown, VICTORY / DEFEAT, no deaths).
+- Combat feel: full-screen impact flash (ultimate finisher, parry, guard break, perfect dodge),
+  darkened edges in slow motion, a camera pull-in on heavy impacts, and a camera path for the
+  ultimate (low angle on the dash, an overhead side view through the barrage, a wide shot for
+  the finisher, on the side with fewer bodies in the way).
+- Struck bodies flash white instead of turning red; light hits in quick succession add up into
+  one rising damage number, big blows keep their own.
+- `config/veyrath-client.properties`: shake strength, flashes, ultimate camera, slow-motion
+  vignette and impact zoom can be turned down or off.
+- The stance camera cranes up over a slope or wall behind the player instead of closing in on
+  the head (TD-029).
+- Game tests `combat`, `arena` and `terrain` (the stance camera on VEYRATH terrain) with
+  screenshots; the arena test logs a performance line.
+
+### Changed
+- Nothing of Unbound Fist can be blocked or parried any more (the finisher already could not be
+  blocked); dodging its dash in is the answer (TD-026).
+
+### Fixed
+- Distant Horizons no longer generates the Proving Grounds' empty void, which took the arena
+  from 236 to 75 FPS with the full pack (TD-025).
+- Frozen bodies stay pressed onto the ground during hit-stop, so the client no longer runs air
+  ticks the server does not.
+- A string follow-up pressed while the client was still held in the hit-stop of a hit the server
+  resolved differently is no longer rejected and cut off (TD-028).
+
 ## [Unreleased] — 0.1.0-ch01
 
 ### Added
