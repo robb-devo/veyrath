@@ -66,5 +66,10 @@
   "subtitles.veyrath.combat.tell_strike": "Duelist readies",
   "subtitles.veyrath.combat.tell_heavy": "Duelist winds up",
   "subtitles.veyrath.combat.tell_unblockable": "Duelist gathers power",
-  "subtitles.veyrath.combat.round_bell": "Round bell"
+  "subtitles.veyrath.combat.round_bell": "Round bell",
+  "itemGroup.veyrath": "VEYRATH",
+  "item.veyrath.oathcleaver": "Oathcleaver",
+  "item.veyrath.wren_and_thorn": "Wren and Thorn",
+  "item.veyrath.skyreach": "Skyreach",
+  "item.veyrath.vesper_codex": "Vesper Codex"
 }

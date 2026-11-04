@@ -7,7 +7,8 @@ import net.minecraft.world.entity.Entity;
 
 /**
  * Which weapon each fighter has drawn, on this client: the local player's from its own fighter,
- * everyone else's from the server's {@code weapon} messages. Weapons are drawn only in stance.
+ * everyone else's from the server's {@code weapon} messages. Out of stance, a weapon item in the
+ * main hand is shown as its model too.
  */
 public final class ClientWeapons {
     private ClientWeapons() {}
@@ -24,11 +25,12 @@ public final class ClientWeapons {
     /** The weapon id to draw on this entity, or null. */
     public static String drawn(Entity e) {
         Minecraft mc = Minecraft.getInstance();
-        if (e == mc.player) {
-            if (!LocalCombat.active()) return null;
+        if (e == mc.player && LocalCombat.active()) {
             String id = Weapons.of(LocalCombat.fighter().set).id();
             return id.equals(Weapons.UNARMED.id()) ? null : id;
         }
-        return REMOTE.get(e.getId());
+        String remote = e == mc.player ? null : REMOTE.get(e.getId());
+        if (remote != null) return remote;
+        return e instanceof net.minecraft.world.entity.LivingEntity le ? dev.veyrath.mod.item.VeyrathItems.weaponOf(le.getMainHandItem()) : null;
     }
 }

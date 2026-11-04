@@ -77,11 +77,16 @@ public final class HudGameTest implements FabricClientGameTest {
             shot(context, "hud_03_hostiles");
 
             // Stance: abilities, Aether and stamina, the weapon name.
-            context.getInput().pressKey(CombatClient.STANCE_KEY);
+            // The weapon item in hand is the weapon of the stance.
+            server.runCommand("item replace entity @p hotbar.0 with veyrath:wren_and_thorn");
+            context.runOnClient(mc -> mc.player.getInventory().setSelectedSlot(0));
             context.waitTicks(10);
-            context.getInput().pressKey(o -> o.keyHotbarSlots[5]);
+            shot(context, "hud_03b_weapon_item");
+            context.getInput().pressKey(CombatClient.STANCE_KEY);
             context.waitTicks(20);
             check(context.computeOnClient(mc -> LocalCombat.active()), "stance is on");
+            String drawn = context.computeOnClient(mc -> dev.veyrath.combat.content.Weapons.of(LocalCombat.fighter().set).id());
+            check(dev.veyrath.combat.content.Weapons.TWIN_BLADES.id().equals(drawn), "the held Wren and Thorn is drawn in stance (" + drawn + ")");
             context.runOnClient(mc -> VeyrathMusic.combatHit(-1, false));
             context.waitTicks(40);
             String combat = context.computeOnClient(mc -> VeyrathMusic.mood() + " " + VeyrathMusic.playing());

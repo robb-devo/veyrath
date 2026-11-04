@@ -102,7 +102,10 @@ framework (TD-032), the Oathcleaver greatsword (playable, all moves land in the 
    toasts and the potion swirl, crit and sweep particles are blocked. Game test `hud`.
    Still vanilla: chat, menus, inventory screens, block-break, rain and other world particles,
    world ambience sounds, experience orbs and item drops.
-5. Keep the companion board card current: in the claude-companion folder run
+5. Chapter 04 (bosses) approved 11-04, plan in docs/CHAPTER_04_PLAN.md. Owner's combat notes in
+   docs/COMBAT_POLISH.md: revisit after he plays the bosses. New items go in VeyrathItems.ALL
+   (own creative tab "VEYRATH"); weapon items are drawn when you enter stance holding them.
+6. Keep the companion board card current: in the claude-companion folder run
    node scripts/board.js thread veyrath-ch03 --title ... --state ... --where pc --checklist "...".
 
 ## Build and test

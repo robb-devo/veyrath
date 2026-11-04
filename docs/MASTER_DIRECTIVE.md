@@ -19,7 +19,12 @@ Later decisions by the owner that change its scope:
   Every effect, particle, sound, HUD element and model the player sees or hears is VEYRATH's own.
   Minecraft's are placeholders to be replaced, never the final implementation.
 
-Chapters 04 and 05 still need his explicit approval.
+- 2026-11-04 (after playing Chapter 03): combat "is not at all Minecraft anymore", the goal is
+  achieved. Chapter 04 (bosses) approved; foundation first: every system in, stable and working
+  together, then expand. His combat notes are logged in docs/COMBAT_POLISH.md, to revisit after he
+  plays the bosses. Items go in VEYRATH's own creative tab instead of commands.
+
+Chapter 05 still needs his explicit approval.
 
 ---
 

@@ -161,6 +161,9 @@ public final class LocalCombat {
         p.setSprinting(false);
         setModifier(p, Attributes.STEP_HEIGHT, STEP_ID, 0.45, AttributeModifier.Operation.ADD_VALUE);
         send(new CombatNet.StanceC2S(true));
+        // A weapon item in hand is the weapon you fight with; else the last one drawn.
+        var held = dev.veyrath.combat.content.Weapons.byId(dev.veyrath.mod.item.VeyrathItems.weaponOf(p.getMainHandItem()));
+        if (held != null) lastWeapon = held;
         if (lastWeapon != dev.veyrath.combat.content.Weapons.UNARMED && fighter.equip(lastWeapon.moves())) {
             ANIM.setBase(lastWeapon.stanceClip(), ANIM.clock, 4);
             send(new CombatNet.WeaponC2S(lastWeapon.id()));
