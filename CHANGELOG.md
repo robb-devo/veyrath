@@ -18,6 +18,8 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   Thousand Cuts, Shadow Step, Talon Spiral and the ultimate Crimson Waltz; own model and texture.
 - **Skyreach**, the glaive (key 8): longest reach, thrusts and sweeps, Vault Thrust, Crescent Sweep,
   Piercing Gale and the ultimate Heavenfall; own model and texture.
+- Deaths: no red tint; the body fades to white and dissolves into light and ash instead of vanilla's
+  smoke puffs.
 - VEYRATH's own combat sounds (TD-033): 19 cues designed from CC0 recordings replace every
   vanilla sound in combat, tells and the arena; weapon swings whoosh.
 - The Duelist can wield the Oathcleaver (`/veyrath arena duelist <style> greatsword`); weapon

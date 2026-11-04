@@ -26,6 +26,11 @@ public abstract class LivingEntityRendererMixin {
         ((FlashState) state).veyrath$setFlash(HitFlash.progress(id));
         ((FlashState) state).veyrath$setWeapon(dev.veyrath.mod.client.combat.ClientWeapons.drawn(entity));
         if (HitFlash.suppressRed(id)) state.hasRedOverlay = false;
+        // Dying: no red tint; the body fades to white as it falls, then dissolves (LivingEntityDeathMixin).
+        if (entity.deathTime > 0) {
+            state.hasRedOverlay = false;
+            ((FlashState) state).veyrath$setFlash(Math.max(((FlashState) state).veyrath$flash(), Math.min(0.85f, (entity.deathTime + partialTick) / 20f)));
+        }
     }
 
     @Inject(method = "getWhiteOverlayProgress(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;)F",

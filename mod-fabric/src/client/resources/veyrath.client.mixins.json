@@ -7,6 +7,7 @@
     "CameraMixin",
     "HumanoidModelMixin",
     "KeyboardInputMixin",
+    "LivingEntityDeathMixin",
     "LivingEntityRendererMixin",
     "LivingEntityRenderStateMixin",
     "MinecraftMixin",

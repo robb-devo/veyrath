@@ -159,6 +159,20 @@ public final class CombatEffects {
                 }
                 flash(x, y, z, 1.0, 0x908FD0FF, 0.25);
             }
+            case "death" -> {
+                for (int i = 0; i < 18; i++) {
+                    Vfx.at(x + r.nextGaussian() * 0.3, y + r.nextGaussian() * 0.45, z + r.nextGaussian() * 0.3)
+                            .vel(r.nextGaussian() * 0.25, 0.6 + r.nextDouble() * 0.9, r.nextGaussian() * 0.25).sprite(Sprite.GLOW)
+                            .size(0.12, 0.03).drag(0.6).life(0.8 + r.nextDouble() * 0.6).fadeIn(0).color(0xD0FFF0D0).spawn();
+                }
+                for (int i = 0; i < 8; i++) {
+                    Vfx.at(x + r.nextGaussian() * 0.25, y + r.nextGaussian() * 0.4, z + r.nextGaussian() * 0.25)
+                            .vel(r.nextGaussian() * 0.2, 0.25 + r.nextDouble() * 0.3, r.nextGaussian() * 0.2).sprite(Sprite.SMOKE)
+                            .size(0.35, 0.9).rot(r.nextDouble() * 6).spin(r.nextGaussian() * 0.5).drag(1.2).life(1.0 + r.nextDouble() * 0.5)
+                            .color(0x70C8C0B8, 0x00C8C0B8).smoke().spawn();
+                }
+                flash(x, y, z, 1.0, 0x90FFF6E8, 0.2);
+            }
             case "tell_strike" -> Vfx.at(x, y, z).sprite(Sprite.FLARE).size(0.15, 0.7).life(0.28).color(0xFFFFF6E8).spawn();
             case "tell_heavy" -> {
                 Vfx.at(x, y, z).sprite(Sprite.FLARE).size(0.25, 1.2).life(0.4).color(0xFFFFD27A).spawn();

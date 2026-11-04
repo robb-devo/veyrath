@@ -22,7 +22,7 @@ public final class VfxGalleryGameTest implements FabricClientGameTest {
     private static final Logger LOG = LoggerFactory.getLogger("VEYRATH vfx gallery");
     static final List<String> IDS = List.of("impact_light", "impact_heavy", "impact_gale", "impact_charged", "impact_launch",
             "shockwave_cone", "shockwave_ring", "ultimate_impact", "block", "guard_break", "parry", "perfect_dodge",
-            "tell_strike", "tell_heavy", "tell_unblockable");
+            "tell_strike", "tell_heavy", "tell_unblockable", "death", "blade_light", "blade_cleave", "blade_sweep", "blade_spin");
 
     @Override
     public void runTest(ClientGameTestContext context) {
@@ -53,6 +53,14 @@ public final class VfxGalleryGameTest implements FabricClientGameTest {
                 LOG.info("{}: {} particles", id, n);
                 context.waitTicks(20);
             }
+            // A real death: no red tint, a white fade while falling, then the own dissolve.
+            server.runCommand("execute at @p run summon minecraft:husk ~ ~ ~3 {NoAI:1b,PersistenceRequired:1b,Rotation:[180f,0f]}");
+            context.waitTicks(10);
+            server.runCommand("kill @e[type=minecraft:husk]");
+            context.waitTicks(10);
+            shot(context, "fx_zz_death_falling");
+            context.waitTicks(11);
+            shot(context, "fx_zz_death_dissolve");
         }
         if (empty > 0) throw new AssertionError("vfx gallery: " + empty + " effects spawned nothing");
         LOG.info("vfx gallery passed");

@@ -37,7 +37,7 @@ animation, input buffered). Out of stance, weapons are items in VEYRATH's own mo
 | 5 Twin blades | First playable version (key 7): four-cut string, lunge, cyclone, air spin and dive, Thousand Cuts, Shadow Step, Talon Spiral, Crimson Waltz; all land in the weapon test (`docs/media/weapons/wren_thorn_sheet.jpg`) |
 | 6 Glaive | First playable version (key 8): thrusts, sweep, lunge, full sweep, air sweep and impaling dive, Vault Thrust, Crescent Sweep, Piercing Gale, Heavenfall; held along the arm's line; all land in the weapon test (`docs/media/weapons/skyreach_sheet.jpg`) |
 | 7 Grimoire | Open |
-| Also open | Mob deaths still use vanilla's red tint, poof particles, orbs and drops: an own death presentation is needed |
+| Death presentation | Done for the look: no red tint, the body fades to white as it falls, then dissolves into rising light and ash (`docs/media/vfx/death_dissolve.jpg`). Still vanilla: experience orbs and item drops (a loot and progression question for later) |
 | 8 Own HUD art | Open |
 
 ## Work packages
