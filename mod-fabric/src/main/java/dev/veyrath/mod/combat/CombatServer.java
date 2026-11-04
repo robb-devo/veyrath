@@ -638,12 +638,43 @@ public final class CombatServer {
 
     // ------------------------------------------------------------------ hits
 
+    private static boolean showShapes;
+
+    /** Debug view of the hit shapes ({@code /veyrath combat shapes}); returns the new state. */
+    public static boolean toggleShapes() {
+        showShapes = !showShapes;
+        return showShapes;
+    }
+
+    /** Particles along every capsule of the fighter's active windows, as the server checks them. */
+    private static void drawShapes(ServerLevel level, Entry e, Vec3 feet) {
+        Move move = e.fighter.move();
+        if (move == null) return;
+        for (int wi : e.fighter.activeWindows()) {
+            var w = move.hits.get(wi);
+            boolean area = w.shapes().stream().allMatch(sh -> sh.bone() == null);
+            // Dust stays where it is put for a moment: red for limb shapes, amber for area shapes.
+            var type = new net.minecraft.core.particles.DustParticleOptions(area ? 0xFFB030 : 0xFF2A2A, 0.7f);
+            for (HitDetector.Capsule c : HitDetector.sweep(move, w, e.fighter.moveTick(), CombatContent.CLIPS, feet, e.fighter.yaw,
+                    e.entity.getScale())) {
+                Vec3 d = c.b().sub(c.a());
+                int n = Math.max(1, (int) Math.ceil(d.length() / 0.25));
+                for (int i = 0; i <= n; i++) {
+                    Vec3 p = c.a().add(d.scale(i / (double) n));
+                    level.sendParticles(type, p.x(), p.y(), p.z(), 1, 0, 0, 0, 0);
+                }
+            }
+        }
+    }
+
     private static void detectHits(Entry e) {
         LivingEntity a = e.entity;
         ServerLevel level = (ServerLevel) a.level();
         Vec3 feet = feet(a);
+        if (showShapes) drawShapes(level, e, feet);
         AABB search = a.getBoundingBox().inflate(8);
-        List<LivingEntity> near = level.getEntitiesOfClass(LivingEntity.class, search, t -> canStrike(a, t));
+        List<LivingEntity> near = level.getEntitiesOfClass(LivingEntity.class, search,
+                t -> canStrike(a, t) && LineOfSight.clear(level, a, t));
         if (near.isEmpty()) return;
         List<HitDetector.Target> targets = new ArrayList<>(near.size());
         Map<Integer, LivingEntity> byId = new HashMap<>();

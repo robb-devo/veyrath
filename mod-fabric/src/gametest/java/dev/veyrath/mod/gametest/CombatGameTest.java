@@ -71,6 +71,7 @@ public final class CombatGameTest implements FabricClientGameTest {
             launcherJuggle(context, sp, y);
             guard(context, sp, y);
             abilities(context, sp, y);
+            walls(context, sp, y);
 
             int rejected = context.computeOnClient(mc -> LocalCombat.rejectedCount());
             String stats = server.computeOnServer(s -> CombatServer.stats());
@@ -228,6 +229,36 @@ public final class CombatGameTest implements FabricClientGameTest {
         context.waitTicks(60);
         LOG.info("ultimate: group health {}", groupHealth(sp));
         server.runCommand("kill @e[tag=vt_group]");
+    }
+
+    /**
+     * A one-block stone wall between the player and a husk 1.8 blocks away (no AI, so it stays put):
+     * three jabs must not touch it. Without the wall the same jab lands. The hit shapes debug view
+     * is on for the screenshot.
+     */
+    private void walls(ClientGameTestContext context, TestSingleplayerContext sp, int y) {
+        var server = sp.getServer();
+        server.runCommand("execute as @p run veyrath combat refill");
+        server.runCommand(String.format(Locale.ROOT, "tp @p %.1f %d %.1f 0 12", PX, y, PZ));
+        server.runCommand(summon("husk", PX, y, PZ + 1.8, "{Tags:[\"vt_wall\"],PersistenceRequired:1b,NoAI:1b,Rotation:[180f,0f]}"));
+        int bz = (int) Math.floor(PZ + 1.0);
+        server.runCommand(String.format(Locale.ROOT, "fill %d %d %d %d %d %d minecraft:stone", (int) Math.floor(PX) - 1, y, bz, (int) Math.floor(PX) + 1, y + 2, bz));
+        server.runCommand("execute as @p run veyrath combat shapes");
+        context.waitTicks(10);
+        float before = health(sp, "vt_wall");
+        for (int i = 0; i < 3; i++) tap(context, ATTACK, 12);
+        float blocked = health(sp, "vt_wall");
+        server.runCommand(String.format(Locale.ROOT, "fill %d %d %d %d %d %d minecraft:air", (int) Math.floor(PX) - 1, y, bz, (int) Math.floor(PX) + 1, y + 2, bz));
+        context.waitTicks(5);
+        tap(context, ATTACK, 3);
+        shot(context, "c13_hit_shapes", true);
+        context.waitTicks(10);
+        float open = health(sp, "vt_wall");
+        server.runCommand("execute as @p run veyrath combat shapes");
+        LOG.info("walls: husk health {} -> {} behind the wall, {} without it", before, blocked, open);
+        check(blocked == before, "strikes do not pass through a wall (" + before + " -> " + blocked + ")");
+        check(open < blocked, "the same jab lands once the wall is gone (" + blocked + " -> " + open + ")");
+        server.runCommand("kill @e[tag=vt_wall]");
     }
 
     private static final double[] GROUP_DX = {-1.2, 0, 1.2};
