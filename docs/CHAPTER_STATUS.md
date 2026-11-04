@@ -85,14 +85,14 @@ and preview tool, not yet seen in Minecraft), **Partial**, **Not started** and *
 | Floating islands work | Met | Aetherreach islands and the Crown of Aether with trees; the Veil, a 20-block straight fall of about 335 blocks into a plunge pool; lit undersides (glow lichen, vines, roots) counted in game |
 | Extraordinary natural landmarks work | Met | World tier: Great Rift, Crown of Aether, Cinder Throne, Crownspire, Elder Tree, Prism Caldera, mountain window. Regional and local: waterfalls, arches, hoodoo groves, basalt stacks, crystal faults, cave mouths. Each has a `/veyrath tp` target and is a tour stop |
 | Rivers, lakes and waterfalls work | Met | 0 bank leaks on seeds 1–3, 462 waterfalls on seed 1 (101 of 20+ blocks), falling water counted in game. Lake-outlet falls and hanging valleys not built |
-| Biome transitions are visually convincing | Not verified | The owner's judgement |
+| Biome transitions are visually convincing | Partial | Owner, 2026-11-04, after a short play: "some biome changes is pretty much 1 line. so its no smooth transition." Fine-tuning item: blend surface materials and vegetation across biome borders |
 | Multiple world seeds have been evaluated | Met | Seeds 1–3 in the engine, seeds 1 and 2 toured in game with screenshots (`docs/media/ingame/`) |
 | Shader integration works | Partial | Complementary Unbound with DH runs (newest build, seed 1: 71–220 fps). Far terrain looks pale with it. Photon and Bliss load but render wrong (black sky / overexposure) |
 | Distant Horizons works with our custom terrain | Met | VEYRATH LOD generator feeds DH; islands, forests and ranges render at distance; LOD equals chunks at block detail (test). The earlier seam band was a test artifact (render distance raised after world start) |
 | Distant landscapes look coherent | Partial | Without shaders yes. With shaders far terrain washes out to blue-white; the LOD slope fix (`de595f5`) added some grey rock but did not change the overall look |
 | Performance has been measured and evaluated | Met | [PERFORMANCE_BENCHMARKS.md](PERFORMANCE_BENCHMARKS.md): newest build 215–238 fps without shaders, 71–220 with Complementary; far view complete 85 s after spawn; engine 1.7–2.3 ms per chunk. Not measured: 1 % lows, long-play memory, save size |
 | No critical generation, loading or saving bugs | Partial | None seen in the create, save and reopen cycles. Not tested with long play |
-| The world is genuinely enjoyable to explore | Not verified | The owner's judgement |
+| The world is genuinely enjoyable to explore | Met (first impression) | Owner, 2026-11-04: "it did look really really good i gotta say. not fully perfect ... i havent fully checked everything. but thats fine tuning." |
 | The technical foundation supports future expansion | Met | Engine has no Minecraft dependency. Extension points listed in [TECHNICAL_ARCHITECTURE.md](TECHNICAL_ARCHITECTURE.md#extension-points-for-later-chapters) |
 | Documentation is up to date | Met | As of this commit |
 

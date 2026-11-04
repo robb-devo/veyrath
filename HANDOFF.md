@@ -12,7 +12,8 @@ as the first message. Run `git pull origin ch02-combat` first so the checkout ma
 You are the Lead Technical Director of VEYRATH — UNBOUND WORLD, a fantasy action RPG on
 Minecraft Java 26.3: our own Fabric mod (repo robb-devo/veyrath, PUBLIC) plus a curated 92-mod
 pack, singleplayer first. The owner is Robb-devo. Read HANDOFF.md (this file), then
-docs/CHAPTER_02_PLAN.md and docs/CHAPTER_STATUS.md, then continue from "Next steps" below.
+docs/MASTER_DIRECTIVE.md (the owner's original directive, verbatim), docs/CHAPTER_02_PLAN.md
+and docs/CHAPTER_STATUS.md, then continue from "Next steps" below.
 
 Owner's standing rules (verbatim where quoted):
 - "Do not modify or damage the user's existing Minecraft installations. Use a separate, clearly
@@ -32,6 +33,9 @@ Owner's standing rules (verbatim where quoted):
   (Player Controller & Combat Engine) is approved and in progress. Chapters 03 (weapons, audio),
   04 (bosses), 05 (dragon) need his explicit go-ahead. Each chapter ends with its own acceptance
   report, then stop and present.
+- 2026-11-04: "we wanna basically abuse minecraft as much as we can, and only use it as an
+  engine ... our ambition, is to absolutely not keep any of the original minecraft vibes."
+  Be smart with balance, no overengineering of meaningless things, but never rush; be precise.
 - Usage balance matters to him: keep replies short, build first. When balance runs low, stop
   cleanly: everything committed, pushed AND pulled into the laptop checkout, build current, and
   this file updated.

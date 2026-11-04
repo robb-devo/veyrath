@@ -5,7 +5,9 @@ mod and a curated modpack. Singleplayer comes first. Multiplayer stays compatibl
 reasonably possible.
 
 This summarises the owner's Master Development Directive (2026-11-02), which remains the
-authority. The owner may change the vision at any time. When that happens, update this file
+authority. The full original text is in [MASTER_DIRECTIVE.md](MASTER_DIRECTIVE.md). On
+2026-11-04 the owner restated the ambition: use Minecraft only as an engine and keep none of
+its original vibe. The owner may change the vision at any time. When that happens, update this file
 first.
 
 ## Core vision
