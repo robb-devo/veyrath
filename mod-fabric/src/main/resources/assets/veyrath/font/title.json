@@ -1,0 +1,6 @@
+{
+  "providers": [
+    {"type": "ttf", "file": "veyrath:cinzel_bold.ttf", "size": 11, "oversample": 6, "shift": [0, 0.5]},
+    {"type": "reference", "id": "minecraft:default"}
+  ]
+}

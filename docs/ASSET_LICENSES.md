@@ -34,6 +34,47 @@ libraries listed above.
 | Mods (Fabric API, Sodium, Iris, Distant Horizons, Lithium, FerriteCore, C2ME, Mod Menu, Placeholder API) | Player install | Each project's licence (see [DEPENDENCIES.md](DEPENDENCIES.md)) | Downloaded by the installer from Modrinth onto the owner's PC, with hashes checked. Not redistributed (TD-013) |
 | Shader packs (Complementary Unbound, Photon, Bliss) | Visuals | Each pack's licence | Downloaded by the installer. Not redistributed. The licence id is recorded at install |
 
+## Music (Chapter 03)
+
+All music is **CC0** (public domain dedication) from OpenGameArt.org, picked from the
+"CC0 - Cinematic Music" collection and checked page by page on 2026-11-04. Downloaded with the
+owner's OK. CC0 needs no attribution; we credit the composers anyway (credits screen later).
+Modification: loudness-normalised to -18 LUFS, short fades, re-encoded to Ogg Vorbis
+(`tools/audio/build_music.py`). Files: `assets/veyrath/sounds/music/`.
+
+| File | Title | Composer (OGA user) | Mood | Source |
+|---|---|---|---|---|
+| `the_hope` | The Hope | TAD | explore | [the-hope](https://opengameart.org/content/the-hope) |
+| `new_sunrise` | New Sunrise | nene | explore | [new-sunrise](https://opengameart.org/content/new-sunrise) |
+| `at_home` | At Home (orchestral) | Wolfgang_ | explore | [at-home-orchestral](https://opengameart.org/content/at-home-orchestral) |
+| `once_upon_a_time` | Once Upon a Time (loop) | TAD | explore | [once-upon-a-time-loop](https://opengameart.org/content/once-upon-a-time-loop) |
+| `fantasy_choir_1..3` | Fantasy Choir 1-3 | cesisco (César da Rocha) | menu, explore | [fantasy-choir-3-orchestral-pieces](https://opengameart.org/content/fantasy-choir-3-orchestral-pieces) |
+| `evil_approach` | Evil Approach | nene | tension | [evil-approach](https://opengameart.org/content/evil-approach) |
+| `ancient_power` | Ancient Power of Serpents | josepharaoh99 | tension | [ancient-power-of-serpents](https://opengameart.org/content/ancient-power-of-serpents) |
+| `battle_a` | Battle Theme A | cynicmusic | combat | [battle-theme-a](https://opengameart.org/content/battle-theme-a) |
+| `battle_b` | Battle Theme B for RPG | cynicmusic | combat | [battle-theme-b-for-rpg](https://opengameart.org/content/battle-theme-b-for-rpg) |
+| `determined_pursuit` | Determined Pursuit (epic orchestra loop) | Emma_MA | combat | [determined-pursuit-epic-orchestra-loop](https://opengameart.org/content/determined-pursuit-epic-orchestra-loop) |
+| `battlegrounds` | Fantasy Battlegrounds | Doge | combat | [fantasy-battlegrounds](https://opengameart.org/content/fantasy-battlegrounds) |
+| `prepare_to_fight` | Prepare to Fight | Basil | combat | [prepare-to-fight](https://opengameart.org/content/prepare-to-fight) |
+| `epic_boss_battle` | Epic Boss Battle | SubspaceAudio (Juhani Junkala) | boss | [boss-battle-music](https://opengameart.org/content/boss-battle-music) |
+| `dramatic_boss` | Dramatic Boss Encounter | cynicmusic | boss | [dramatic-boss-encounter](https://opengameart.org/content/dramatic-boss-encounter) |
+| `sinister_boss` | Sinister Boss Appears | cynicmusic | boss | [sinister-boss-appears](https://opengameart.org/content/sinister-boss-appears) |
+| `victory` | Victory Theme for RPG | cynicmusic | victory | [victory-theme-for-rpg](https://opengameart.org/content/victory-theme-for-rpg) |
+| `legend_will_rise` | A Legend Will Rise (orchestral) | CodeManu | victory | [a-legend-will-rise-orchestral](https://opengameart.org/content/a-legend-will-rise-orchestral) |
+
+## Fonts (Chapter 03)
+
+| Font | Use | Licence | Source | Modification |
+|---|---|---|---|---|
+| Cinzel (The Cinzel Project Authors) | HUD titles, compass, weapon and boss names (`font/title`, `font/heading`) | SIL Open Font License 1.1, text in `docs/licenses/OFL-Cinzel.txt` | github.com/google/fonts `ofl/cinzel` | Variable font instanced at weight 700 with fontTools (`cinzel_bold.ttf`); OFL allows this, the name is not used as a Reserved Font Name |
+| Alegreya Sans (The Alegreya Sans Project Authors) | HUD numbers and labels (`font/label`, `font/small`) | SIL Open Font License 1.1, text in `docs/licenses/OFL-AlegreyaSans.txt` | github.com/google/fonts `ofl/alegreyasans` | None (Bold and Medium copied as-is) |
+
+## HUD art (Chapter 03)
+
+Own work: every HUD texture (`textures/gui/hud/`: compass band and caps, bar frames and fills,
+slots, panel, medallion, icon sheet) is drawn by `tools/textures/paint_hud.py` from signed
+distance fields. No source images.
+
 ## Research and reference sources
 
 Web sources consulted for Chapter 00 are listed in

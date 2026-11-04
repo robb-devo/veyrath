@@ -14,6 +14,15 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   cleave and plunge, parry riposte, Rending Arc, Grave Drop, Guard Crush and the ultimate
   Sundering Verdict; its own model and texture, blade trail and slash effects.
 - Game tests `vfx` (effects gallery) and `weapons`.
+- VEYRATH's own score (TD-034): 20 CC0 orchestral and choir pieces with a mood director (choir on
+  the title screen, explore with quiet gaps, tension near hostiles, combat, boss, victory sting),
+  crossfaded; vanilla music never plays.
+- VEYRATH's own fantasy HUD (TD-035): a compass band with cardinals, hearth, grave, locked foe and
+  hostiles; gilded boss bars; framed vitals (Aether or air, health, stamina or satiety) that fill
+  from the centre, show a ghost of recent loss and fade when full; a gilded hotbar with an XP
+  medallion; the ability slots with the Unbound-filled ultimate; effect gems; own crosshair; own
+  fonts (Cinzel, Alegreya Sans). Vanilla toasts and the potion swirl, crit and sweep particles are
+  gone. Game test `hud`.
 - **Wren and Thorn**, the twin blades (key 7): fast four-cut string, lunge, cyclone, air spin and dive,
   Thousand Cuts, Shadow Step, Talon Spiral and the ultimate Crimson Waltz; own model and texture.
 - **Skyreach**, the glaive (key 8): longest reach, thrusts and sweeps, Vault Thrust, Crescent Sweep,

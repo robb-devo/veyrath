@@ -460,3 +460,32 @@ in the mod's code (`SoundEvents` no longer referenced).
 **Why.** The owner's no-vanilla rule. CC0 sources need no attribution and are safe for the public
 repository; layering and processing them gives VEYRATH its own sound rather than a library's.
 Better recordings (licensed Foley, own recordings) can replace sources later without code changes.
+
+## TD-034 — Own score with a mood director; vanilla music never plays
+
+**Decision:** `MusicManager.tick` and `startPlaying` are cancelled (`MusicManagerMixin`); the
+client's `VeyrathMusic` picks a mood each tick (boss bar that asks for music > combat > tension >
+explore; menu on the title screen; a victory sting when the last thing the player hit dies) and
+crossfades our streamed CC0 tracks on the MUSIC channel with an equal-power curve. Explore plays
+one piece, then 40-110 s of quiet, never the same piece twice in a row; combat, boss and tension
+loop while they last. Combat starts on any hit on or by the player, an arena bar or a locked
+target in reach, and holds for 10 s after the last.
+**Why:** the no-vanilla rule, and an open-world score breathes: constant music tires, silence
+makes the next piece land. The MUSIC channel keeps the player's volume slider meaningful.
+**Later:** stems per piece (layers that fade in with intensity) once we commission or find
+stemmed music; region themes per biome.
+
+## TD-035 — Own HUD from painted SDF art and own type
+
+**Decision:** every vanilla HUD element that reads as Minecraft is replaced, in and out of stance
+(hotbar, hearts, armour, food, air, mount health, info and locator bar, XP, held item name,
+effects, boss bar, crosshair), plus vanilla toasts and the particles our engine replaces (potion
+swirl, crit, sweep, damage indicator). `client.hud.VeyrathHud` draws a compass band at the top,
+boss bars, framed vitals filling from the centre with a ghost of recent loss, a gilded hotbar or
+the ability slots, effect gems, our crosshair and combo counter. Textures are painted by
+`tools/textures/paint_hud.py` at 4 texture pixels per GUI unit with linear filtering (`blur` in
+`.mcmeta`) and drawn at 1/4 scale, so they stay smooth at GUI scales 2-4. Type: Cinzel and
+Alegreya Sans as TTF font providers (`assets/veyrath/font/`).
+**Why:** the owner asked for a full fantasy RPG HUD with a Skyrim-like compass; the vanilla font
+and sprites are the strongest "this is Minecraft" signal on screen.
+**Open:** chat, the pause menu, inventory screens and the title screen still use vanilla UI.

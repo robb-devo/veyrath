@@ -4,6 +4,7 @@
   "package": "dev.veyrath.mod.client.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
+    "BossHealthOverlayAccessor",
     "CameraMixin",
     "HumanoidModelMixin",
     "KeyboardInputMixin",
@@ -11,7 +12,10 @@
     "LivingEntityRendererMixin",
     "LivingEntityRenderStateMixin",
     "MinecraftMixin",
-    "MouseHandlerMixin"
+    "MouseHandlerMixin",
+    "MusicManagerMixin",
+    "ParticleEngineMixin",
+    "ToastManagerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

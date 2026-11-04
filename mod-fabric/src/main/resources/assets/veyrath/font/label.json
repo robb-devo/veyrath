@@ -1,0 +1,6 @@
+{
+  "providers": [
+    {"type": "ttf", "file": "veyrath:alegreya_sans_bold.ttf", "size": 8, "oversample": 8, "shift": [0, 0.5]},
+    {"type": "reference", "id": "minecraft:default"}
+  ]
+}

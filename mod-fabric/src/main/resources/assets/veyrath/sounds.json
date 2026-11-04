@@ -349,5 +349,253 @@
       }
     ],
     "subtitle": "subtitles.veyrath.combat.round_bell"
+  },
+  "music.explore": {
+    "sounds": [
+      {
+        "name": "veyrath:music/the_hope",
+        "stream": true
+      },
+      {
+        "name": "veyrath:music/new_sunrise",
+        "stream": true
+      },
+      {
+        "name": "veyrath:music/at_home",
+        "stream": true
+      },
+      {
+        "name": "veyrath:music/once_upon_a_time",
+        "stream": true
+      },
+      {
+        "name": "veyrath:music/fantasy_choir_1",
+        "stream": true
+      },
+      {
+        "name": "veyrath:music/fantasy_choir_2",
+        "stream": true
+      },
+      {
+        "name": "veyrath:music/fantasy_choir_3",
+        "stream": true
+      }
+    ]
+  },
+  "music.track.the_hope": {
+    "sounds": [
+      {
+        "name": "veyrath:music/the_hope",
+        "stream": true
+      }
+    ]
+  },
+  "music.track.new_sunrise": {
+    "sounds": [
+      {
+        "name": "veyrath:music/new_sunrise",
+        "stream": true
+      }
+    ]
+  },
+  "music.track.at_home": {
+    "sounds": [
+      {
+        "name": "veyrath:music/at_home",
+        "stream": true
+      }
+    ]
+  },
+  "music.track.once_upon_a_time": {
+    "sounds": [
+      {
+        "name": "veyrath:music/once_upon_a_time",
+        "stream": true
+      }
+    ]
+  },
+  "music.track.fantasy_choir_1": {
+    "sounds": [
+      {
+        "name": "veyrath:music/fantasy_choir_1",
+        "stream": true
+      }
+    ]
+  },
+  "music.track.fantasy_choir_2": {
+    "sounds": [
+      {
+        "name": "veyrath:music/fantasy_choir_2",
+        "stream": true
+      }
+    ]
+  },
+  "music.track.fantasy_choir_3": {
+    "sounds": [
+      {
+        "name": "veyrath:music/fantasy_choir_3",
+        "stream": true
+      }
+    ]
+  },
+  "music.tension": {
+    "sounds": [
+      {
+        "name": "veyrath:music/evil_approach",
+        "stream": true
+      },
+      {
+        "name": "veyrath:music/ancient_power",
+        "stream": true
+      }
+    ]
+  },
+  "music.track.evil_approach": {
+    "sounds": [
+      {
+        "name": "veyrath:music/evil_approach",
+        "stream": true
+      }
+    ]
+  },
+  "music.track.ancient_power": {
+    "sounds": [
+      {
+        "name": "veyrath:music/ancient_power",
+        "stream": true
+      }
+    ]
+  },
+  "music.combat": {
+    "sounds": [
+      {
+        "name": "veyrath:music/battle_a",
+        "stream": true
+      },
+      {
+        "name": "veyrath:music/battle_b",
+        "stream": true
+      },
+      {
+        "name": "veyrath:music/determined_pursuit",
+        "stream": true
+      },
+      {
+        "name": "veyrath:music/battlegrounds",
+        "stream": true
+      },
+      {
+        "name": "veyrath:music/prepare_to_fight",
+        "stream": true
+      }
+    ]
+  },
+  "music.track.battle_a": {
+    "sounds": [
+      {
+        "name": "veyrath:music/battle_a",
+        "stream": true
+      }
+    ]
+  },
+  "music.track.battle_b": {
+    "sounds": [
+      {
+        "name": "veyrath:music/battle_b",
+        "stream": true
+      }
+    ]
+  },
+  "music.track.determined_pursuit": {
+    "sounds": [
+      {
+        "name": "veyrath:music/determined_pursuit",
+        "stream": true
+      }
+    ]
+  },
+  "music.track.battlegrounds": {
+    "sounds": [
+      {
+        "name": "veyrath:music/battlegrounds",
+        "stream": true
+      }
+    ]
+  },
+  "music.track.prepare_to_fight": {
+    "sounds": [
+      {
+        "name": "veyrath:music/prepare_to_fight",
+        "stream": true
+      }
+    ]
+  },
+  "music.boss": {
+    "sounds": [
+      {
+        "name": "veyrath:music/epic_boss_battle",
+        "stream": true
+      },
+      {
+        "name": "veyrath:music/dramatic_boss",
+        "stream": true
+      },
+      {
+        "name": "veyrath:music/sinister_boss",
+        "stream": true
+      }
+    ]
+  },
+  "music.track.epic_boss_battle": {
+    "sounds": [
+      {
+        "name": "veyrath:music/epic_boss_battle",
+        "stream": true
+      }
+    ]
+  },
+  "music.track.dramatic_boss": {
+    "sounds": [
+      {
+        "name": "veyrath:music/dramatic_boss",
+        "stream": true
+      }
+    ]
+  },
+  "music.track.sinister_boss": {
+    "sounds": [
+      {
+        "name": "veyrath:music/sinister_boss",
+        "stream": true
+      }
+    ]
+  },
+  "music.victory": {
+    "sounds": [
+      {
+        "name": "veyrath:music/victory",
+        "stream": true
+      },
+      {
+        "name": "veyrath:music/legend_will_rise",
+        "stream": true
+      }
+    ]
+  },
+  "music.track.victory": {
+    "sounds": [
+      {
+        "name": "veyrath:music/victory",
+        "stream": true
+      }
+    ]
+  },
+  "music.track.legend_will_rise": {
+    "sounds": [
+      {
+        "name": "veyrath:music/legend_will_rise",
+        "stream": true
+      }
+    ]
   }
 }

@@ -229,6 +229,10 @@ selected there) and set it back afterwards.
 - **weapons** (`WeaponGameTest`, screenshots `w01`–`w10`): key 6 draws the Oathcleaver (client
   and server agree), its string, heavy, three abilities and ultimate land on three husks, key 5
   goes back to the fists, no input rejected.
+- **hud** (`HudGameTest`, screenshots `hud_01`–`hud_06`): our choir on the title screen, an
+  explore piece once in the world and no vanilla music, tension music near hostiles, combat music
+  after a hit; the HUD out of stance (items, hurt vitals, armour, XP, effects, compass with the
+  hearth), with hostiles on the compass, in stance, with a boss bar, and after a death.
 
 What the tests cannot judge and needs hands on the keyboard: how readable the Duelist's tells
 are, whether each style feels fair, camera comfort in mountains, and how the effects feel.
