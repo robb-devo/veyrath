@@ -214,7 +214,8 @@ public final class CombatGameTest implements FabricClientGameTest {
         logFighter(context, "1 tick after ultimate");
         context.waitTicks(27);
         shot(context, "c11_ultimate_barrage", true);
-        context.waitTicks(20);
+        // Two ticks after the finisher connects (tick 48): its flash, zoom and shockwave are on screen.
+        context.waitTicks(22);
         shot(context, "c12_ultimate_finisher", true);
         context.waitTicks(60);
         LOG.info("ultimate: group health {}", groupHealth(sp));

@@ -30,7 +30,9 @@ import java.util.function.Function;
  * enters the arena dimension, strikes a training dummy and reads its DPS, then spars a round
  * against the adept Duelist. The player first stands still (the Duelist must close in, tell and
  * land hits), then the Duelist is set to 1 health and the player attacks until the round is won
- * and the next round starts. Screenshots: arena, dummy, Duelist fight.
+ * and the next round starts. In round 2 the player's ultimate lands on the Duelist (its barrage
+ * cannot be parried, its finisher cannot be blocked). Screenshots: arena, dummy, Duelist fight,
+ * ultimate.
  */
 public final class ArenaGameTest implements FabricClientGameTest {
     private static final Logger LOG = LoggerFactory.getLogger("VEYRATH arena test");
@@ -63,6 +65,7 @@ public final class ArenaGameTest implements FabricClientGameTest {
 
             dummy(context, sp);
             duel(context, sp);
+            ultimate(context, sp);
             performance(context, sp);
 
             String stats = server.computeOnServer(s -> CombatServer.stats());
@@ -169,6 +172,46 @@ public final class ArenaGameTest implements FabricClientGameTest {
         LOG.info("next round: {}, Duelist health {}", next, hp);
         check(next.startsWith("round 2"), "the next round starts (" + next + ")");
         check(hp >= 0.99f, "the Duelist is back at full health (" + hp + ")");
+    }
+
+    /**
+     * Round 2: a full gauge, the Duelist right in front, Unbound Fist. Its hits must land. The
+     * Duelist's mind is paused for this step: it may dodge the dash in (its answer to an ultimate,
+     * covered headless in DuelistTest), which would make the in-game check depend on a dice roll.
+     */
+    private void ultimate(ClientGameTestContext context, TestSingleplayerContext sp) {
+        var server = sp.getServer();
+        for (int t = 0; t < 300 && !server.<String, RuntimeException>computeOnServer(s -> ProvingGrounds.roundInfo()).contains("FIGHT"); t += 10) context.waitTicks(10);
+        server.runCommand("execute as @p run veyrath combat refill");
+        int hitsBefore = server.computeOnServer(s -> CombatServer.duelistStruck(Outcome.Result.HIT));
+        float before = server.computeOnServer(s -> {
+            DuelistEntity d = duelist(s);
+            return d == null ? -1f : d.getHealth();
+        });
+        server.runOnServer(s -> {
+            DuelistEntity d = duelist(s);
+            ServerPlayer p = player(s);
+            if (d == null) return;
+            double yawR = Math.toRadians(p.getYRot());
+            d.teleportTo(p.getX() - Math.sin(yawR) * 2.0, p.getY(), p.getZ() + Math.cos(yawR) * 2.0);
+            d.setYRot(p.getYRot() + 180);
+            CombatServer.setDuelistActive(d, false);
+        });
+        context.waitTicks(1);
+        context.getInput().pressKey(o -> o.keyHotbarSlots[3]);
+        context.waitTicks(28);
+        shot(context, "a07_ultimate_barrage", true);
+        context.waitTicks(22);
+        shot(context, "a08_ultimate_finisher", true);
+        context.waitTicks(40);
+        server.runOnServer(s -> {
+            DuelistEntity d = duelist(s);
+            if (d != null) CombatServer.setDuelistActive(d, true);
+        });
+        int hits = server.computeOnServer(s -> CombatServer.duelistStruck(Outcome.Result.HIT)) - hitsBefore;
+        String round = server.<String, RuntimeException>computeOnServer(s -> ProvingGrounds.roundInfo());
+        LOG.info("ultimate on the Duelist: health before {}, {} hits landed, {}", before, hits, round);
+        check(hits == 13, "every hit of the ultimate lands on the Duelist (" + hits + " of 13)");
     }
 
     /**
