@@ -24,7 +24,8 @@ public final class WeaponLayer<S extends HumanoidRenderState, M extends Humanoid
     static final Identifier OATHCLEAVER = VeyrathMod.id("textures/entity/weapon/oathcleaver.png");
     static final Identifier WREN_THORN = VeyrathMod.id("textures/entity/weapon/wren_thorn.png");
     static final Identifier SKYREACH = VeyrathMod.id("textures/entity/weapon/skyreach.png");
-    private static RenderType oathcleaverType, wrenThornType, skyreachType;
+    static final Identifier VESPER_CODEX = VeyrathMod.id("textures/entity/weapon/vesper_codex.png");
+    private static RenderType oathcleaverType, wrenThornType, skyreachType, codexType;
 
     public WeaponLayer(RenderLayerParent<S, M> parent) {
         super(parent);
@@ -43,6 +44,15 @@ public final class WeaponLayer<S extends HumanoidRenderState, M extends Humanoid
                 collector.submitCustomGeometry(pose, wrenThornType, (p, vc) -> shortBlade(p, vc, light, hx));
                 pose.popPose();
             }
+            return;
+        }
+        if (dev.veyrath.combat.content.Grimoire.ID.equals(weapon)) {
+            if (codexType == null) codexType = RenderTypes.entitySolid(VESPER_CODEX);
+            pose.pushPose();
+            getParentModel().root().translateAndRotate(pose);
+            getParentModel().rightArm.translateAndRotate(pose);
+            collector.submitCustomGeometry(pose, codexType, (p, vc) -> codex(p, vc, light));
+            pose.popPose();
             return;
         }
         if (dev.veyrath.combat.content.Glaive.ID.equals(weapon)) {
@@ -93,6 +103,18 @@ public final class WeaponLayer<S extends HumanoidRenderState, M extends Humanoid
         box(p, vc, light, hx - 0.5f, 43, hz - 0.35f, hx + 0.5f, 55, hz + 0.35f, 0, 16, 16, 32);
         box(p, vc, light, hx - 0.8f, 56, hz - 0.2f, hx + 0.8f, 60, hz + 0.2f, 0, 0, 16, 16);      // point
         box(p, vc, light, hx + 1.6f, 45, hz - 0.25f, hx + 4.2f, 49, hz + 0.25f, 0, 0, 16, 16);    // side crescent
+    }
+
+    /** The Vesper Codex held open in the right hand: two covers, the page block, a clasp and a gem. */
+    private static void codex(PoseStack.Pose p, VertexConsumer vc, int light) {
+        float hx = -1, hy = 11;
+        box(p, vc, light, hx - 4.5f, hy, -4, hx - 0.2f, hy + 0.6f, 2, 24, 0, 32, 8);      // left cover
+        box(p, vc, light, hx + 0.2f, hy, -4, hx + 4.5f, hy + 0.6f, 2, 24, 0, 32, 8);      // right cover
+        box(p, vc, light, hx - 0.4f, hy - 0.2f, -4, hx + 0.4f, hy + 0.7f, 2, 24, 0, 32, 8); // spine
+        box(p, vc, light, hx - 4.2f, hy - 1.2f, -3.6f, hx - 0.3f, hy, 1.6f, 0, 0, 16, 16); // pages, left
+        box(p, vc, light, hx + 0.3f, hy - 1.2f, -3.6f, hx + 4.2f, hy, 1.6f, 0, 0, 16, 16); // pages, right
+        box(p, vc, light, hx + 3.6f, hy - 0.2f, -1.6f, hx + 5.0f, hy + 0.9f, -0.4f, 16, 0, 24, 8); // clasp
+        box(p, vc, light, hx - 0.6f, hy + 0.6f, -1.6f, hx + 0.6f, hy + 1.4f, -0.4f, 16, 8, 24, 16); // gem on the spine
     }
 
     /** One of the twin blades in its hand's space: short grip, small guard, a 15 px blade. */

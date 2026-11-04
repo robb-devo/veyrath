@@ -159,6 +159,37 @@ public final class CombatEffects {
                 }
                 flash(x, y, z, 1.0, 0x908FD0FF, 0.25);
             }
+            // ---- Vesper Codex: violet-blue Aether
+            case "arcane_hit" -> {
+                flash(x, y, z, 0.7, 0xD0B8A8FF, 0.12);
+                sparks(r, x, y, z, fwd, 8, 6.0, 0.1, 0xFFB8C8FF, 0.22);
+                ringFacing(x, y, z, yaw, 0.15, 0.9, 0.16, 0xC08F7CFF);
+            }
+            case "arcane_burst" -> {
+                flash(x, y, z, 1.3, 0xD0C8B8FF, 0.16);
+                Vfx.at(x, y, z).sprite(Sprite.FLARE).size(0.5, 2.2).life(0.24).fadeIn(0).color(0xE0D8D0FF).spawn();
+                sparks(r, x, y, z, fwd, 16, 9.0, 0.12, 0xFFA898FF, 0.3);
+                ringFacing(x, y, z, yaw, 0.3, 1.8, 0.22, 0xC08F7CFF);
+            }
+            case "arcane_nova" -> {
+                flash(x, y, z, 1.8, 0xC0C8B8FF, 0.2);
+                groundRing(x, y - 0.9, z, 0.5, 4.2, 0.5, 0xC08F7CFF);
+                groundRing(x, y - 0.88, z, 0.3, 2.6, 0.35, 0xC0E0D8FF);
+                for (int i = 0; i < 24; i++) {
+                    double a = r.nextDouble() * Math.PI * 2, s = 2 + r.nextDouble() * 4;
+                    Vfx.at(x, y, z).vel(Math.cos(a) * s, 0.5 + r.nextDouble() * 2, Math.sin(a) * s).sprite(Sprite.SPARK).shape(Shape.STREAK).stretch(0.8)
+                            .size(0.12, 0.03).drag(3).life(0.45).fadeIn(0).color(0xFFB8C8FF).spawn();
+                }
+            }
+            case "arcane_pull" -> {
+                for (int i = 0; i < 14; i++) {
+                    double a = r.nextDouble() * Math.PI * 2, d = 1.6 + r.nextDouble() * 1.4;
+                    double px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d;
+                    Vfx.at(px, y + r.nextGaussian() * 0.4, pz).vel((x - px) * 3, 0, (z - pz) * 3).sprite(Sprite.STREAK).shape(Shape.STREAK).stretch(1)
+                            .size(0.12, 0.04).life(0.3).fadeIn(0).color(0xD09080FF).spawn();
+                }
+                flash(x, y, z, 0.9, 0xA08F7CFF, 0.2);
+            }
             case "death" -> {
                 for (int i = 0; i < 18; i++) {
                     Vfx.at(x + r.nextGaussian() * 0.3, y + r.nextGaussian() * 0.45, z + r.nextGaussian() * 0.3)
@@ -208,6 +239,28 @@ public final class CombatEffects {
             double vz = dir.z() * s * 0.7 + r.nextGaussian() * s * 0.45;
             Vfx.at(x, y, z).vel(vx, vy, vz).sprite(Sprite.SPARK).shape(Shape.STREAK).stretch(0.9).size(size, size * 0.3).drag(5).gravity(6)
                     .life(life * (0.6 + r.nextDouble() * 0.6)).fadeIn(0).color(color).spawn();
+        }
+    }
+
+    /**
+     * The visible spell when a grimoire window opens: along a long shape, a bolt of light racing
+     * from the caster's end to the far end with a trail; on a round shape, the gathering glow.
+     */
+    public static void spell(dev.veyrath.combat.math.Vec3 a, dev.veyrath.combat.math.Vec3 b, double radius) {
+        dev.veyrath.combat.math.Vec3 d = b.sub(a);
+        double len = d.length();
+        if (len > 1.5) {
+            dev.veyrath.combat.math.Vec3 v = d.scale(1 / 0.12); // reaches the far end in 0.12 s
+            Vfx.at(a.x(), a.y(), a.z()).vel(v.x(), v.y(), v.z()).sprite(Sprite.GLOW).size(0.5, 0.4).life(0.12).fadeIn(0).color(0xF0D8D0FF).spawn();
+            Vfx.at(a.x(), a.y(), a.z()).vel(v.x(), v.y(), v.z()).sprite(Sprite.SPARK).shape(Shape.STREAK).stretch(0.25).size(0.25, 0.2).life(0.12)
+                    .fadeIn(0).color(0xFFE8E0FF).spawn();
+            for (int i = 0; i < (int) (len * 3); i++) {
+                dev.veyrath.combat.math.Vec3 p = a.lerp(b, i / (len * 3));
+                Vfx.at(p.x(), p.y(), p.z()).sprite(Sprite.GLOW).size(0.22, 0.02).life(0.25).fadeIn(i / (len * 3) * 0.12).color(0x908F7CFF).spawn();
+            }
+        } else {
+            dev.veyrath.combat.math.Vec3 c = a.lerp(b, 0.5);
+            Vfx.at(c.x(), c.y(), c.z()).sprite(Sprite.WAVE).size(radius * 1.2, 0.2).life(0.3).fadeIn(0).color(0x908F7CFF).spawn();
         }
     }
 

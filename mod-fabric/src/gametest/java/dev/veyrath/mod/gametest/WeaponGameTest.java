@@ -115,6 +115,23 @@ public final class WeaponGameTest implements FabricClientGameTest {
             step(context, sp, y, "g06_heavenfall", 2.8, () -> tap(context, o -> o.keyHotbarSlots[3], 40));
             context.waitTicks(40);
 
+            // Vesper Codex on key 9.
+            context.getInput().pressKey(o -> o.keyHotbarSlots[8]);
+            context.waitTicks(10);
+            String codex = context.computeOnClient(mc -> Weapons.of(LocalCombat.fighter().set).id());
+            check(Weapons.GRIMOIRE.id().equals(codex), "key 9 draws the Vesper Codex (" + codex + ")");
+            step(context, sp, y, "r01_bolts", 6.0, () -> {
+                tap(context, ATTACK, 4);
+                tap(context, ATTACK, 4);
+                tap(context, ATTACK, 7);
+            });
+            step(context, sp, y, "r02_nova", 2.0, () -> tap(context, USE, 8));
+            step(context, sp, y, "r03_arcane_lance", 8.0, () -> tap(context, o -> o.keyHotbarSlots[0], 12));
+            step(context, sp, y, "r04_star_mine", 5.0, () -> tap(context, o -> o.keyHotbarSlots[1], 17));
+            step(context, sp, y, "r05_rift_pull", 5.0, () -> tap(context, o -> o.keyHotbarSlots[2], 9));
+            step(context, sp, y, "r06_vesper_nova", 4.0, () -> tap(context, o -> o.keyHotbarSlots[3], 50));
+            context.waitTicks(40);
+
             context.getInput().pressKey(o -> o.keyHotbarSlots[4]);
             context.waitTicks(10);
             String back = context.computeOnClient(mc -> Weapons.of(LocalCombat.fighter().set).id());

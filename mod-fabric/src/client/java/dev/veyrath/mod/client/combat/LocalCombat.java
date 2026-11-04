@@ -385,9 +385,20 @@ public final class LocalCombat {
 
     /** Light along every bone-attached capsule of the live windows (weapon swings; fists too, faintly). */
     private static void bladeTrail(LocalPlayer p) {
-        boolean armed = dev.veyrath.combat.content.Weapons.of(fighter.set) != dev.veyrath.combat.content.Weapons.UNARMED;
-        if (!armed) return;
+        var weapon = dev.veyrath.combat.content.Weapons.of(fighter.set);
+        if (weapon == dev.veyrath.combat.content.Weapons.UNARMED) return;
         Move m = fighter.move();
+        if (weapon == dev.veyrath.combat.content.Weapons.GRIMOIRE) {
+            // Spells show once, as their window opens.
+            for (int wi : fighter.activeWindows()) {
+                var w = m.hits.get(wi);
+                if (fighter.moveTick() != w.from()) continue;
+                for (HitDetector.Capsule c : HitDetector.sweep(m, w, fighter.moveTick(), CombatContent.CLIPS, feet(p), fighter.yaw, p.getScale())) {
+                    CombatEffects.spell(c.a(), c.b(), c.radius());
+                }
+            }
+            return;
+        }
         for (int wi : fighter.activeWindows()) {
             var w = m.hits.get(wi);
             for (HitDetector.Capsule c : HitDetector.sweep(m, w, fighter.moveTick(), CombatContent.CLIPS, feet(p), fighter.yaw, p.getScale())) {

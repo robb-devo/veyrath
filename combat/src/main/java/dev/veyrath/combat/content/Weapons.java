@@ -19,9 +19,10 @@ public final class Weapons {
     public static final Weapon GREATSWORD = new Weapon(Greatsword.ID, "Oathcleaver", Greatsword.moveSet(UNARMED.moves()), "gs_stance_idle");
     public static final Weapon TWIN_BLADES = new Weapon(TwinBlades.ID, "Wren and Thorn", TwinBlades.moveSet(UNARMED.moves()), "tb_stance_idle");
     public static final Weapon GLAIVE = new Weapon(Glaive.ID, "Skyreach", Glaive.moveSet(UNARMED.moves()), "gl_stance_idle");
+    public static final Weapon GRIMOIRE = new Weapon(Grimoire.ID, "Vesper Codex", Grimoire.moveSet(UNARMED.moves()), "gr_stance_idle");
 
     /** In swap order (keys 5, 6, ... in stance). */
-    public static final List<Weapon> ALL = List.of(UNARMED, GREATSWORD, TWIN_BLADES, GLAIVE);
+    public static final List<Weapon> ALL = List.of(UNARMED, GREATSWORD, TWIN_BLADES, GLAIVE, GRIMOIRE);
 
     public static final ClipLibrary CLIPS = buildClips();
 
@@ -30,6 +31,7 @@ public final class Weapons {
         Greatsword.clips(lib);
         TwinBlades.clips(lib);
         Glaive.clips(lib);
+        Grimoire.clips(lib);
         return lib;
     }
 

@@ -20,6 +20,8 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   Piercing Gale and the ultimate Heavenfall; own model and texture.
 - Deaths: no red tint; the body fades to white and dissolves into light and ash instead of vanilla's
   smoke puffs.
+- **Vesper Codex**, the grimoire (key 9): ranged Aether bolts, nova, meteor, Arcane Lance, Star Mine,
+  Rift Pull and the ultimate Vesper Nova; own book model and violet spell effects.
 - VEYRATH's own combat sounds (TD-033): 19 cues designed from CC0 recordings replace every
   vanilla sound in combat, tells and the arena; weapon swings whoosh.
 - The Duelist can wield the Oathcleaver (`/veyrath arena duelist <style> greatsword`); weapon

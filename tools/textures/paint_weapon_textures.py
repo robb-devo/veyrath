@@ -123,3 +123,36 @@ fill(24, 0, 32, 8, ash)
 fill(16, 8, 24, 16, cap)
 img.save(OUT3)
 print("wrote", OUT3)
+
+# vesper_codex.png: the grimoire. Cream pages, a deep violet leather cover, a gold clasp, a blue gem.
+OUT4 = OUT.with_name("vesper_codex.png")
+img = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+
+def pages(x, y, w, h):
+    line = y % 3 == 0
+    b = 214 if line else 232
+    return (clamp(b + rng.uniform(-4, 4)), clamp(b - 10), clamp(b - 34), 255)
+
+def page_edge(x, y, w, h):
+    return (clamp(200 - (x % 2) * 18), clamp(186 - (x % 2) * 18), clamp(150 - (x % 2) * 18), 255)
+
+def clasp(x, y, w, h):
+    v = 1 - y / h
+    return (clamp(196 + 40 * v), clamp(150 + 30 * v), clamp(60 + 10 * v), 255)
+
+def cover(x, y, w, h):
+    tool = (x == 2 or x == w - 3 or y == 2 or y == h - 3)
+    b = (70, 34, 96) if tool else (44, 20, 62)
+    return (b[0], b[1], b[2], 255)
+
+def gem(x, y, w, h):
+    hi = x < w / 2 and y < h / 2
+    return (clamp(150 if hi else 60), clamp(210 if hi else 120), clamp(255 if hi else 220), 255)
+
+fill(0, 0, 16, 16, pages)
+fill(0, 16, 16, 32, page_edge)
+fill(16, 0, 24, 8, clasp)
+fill(24, 0, 32, 8, cover)
+fill(16, 8, 24, 16, gem)
+img.save(OUT4)
+print("wrote", OUT4)

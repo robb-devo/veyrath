@@ -93,8 +93,8 @@ framework (TD-032), the Oathcleaver greatsword (playable, all moves land in the 
    kenney.nl). Next: ambience, dynamic music, buses and ducking.
 2. Oathcleaver: `/veyrath arena duelist adept greatsword` arms the Duelist, but its cuts rarely
    connect (DuelistBrain/Reach were built for fists): fix that; feel tuning; own sounds.
-3. Weapons: Oathcleaver (key 6), Wren and Thorn twin blades (key 7) and the Skyreach glaive (key 8)
-   are playable. Next: grimoire (roster in the plan). Deaths now fade white and dissolve (own effect); experience orbs and item drops are still vanilla.
+3. Weapons: All five are playable: fists (5), Oathcleaver (6), Wren and Thorn (7), Skyreach (8), Vesper Codex (9).
+   Next: feel tuning per weapon with the owner, Duelist support for every weapon. Deaths now fade white and dissolve (own effect); experience orbs and item drops are still vanilla.
 4. Own combat HUD art (vanilla hearts and hunger still show in stance).
 5. Keep the companion board card current: in the claude-companion folder run
    node scripts/board.js thread veyrath-ch03 --title ... --state ... --where pc --checklist "...".
