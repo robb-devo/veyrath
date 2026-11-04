@@ -82,13 +82,24 @@ spots on steep slopes (crane halves it); Complementary Unbound shows single low 
 and 40) in the arena, not investigated; Photon and Bliss render wrong with DH; the barrage is
 unblockable now (TD-026), answer is the dodge.
 
-## Next steps
+## Next steps (Chapter 03 approved 2026-11-04)
 
-1. Wait for the owner's review of the Chapter 02 acceptance report and his own play test.
-2. Fix what he reports. Likely candidates: tell readability, Duelist fairness per style, camera.
-3. Chapter 01 fine-tuning when he asks: soft biome borders (blend surface and vegetation).
-4. Chapter 03 (weapons and audio) only after his explicit approval; start with a plan like
-   docs/CHAPTER_02_PLAN.md.
+The owner played Chapter 02 and keeps it as the foundation. Chapter 03 (weapons and audio) is
+approved; the no-vanilla rule above applies to everything. Nothing of Chapter 03 is built yet.
+
+1. Write docs/CHAPTER_03_PLAN.md: 4-5 weapons with their own models, animation sets, rhythm,
+   combos, abilities, effects and sound; our own VFX renderer; our own audio; HUD art.
+2. VFX render API (26.3): Fabric LevelRenderEvents.COLLECT_SUBMITS gives a SubmitNodeCollector
+   and PoseStack; submitCustomGeometry(PoseStack, RenderType, CustomGeometryRenderer) draws our
+   own quads; RenderType.create(name, RenderSetup.builder(pipeline).withTexture("Sampler0", id)
+   .createRenderSetup()); pipelines in RenderPipelines (ENTITY_TRANSLUCENT_EMISSIVE etc.),
+   RenderTypes.entityTranslucentEmissive(id). Still to find: the jar holding
+   com.mojang.renderpearl.api.pipeline.RenderPipeline (for custom additive pipelines); test with Iris.
+3. First work package: replace every vanilla particle in CombatEffects with our own effects.
+4. Audio needs sound files: downloads need the owner's OK (source, files, size). Candidates: CC0
+   libraries (Kenney). Then replace vanilla sounds in CombatSounds.
+5. Keep the companion board card current: in the claude-companion folder run
+   node scripts/board.js thread veyrath-ch03 --title ... --state ... --where pc --checklist "...".
 
 ## Build and test
 
