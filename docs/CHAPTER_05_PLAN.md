@@ -47,4 +47,5 @@ follow-through springs, banking into turns, foot planting).
 
 | WP | State |
 |---|---|
-| 1 Skinned mesh pipeline | Starting |
+| 1 Skinned mesh pipeline | Done: `.vmesh` loader and CPU skinning (client/dragon/SkinnedMesh), DragonRenderer through `RenderTypes.entityCutout` (lit by the world), procedural test animation; game test `dragon` photographs her from eight sides (`docs/media/dragon/wp1_first_render.jpg`). Still to check: with Complementary shaders |
+| 2 Model | v1 generated (tools/models/build_dragon.py: 56 bones, 11 893 vertices, 20 222 triangles; preview offline with tools/models/preview_mesh.py). Next: art passes (head shape, wing proportions, tail fin, scale density) |

@@ -111,6 +111,10 @@ framework (TD-032), the Oathcleaver greatsword (playable, all moves land in the 
    (own creative tab "VEYRATH"); weapon items are drawn when you enter stance holding them.
 6. Chapter 05 (dragons) approved 11-04, plan and status in docs/CHAPTER_05_PLAN.md: a generated,
    skinned triangle-mesh wyvern ("Vaelith"), not a box model. Work package order in the plan.
+   Done: WP1 pipeline (client/dragon: SkinnedMesh, DragonRenderer, DragonAnimator procedural
+   placeholder; main/dragon: DragonEntity, DragonEntities "veyrath:vaelith"), model v1 from
+   `python tools/models/build_dragon.py`, game test `dragon`. Bone frames: local +Z along the bone,
+   rotate about X to bend/lift. Next: WP3 clip system + WP2 art passes, then movement and riding.
 7. Keep the companion board card current: in the claude-companion folder run
    node scripts/board.js thread veyrath-ch03 --title ... --state ... --where pc --checklist "...".
 

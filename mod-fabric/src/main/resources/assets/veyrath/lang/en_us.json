@@ -86,5 +86,6 @@
   "item.veyrath.sun_sigil": "Sunless Sigil",
   "entity.veyrath.hollow_sun": "The Hollow Sun",
   "veyrath.boss.hollow_sun": "The Hollow Sun",
-  "veyrath.boss.hollow_sun.epithet": "A star that burned out and would not die"
+  "veyrath.boss.hollow_sun.epithet": "A star that burned out and would not die",
+  "entity.veyrath.vaelith": "Vaelith"
 }

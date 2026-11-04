@@ -16,6 +16,7 @@ public final class VeyrathClient implements ClientModInitializer {
         CombatClient.init();
         ArenaRenderers.init();
         dev.veyrath.mod.client.boss.BossClient.init();
+        net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(dev.veyrath.mod.dragon.DragonEntities.VAELITH, dev.veyrath.mod.client.dragon.DragonRenderer::new);
         dev.veyrath.mod.client.audio.VeyrathMusic.init();
         VeyrathMod.LOG.info("VEYRATH client initialised");
     }
