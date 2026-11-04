@@ -53,6 +53,7 @@ public final class DragonGameTest implements FabricClientGameTest {
                 shot(context, "ds_" + st.name().toLowerCase(Locale.ROOT));
             }
             ride(context, server, y);
+            horn(context, server, y);
         }
         if (!failures.isEmpty()) throw new AssertionError("dragon test: " + String.join("; ", failures));
         LOG.info("dragon test done");
@@ -115,6 +116,42 @@ public final class DragonGameTest implements FabricClientGameTest {
         context.waitTicks(10);
         shot(context, "dr_07_landed");
         LOG.info("start {} climb {}", startY, climbY);
+    }
+
+    /** The Storm Horn: she arrives from the sky far off and lands near the player. */
+    private void horn(ClientGameTestContext context, net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext server, int y) {
+        server.runOnServer(s -> {
+            var pl = s.getPlayerList().getPlayers().getFirst();
+            pl.stopRiding();
+            for (var lvl : s.getAllLevels()) for (var e : lvl.getAllEntities()) if (e instanceof DragonEntity d) d.discard();
+            pl.teleportTo(pl.level(), 200.5, y, 200.5, java.util.Set.of(), 0, -5, true);
+            pl.getInventory().setItem(0, new net.minecraft.world.item.ItemStack(dev.veyrath.mod.item.VeyrathItems.STORM_HORN));
+            pl.getInventory().setSelectedSlot(0);
+        });
+        context.waitTicks(40);
+        context.getInput().pressKey(o -> o.keyUse);
+        context.waitTicks(5);
+        boolean came = server.computeOnServer(s -> dragon(s) != null);
+        check(came, "the horn brings her");
+        boolean landed = false;
+        int shots = 0;
+        for (int i = 0; i < 60 && !landed; i++) {
+            context.waitTicks(10);
+            context.runOnClient(mc -> {
+                for (var e : mc.level.entitiesForRendering()) if (e instanceof DragonEntity d) {
+                    var to = d.position().subtract(mc.player.position());
+                    mc.player.setYRot((float) Math.toDegrees(Math.atan2(-to.x, to.z)));
+                    mc.player.setXRot((float) -Math.toDegrees(Math.atan2(to.y + 2, to.horizontalDistance())));
+                }
+            });
+            if (i % 4 == 0 && shots < 8) shot(context, "dh_" + (shots++) + "_arrive");
+            landed = server.computeOnServer(s -> dragon(s) != null && !dragon(s).flying() && dragon(s).mode() == DragonEntity.Mode.STAY);
+        }
+        check(landed, "she lands");
+        double dist = server.computeOnServer(s -> dragon(s).distanceTo(s.getPlayerList().getPlayers().getFirst()));
+        check(dist < 14, "she lands near the player (" + Math.round(dist) + " blocks)");
+        context.waitTicks(20);
+        shot(context, "dh_9_landed");
     }
 
     private static void view(ClientGameTestContext context, net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext server,

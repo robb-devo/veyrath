@@ -87,5 +87,8 @@
   "entity.veyrath.hollow_sun": "The Hollow Sun",
   "veyrath.boss.hollow_sun": "The Hollow Sun",
   "veyrath.boss.hollow_sun.epithet": "A star that burned out and would not die",
-  "entity.veyrath.vaelith": "Vaelith"
+  "entity.veyrath.vaelith": "Vaelith",
+  "item.veyrath.storm_horn": "Storm Horn",
+  "veyrath.dragon.answers": "Far off, something vast answers the horn.",
+  "veyrath.dragon.dismissed": "Vaelith takes to the sky."
 }

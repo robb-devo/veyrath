@@ -169,6 +169,28 @@ def sun_sigil():
     c.save_to(OUT / "sun_sigil.png")
 
 
+def storm_horn():
+    """A curved horn bound in silver bands, a storm-blue gem at its mouth."""
+    c = Canvas(N, N)
+    x, y = c.x, c.y
+    pts = [(10 + t * 40 + np.sin(t * 3) * 3, 52 - t * 34 - np.sin(t * np.pi) * 10) for t in np.linspace(0, 1, 24)]
+    d = np.full(x.shape, 1e9)
+    for i in range(len(pts) - 1):
+        t = i / (len(pts) - 1)
+        d = np.minimum(d, sd_segment(x, y, *pts[i], *pts[i + 1]) - (2 + 7 * t))
+    shade = np.clip((y - 10) / 50, 0, 1)[..., None]
+    part(c, d, np.array([0.86, 0.80, 0.66]) * (1.05 - 0.45 * shade))
+    for k in (0.25, 0.5, 0.75):
+        i = int(k * (len(pts) - 1))
+        band = sd_segment(x, y, *pts[i], *pts[i + 1]) - (2.6 + 7 * k)
+        c.over(np.array([0.78, 0.80, 0.86]), aa(band) * 0.9)
+    mouth = sd_circle(x, y, *pts[-1], 6.5)
+    c.over(np.array([0.10, 0.12, 0.18]), aa(mouth))
+    gem = sd_circle(x, y, pts[-1][0] - 2, pts[-1][1] + 2, 2.6)
+    c.over(np.array([0.4, 0.7, 1.0]), aa(gem))
+    c.save_to(OUT / "storm_horn.png")
+
+
 def save_to(self, path):
     path.parent.mkdir(parents=True, exist_ok=True)
     img = np.dstack([np.clip(self.rgb, 0, 1), np.clip(self.a, 0, 1)])
@@ -185,3 +207,4 @@ if __name__ == "__main__":
     vesper_codex()
     oath_sigil()
     sun_sigil()
+    storm_horn()

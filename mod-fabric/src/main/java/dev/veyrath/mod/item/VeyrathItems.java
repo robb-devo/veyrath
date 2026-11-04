@@ -29,7 +29,7 @@ public final class VeyrathItems {
     public static final List<Item> ALL = new ArrayList<>();
     private static final Map<Item, String> WEAPON_OF = new HashMap<>();
 
-    public static Item OATHCLEAVER, WREN_AND_THORN, SKYREACH, VESPER_CODEX, OATH_SIGIL;
+    public static Item OATHCLEAVER, WREN_AND_THORN, SKYREACH, VESPER_CODEX, OATH_SIGIL, STORM_HORN;
     public static ResourceKey<CreativeModeTab> TAB = ResourceKey.create(Registries.CREATIVE_MODE_TAB, VeyrathMod.id("veyrath"));
 
     public static void register() {
@@ -41,6 +41,9 @@ public final class VeyrathItems {
         ALL.add(OATH_SIGIL);
         dev.veyrath.mod.boss.BossEntities.SUN_SIGIL = dev.veyrath.mod.boss.BossEntities.sigil("sun_sigil", dev.veyrath.mod.boss.BossArenas.Arena.SUNLESS_CROWN);
         ALL.add(dev.veyrath.mod.boss.BossEntities.SUN_SIGIL);
+        ResourceKey<Item> horn = ResourceKey.create(Registries.ITEM, VeyrathMod.id("storm_horn"));
+        STORM_HORN = Registry.register(BuiltInRegistries.ITEM, horn, new dev.veyrath.mod.dragon.StormHorn(new Item.Properties().setId(horn).stacksTo(1).rarity(Rarity.EPIC)));
+        ALL.add(STORM_HORN);
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, TAB, FabricCreativeModeTab.builder()
                 .title(Component.translatable("itemGroup.veyrath"))
                 .icon(() -> new ItemStack(OATHCLEAVER))

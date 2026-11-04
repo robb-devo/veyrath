@@ -120,8 +120,8 @@ framework (TD-032), the Oathcleaver greatsword (playable, all moves land in the 
    DragonState (force() for tests). Next: WP4 flight physics on DragonEntity (state derived from
    motion) DONE first version, WP5 riding DONE (DragonEntity.travel on the rider's client, keys via
    DragonEntity.clientKeys set in client/dragon/DragonClient), WP6 camera DONE (DragonClient.view,
-   hooked in CameraMixin). Next: WP7 Storm Horn (item in VeyrathItems, arrival from the sky, circle,
-   land beside the player, call/dismiss), WP8 audio (wing beats, wind, roar, landing; CC0 roars in
+   hooked in CameraMixin). WP7 Storm Horn DONE first version (dragon/StormHorn, DragonEntity modes STAY/ARRIVE/DEPART,
+   owner UUID saved). Next: WP8 audio (wing beats, wind, roar, landing; CC0 roars in
    $TEMP/veyrath_boss_audio_src), WP2 art passes, unridden AI (follow, idle wander), FPS numbers.
    Game test `dragon` = turntable + state gallery + ride (takeoff, flight, glide, dive, land).
 7. Keep the companion board card current: in the claude-companion folder run
