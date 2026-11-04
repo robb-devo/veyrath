@@ -34,6 +34,15 @@ public abstract class CameraMixin {
 
     @Inject(method = "alignWithEntity", at = @At("TAIL"))
     private void veyrath$actionCamera(float partialTick, CallbackInfo ci) {
+        var dragon = dev.veyrath.mod.client.dragon.DragonClient.mount(this.entity);
+        if (this.detached && dragon != null) {
+            // Riding the dragon: far behind and above her, lagging her turns, kept out of terrain.
+            var v = dev.veyrath.mod.client.dragon.DragonClient.view(this.entity, dragon, partialTick);
+            this.setRotation(v.yaw(), v.pitch());
+            this.setPosition(v.pivot());
+            this.move(-this.getMaxZoom(v.distance()), 0.0F, 0.0F);
+            return;
+        }
         if (!this.detached || !ActionCamera.controls(this.entity)) return;
         ActionCamera.View v = ActionCamera.view(this.entity, partialTick);
         // Probe how far back the camera gets as it is and craned up, then let the camera choose.

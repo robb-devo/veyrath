@@ -52,8 +52,69 @@ public final class DragonGameTest implements FabricClientGameTest {
                 context.waitTicks(st == DragonState.ROAR || st == DragonState.LAND || st == DragonState.TAKEOFF ? 14 : 30);
                 shot(context, "ds_" + st.name().toLowerCase(Locale.ROOT));
             }
+            ride(context, server, y);
         }
+        if (!failures.isEmpty()) throw new AssertionError("dragon test: " + String.join("; ", failures));
         LOG.info("dragon test done");
+    }
+
+    private final java.util.List<String> failures = new java.util.ArrayList<>();
+
+    private void check(boolean ok, String what) {
+        LOG.info("{} {}", ok ? "PASS" : "FAIL", what);
+        if (!ok) failures.add(what);
+    }
+
+    /** Mount, take off with jump, fly forward with the look raised, glide, come down and land. */
+    private void ride(ClientGameTestContext context, net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext server, int y) {
+        server.runOnServer(s -> {
+            DragonEntity d = dragon(s);
+            d.force(null);
+            d.setNoGravity(false);
+            d.snapTo(0.5, y, 0.5, 0, 0);
+        });
+        context.waitTicks(20);
+        server.runOnServer(s -> s.getPlayerList().getPlayers().getFirst().startRiding(dragon(s)));
+        context.waitTicks(20);
+        check(context.computeOnClient(mc -> mc.player.getVehicle() instanceof DragonEntity), "the player rides her");
+        shot(context, "dr_01_mounted");
+        context.runOnClient(mc -> mc.player.setXRot(-15));
+        context.getInput().holdKeyFor(o -> o.keyJump, 30);
+        context.getInput().holdKey(o -> o.keyUp);
+        context.waitTicks(10);
+        double startY = context.computeOnClient(mc -> mc.player.getVehicle().getY());
+        boolean flew = context.computeOnClient(mc -> ((DragonEntity) mc.player.getVehicle()).flying());
+        check(flew, "jump takes off");
+        shot(context, "dr_02_takeoff");
+        context.waitTicks(60);
+        double climbY = context.computeOnClient(mc -> mc.player.getVehicle().getY());
+        check(climbY > y + 6, "she climbs (" + Math.round(climbY - y) + " blocks)");
+        shot(context, "dr_03_flight");
+        context.runOnClient(mc -> mc.player.setYRot(mc.player.getYRot() + 70));
+        context.waitTicks(30);
+        shot(context, "dr_04_turn");
+        context.runOnClient(mc -> mc.player.setXRot(10));
+        context.getInput().releaseKey(o -> o.keyUp);
+        context.waitTicks(40);
+        shot(context, "dr_05_glide");
+        String st = server.computeOnServer(s -> dragon(s).state().name());
+        LOG.info("gliding state: {}", st);
+        context.runOnClient(mc -> mc.player.setXRot(40));
+        context.getInput().holdKey(o -> o.keySprint);
+        context.waitTicks(30);
+        shot(context, "dr_06_dive");
+        context.getInput().releaseKey(o -> o.keySprint);
+        double dist = context.computeOnClient(mc -> Math.hypot(mc.player.getVehicle().getX(), mc.player.getVehicle().getZ()));
+        check(dist > 40, "she covers ground in flight (" + Math.round(dist) + " blocks)");
+        boolean landed = false;
+        for (int i = 0; i < 40 && !landed; i++) {
+            context.waitTicks(10);
+            landed = context.computeOnClient(mc -> !((DragonEntity) mc.player.getVehicle()).flying());
+        }
+        check(landed, "she lands");
+        context.waitTicks(10);
+        shot(context, "dr_07_landed");
+        LOG.info("start {} climb {}", startY, climbY);
     }
 
     private static void view(ClientGameTestContext context, net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext server,
