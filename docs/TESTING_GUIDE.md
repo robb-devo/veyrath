@@ -224,6 +224,12 @@ selected there) and set it back afterwards.
   1.6 blocks to the player's eyes. Then the player runs uphill in stance for three seconds. Not at
   a waterfall: the stance does not open in water.
 
+- **vfx** (`VfxGalleryGameTest`, screenshots `fx_*`): every effect id of the own effects engine,
+  played in front of the camera; each must spawn particles.
+- **weapons** (`WeaponGameTest`, screenshots `w01`–`w10`): key 6 draws the Oathcleaver (client
+  and server agree), its string, heavy, three abilities and ultimate land on three husks, key 5
+  goes back to the fists, no input rejected.
+
 What the tests cannot judge and needs hands on the keyboard: how readable the Duelist's tells
 are, whether each style feels fair, camera comfort in mountains, and how the effects feel.
 Effect strength is set in `config/veyrath-client.properties` (written on first start):

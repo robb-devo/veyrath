@@ -26,6 +26,17 @@ Each weapon answers a different question in a fight, so none is a reskin of anot
 Swapping: in stance, the mouse wheel or keys 5–8 cycles the equipped weapon (a short draw
 animation, input buffered). Out of stance, weapons are items in VEYRATH's own models.
 
+## Status (2026-11-04)
+
+| WP | State |
+|---|---|
+| 1 Own effects engine | Done: all combat effects and biome atmosphere; gallery test with and without shaders (`docs/media/vfx/`) |
+| 2 Own audio | Waiting for the owner's OK to download CC0 libraries |
+| 3 Weapon framework | Done: swap keys 5 and 6, server agreement, held models, HUD name |
+| 4 Oathcleaver | First playable version: all moves land in the weapon test (`docs/media/weapons/`); own sounds and feel tuning still to come |
+| 5-7 Twin blades, glaive, grimoire | Open |
+| 8 Own HUD art | Open |
+
 ## Work packages
 
 | WP | What | Done when |

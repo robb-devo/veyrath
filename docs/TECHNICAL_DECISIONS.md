@@ -426,3 +426,21 @@ rate. Duelist tells reach clients as `veyrath:vfx` payloads.
 **Why.** The owner's no-vanilla rule. Alpha-blended light looked muddy (orange over blue sky
 turned brown); additive light reads as light. Verified by the `vfx` gallery game test
 (15 effects, with and without Complementary Unbound; `docs/media/vfx/`).
+
+## TD-032 — Weapons are move sets; the server waits through its own hit-stop
+
+**Status:** Accepted · 2026-11-04
+
+**Decision.** A weapon (`combat/content/Weapons`) is a move set plus a stance loop; clips of all
+weapons share one library. `Fighter.equip` swaps only between actions. In stance keys 5 and 6
+draw the fists and the Oathcleaver; the client equips at once and tells the server
+(`veyrath:weapon_select`), which confirms or corrects to the player and tells viewers
+(`veyrath:weapon`). The drawn weapon is rendered by `WeaponLayer` on every humanoid renderer, in
+the hand's space after the model root and the posed right arm, on the same line as the server's
+blade hit shape. A request that the server's copy cannot start yet now waits up to the retry
+window plus the total hit-stop of the move it is still in (at most 12 ticks).
+
+**Why.** Weapons differ in rhythm, strings and abilities, not in rules, so a move set is the
+whole difference. The greatsword's long hit-stops (4 to 10 ticks) held the server's copy back
+further than the 3-tick retry window: the weapon test saw a cross-string cut rejected with the
+server 5 ticks behind (`rejected LIGHT gs_slash_3 ... gs_slash_2 t=3`).

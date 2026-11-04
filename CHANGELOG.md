@@ -3,7 +3,22 @@
 All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follow
 `<semver>-ch<chapter>`.
 
-## [Unreleased] — 0.2.0-ch02
+## [Unreleased] — 0.3.0-ch03 (in progress)
+
+### Added
+- VEYRATH's own effects engine (TD-031): every combat effect and the biome atmosphere (ash,
+  spores, pollen, Aether motes) is drawn with our own textures and render pipelines; no vanilla
+  particle is left in combat or in the biomes. Works with Complementary Unbound.
+- Weapon framework (TD-032): weapons are move sets, swapped with keys 5 and 6 in stance.
+- **Oathcleaver**, the greatsword: three-cut string, heavy sweep and charged full turn, air
+  cleave and plunge, parry riposte, Rending Arc, Grave Drop, Guard Crush and the ultimate
+  Sundering Verdict; its own model and texture, blade trail and slash effects.
+- Game tests `vfx` (effects gallery) and `weapons`.
+
+### Changed
+- The server's copy of a fighter waits through its own hit-stop before rejecting an input.
+
+## [Released to the owner] — 0.2.0-ch02
 
 ### Added
 - **Combat core** (`combat/`, pure Java, headless tests): fighter state machine, input buffer,
