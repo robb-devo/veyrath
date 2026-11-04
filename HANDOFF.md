@@ -109,7 +109,9 @@ framework (TD-032), the Oathcleaver greatsword (playable, all moves land in the 
    <boss sources> <kenney sources>`. Open: owner's play test and tuning, performance numbers, report. Owner's combat notes in
    docs/COMBAT_POLISH.md: revisit after he plays the bosses. New items go in VeyrathItems.ALL
    (own creative tab "VEYRATH"); weapon items are drawn when you enter stance holding them.
-6. Keep the companion board card current: in the claude-companion folder run
+6. Chapter 05 (dragons) approved 11-04, plan and status in docs/CHAPTER_05_PLAN.md: a generated,
+   skinned triangle-mesh wyvern ("Vaelith"), not a box model. Work package order in the plan.
+7. Keep the companion board card current: in the claude-companion folder run
    node scripts/board.js thread veyrath-ch03 --title ... --state ... --where pc --checklist "...".
 
 ## Build and test

@@ -24,7 +24,9 @@ Later decisions by the owner that change its scope:
   together, then expand. His combat notes are logged in docs/COMBAT_POLISH.md, to revisit after he
   plays the bosses. Items go in VEYRATH's own creative tab instead of commands.
 
-Chapter 05 still needs his explicit approval.
+- 2026-11-04 (afternoon): Chapter 05 (dragons) approved, verbatim: "Also really go absolute full
+  put on dragons. U will most likely need bunch of sessions. Thats fully alright". The Chapter 04
+  bosses wait for his play test (tuning and report after his notes). Plan: docs/CHAPTER_05_PLAN.md.
 
 ---
 
