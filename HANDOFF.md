@@ -102,7 +102,11 @@ framework (TD-032), the Oathcleaver greatsword (playable, all moves land in the 
    toasts and the potion swirl, crit and sweep particles are blocked. Game test `hud`.
    Still vanilla: chat, menus, inventory screens, block-break, rain and other world particles,
    world ambience sounds, experience orbs and item drops.
-5. Chapter 04 (bosses) approved 11-04, plan in docs/CHAPTER_04_PLAN.md. Owner's combat notes in
+5. Chapter 04 (bosses) approved 11-04, plan and status in docs/CHAPTER_04_PLAN.md. Both bosses
+   playable (Varek: content/Varek + boss/VarekEntity; Hollow Sun: content/HollowSun +
+   boss/HollowSunEntity + client/boss/HollowSunBody); arenas in boss/BossArenas (x 1000 and 2000 in
+   the proving_grounds dimension). Rebuild boss sounds: `python tools/audio/build_boss_sounds.py
+   <boss sources> <kenney sources>`. Open: owner's play test and tuning, performance numbers, report. Owner's combat notes in
    docs/COMBAT_POLISH.md: revisit after he plays the bosses. New items go in VeyrathItems.ALL
    (own creative tab "VEYRATH"); weapon items are drawn when you enter stance holding them.
 6. Keep the companion board card current: in the claude-companion folder run

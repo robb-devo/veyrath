@@ -115,6 +115,70 @@ public final class Vfx {
 
     public static int count() { return count; }
 
+    /**
+     * Something drawn every frame with the effects' sprites and pipelines (a boss made of light),
+     * rather than spawned as particles. Called twice per frame: glow pass, then soft pass.
+     */
+    public interface Body {
+        void draw(Quads q, float partialTick);
+    }
+
+    private static final java.util.List<Body> BODIES = new java.util.ArrayList<>();
+
+    public static void addBody(Body b) { BODIES.add(b); }
+
+    /** Emits quads in the current pass; coordinates are world positions. */
+    public static final class Quads {
+        PoseStack.Pose pose;
+        VertexConsumer vc;
+        Vec3 cam;
+        float[] axes;
+        boolean soft;
+
+        /** True in the soft (alpha-blended, lit) pass, false in the glow (additive) pass. */
+        public boolean soft() { return soft; }
+
+        public void billboard(Sprite s, double x, double y, double z, double size, double rot, int argb) {
+            float lx = axes[0], ly = axes[1], lz = axes[2], ux = axes[3], uy = axes[4], uz = axes[5];
+            float cs = (float) Math.cos(rot), sn = (float) Math.sin(rot), k = (float) size;
+            float ax = (lx * cs + ux * sn) * k, ay = (ly * cs + uy * sn) * k, az = (lz * cs + uz * sn) * k;
+            float bx = (ux * cs - lx * sn) * k, by = (uy * cs - ly * sn) * k, bz = (uz * cs - lz * sn) * k;
+            float px = (float) (x - cam.x), py = (float) (y - cam.y), pz = (float) (z - cam.z);
+            corners(s, px - ax - bx, py - ay - by, pz - az - bz, px + ax - bx, py + ay - by, pz + az - bz,
+                    px + ax + bx, py + ay + by, pz + az + bz, px - ax + bx, py - ay + by, pz - az + bz, argb, false);
+        }
+
+        /** A quad through four world points (in order round the quad), seen from both sides. */
+        public void quad(Sprite s, double x0, double y0, double z0, double x1, double y1, double z1, double x2, double y2, double z2,
+                         double x3, double y3, double z3, int argb) {
+            corners(s, (float) (x0 - cam.x), (float) (y0 - cam.y), (float) (z0 - cam.z), (float) (x1 - cam.x), (float) (y1 - cam.y), (float) (z1 - cam.z),
+                    (float) (x2 - cam.x), (float) (y2 - cam.y), (float) (z2 - cam.z), (float) (x3 - cam.x), (float) (y3 - cam.y), (float) (z3 - cam.z), argb, true);
+        }
+
+        private void corners(Sprite s, float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2,
+                             float x3, float y3, float z3, int argb, boolean both) {
+            int a = argb >>> 24, r = (argb >> 16) & 0xFF, g = (argb >> 8) & 0xFF, b = argb & 0xFF;
+            if (a <= 2) return;
+            if (soft) {
+                float lit = light(cam.x + x0, cam.y + y0, cam.z + z0);
+                r = Math.round(r * lit); g = Math.round(g * lit); b = Math.round(b * lit);
+            }
+            int cell = s.ordinal();
+            float u0 = (cell % GRID) / (float) GRID, v0 = (cell / GRID) / (float) GRID, u1 = u0 + 1f / GRID, v1 = v0 + 1f / GRID;
+            quadsDrawn++;
+            vertex(pose, vc, x0, y0, z0, r, g, b, a, u0, v1);
+            vertex(pose, vc, x1, y1, z1, r, g, b, a, u1, v1);
+            vertex(pose, vc, x2, y2, z2, r, g, b, a, u1, v0);
+            vertex(pose, vc, x3, y3, z3, r, g, b, a, u0, v0);
+            if (both) {
+                vertex(pose, vc, x3, y3, z3, r, g, b, a, u0, v0);
+                vertex(pose, vc, x2, y2, z2, r, g, b, a, u1, v0);
+                vertex(pose, vc, x1, y1, z1, r, g, b, a, u1, v1);
+                vertex(pose, vc, x0, y0, z0, r, g, b, a, u0, v1);
+            }
+        }
+    }
+
     /** Frames that submitted geometry, quads drawn and particles spawned since start (tests and diagnostics). */
     public static long submittedFrames, quadsDrawn, spawned;
 
@@ -216,7 +280,7 @@ public final class Vfx {
         }
         double scale = mc.isPaused() ? 0 : mc.level.tickRateManager().tickrate() / 20.0;
         update(dt * scale);
-        if (count == 0) return;
+        if (count == 0 && BODIES.isEmpty()) return;
         if (glowType == null) {
             glowType = RenderType.create("veyrath_vfx_glow", RenderSetup.builder(ADDITIVE).withTexture("Sampler0", ATLAS).useOverlay()
                     .createRenderSetup());
@@ -232,13 +296,23 @@ public final class Vfx {
         float[] axes = {-l.x(), -l.y(), -l.z(), u.x(), u.y(), u.z(), f.x(), f.y(), f.z()};
         for (int pass = 0; pass < 2; pass++) {
             final boolean wantSmoke = pass == 1;
-            boolean any = false;
+            boolean any = !BODIES.isEmpty();
             for (int i = 0; i < count && !any; i++) any = smoke[i] == wantSmoke;
             if (!any) continue;
             submittedFrames++;
             ctx.submitNodeCollector().submitCustomGeometry(ctx.poseStack(), wantSmoke ? smokeType : glowType, (pose, vc) -> {
                 for (int i = 0; i < count; i++) {
                     if (smoke[i] == wantSmoke) emit(pose, vc, i, c, axes);
+                }
+                if (!BODIES.isEmpty()) {
+                    Quads q = new Quads();
+                    q.pose = pose;
+                    q.vc = vc;
+                    q.cam = c;
+                    q.axes = axes;
+                    q.soft = wantSmoke;
+                    float pt = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+                    for (Body b : BODIES) b.draw(q, pt);
                 }
             });
         }

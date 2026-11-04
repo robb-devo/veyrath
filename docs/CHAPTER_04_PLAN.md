@@ -41,4 +41,7 @@ spectacle (note 1) is built into the bosses' own effects from the start.
 |---|---|
 | 1 Boss framework | Done (TD-036): BossEntity, BossBrain, phases, wake and reset, boss bar and music, name card, boss effects (BossEffects) and sounds (build_boss_sounds.py), Oath Hall arena, Oath Sigil in the creative tab, `/veyrath boss oath_hall` |
 | 3 Varek | First playable version: model, texture, 10 moves over three phases, tells, effects, sounds; game test `boss` passes (all phases, 4-6 attacks each, his blows land) |
-| 4 The Hollow Sun | Next |
+| 4 The Hollow Sun | First playable version: a body drawn as light (dead core, corona, three turning rings, orbiting shards), seven casts over three phases (sweeping beams, marked starfall, shard volleys, gravity well and implosion, the nova that only the monoliths' shadow survives, the shatter that drops the outer ring, the flare), exhausted sinks that open it to melee; the Sunless Crown arena, the Sunless Sigil; game test `sun` passes |
+| 2 Telegraphs | Every attack of both bosses has a tell (glint, flare, gathering light, burning ground marks) |
+| 6 Entry | Done: Oath Sigil and Sunless Sigil in the creative tab; `/veyrath boss <arena>` |
+| 5 Presentation, 7 acceptance | Next: owner's play test, tuning, performance numbers, report |

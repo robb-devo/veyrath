@@ -82,5 +82,9 @@
   "subtitles.veyrath.combat.boss_death": "A giant falls",
   "subtitles.veyrath.combat.boss_grunt": "A giant heaves",
   "subtitles.veyrath.combat.boss_fire": "The brand ignites",
-  "subtitles.veyrath.combat.boss_slam": "The ground breaks"
+  "subtitles.veyrath.combat.boss_slam": "The ground breaks",
+  "item.veyrath.sun_sigil": "Sunless Sigil",
+  "entity.veyrath.hollow_sun": "The Hollow Sun",
+  "veyrath.boss.hollow_sun": "The Hollow Sun",
+  "veyrath.boss.hollow_sun.epithet": "A star that burned out and would not die"
 }

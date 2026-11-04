@@ -150,6 +150,25 @@ def oath_sigil():
     c.save_to(OUT / "oath_sigil.png")
 
 
+def sun_sigil():
+    """A black seal with a ring of pale fire round a dead core (the key to the Sunless Crown)."""
+    c = Canvas(N, N)
+    x, y = c.x, c.y
+    disc = sd_circle(x, y, 32, 32, 25)
+    part(c, disc, np.array([0.10, 0.09, 0.12]))
+    gilded(c, np.abs(disc + 2.2) - 2.0, 2.0)
+    ring = np.abs(sd_circle(x, y, 32, 32, 11)) - 2.2
+    glow = np.exp(-np.abs(sd_circle(x, y, 32, 32, 11)) / 4.5) * (disc < -3)
+    c.over(np.array([1.0, 0.78, 0.35]), glow * 0.7)
+    c.over(np.array([1.0, 0.92, 0.7]), aa(ring))
+    c.over(np.array([0.03, 0.02, 0.04]), aa(sd_circle(x, y, 32, 32, 8.2)))
+    for k in range(8):
+        a = k * np.pi / 4
+        ray = sd_segment(x, y, 32 + np.cos(a) * 14, 32 + np.sin(a) * 14, 32 + np.cos(a) * 19, 32 + np.sin(a) * 19) - 1.0
+        c.over(np.array([1.0, 0.85, 0.5]), aa(ray) * 0.9)
+    c.save_to(OUT / "sun_sigil.png")
+
+
 def save_to(self, path):
     path.parent.mkdir(parents=True, exist_ok=True)
     img = np.dstack([np.clip(self.rgb, 0, 1), np.clip(self.a, 0, 1)])
@@ -165,3 +184,4 @@ if __name__ == "__main__":
     skyreach()
     vesper_codex()
     oath_sigil()
+    sun_sigil()

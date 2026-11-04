@@ -14,6 +14,11 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   cleave and plunge, parry riposte, Rending Arc, Grave Drop, Guard Crush and the ultimate
   Sundering Verdict; its own model and texture, blade trail and slash effects.
 - Game tests `vfx` (effects gallery) and `weapons`.
+- Boss framework (TD-036, TD-037) and the first two bosses: **Varek, the Oathbound** in the Oath
+  Hall and **The Hollow Sun** over the Sunless Crown, each reached with its sigil from the VEYRATH
+  creative tab. Three phases each, readable tells, boss-sized effects and sounds, name cards, boss
+  bars and boss music. Game test `boss`.
+- VEYRATH creative tab: the four weapons as items (hold one and enter stance to fight with it).
 - VEYRATH's own score (TD-034): 20 CC0 orchestral and choir pieces with a mood director (choir on
   the title screen, explore with quiet gaps, tension near hostiles, combat, boss, victory sting),
   crossfaded; vanilla music never plays.

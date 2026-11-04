@@ -46,7 +46,7 @@ public final class BossEffects {
 
     /** True if this effect id is one of ours. */
     public static boolean handles(String id) {
-        return id.startsWith("vk_") || id.startsWith("boss_") || id.startsWith("tell_area");
+        return id.startsWith("vk_") || id.startsWith("hs_") || id.startsWith("boss_") || id.startsWith("tell_area");
     }
 
     public static void play(RandomSource r, String id, double x, double y, double z, double yaw) {
@@ -157,6 +157,133 @@ public final class BossEffects {
                 shake(x, y, z, 0.6);
             }
             case "vk_ember" -> embers(r, x, y, z, 2, 0.4);
+            // ---- The Hollow Sun
+            case "hs_gather" -> {
+                for (int i = 0; i < 24; i++) {
+                    double a = r.nextDouble() * Math.PI * 2, b = r.nextDouble() * Math.PI - Math.PI / 2, d = 5 + r.nextDouble() * 2;
+                    double ox = Math.cos(a) * Math.cos(b) * d, oy = Math.sin(b) * d, oz = Math.sin(a) * Math.cos(b) * d;
+                    Vfx.at(x + ox, y + oy, z + oz).vel(-ox * 1.6, -oy * 1.6, -oz * 1.6).sprite(Sprite.GLOW).size(0.25, 0.05).life(0.6)
+                            .color(0xE0FFD080).spawn();
+                }
+                flare(x, y, z, 3, 0xFFFFE0A0, 0.5);
+            }
+            case "hs_beam" -> {
+                // From the sun's core to where the beam meets the floor: a hot line, a burn where it lands.
+                double[] sun = nearestSun(x, y, z);
+                double sx = sun == null ? x : sun[0], sy = sun == null ? y + 6 : sun[1], sz = sun == null ? z : sun[2];
+                double dx = x - sx, dy = y - sy, dz = z - sz, len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                int n = (int) (len * 2.5);
+                for (int i = 0; i < n; i++) {
+                    double t = i / (double) n;
+                    Vfx.at(sx + dx * t, sy + dy * t, sz + dz * t).sprite(Sprite.GLOW).size(0.55, 0.3).life(0.12).fadeIn(0).color(0xC0FFE8B0).spawn();
+                }
+                for (int i = 0; i < 18; i++) {
+                    double t = r.nextDouble() * 0.9;
+                    double gx = sx + (x - sx) * (0.1 + t), gz = sz + (z - sz) * (0.1 + t);
+                    Vfx.at(gx, y + 0.05, gz).shape(Shape.GROUND).sprite(Sprite.GLOW).size(0.7, 0.5).life(0.5).fadeIn(0).color(0x90FF9A40).spawn();
+                }
+                flash(x, y + 0.3, z, 2.4, 0xC0FFE0A0, 0.15);
+                sparks(r, x, y + 0.2, z, 6, 6, 0.12, EMBER, 0.4);
+            }
+            case "hs_star" -> {
+                // A star falls from high above and bursts on the mark.
+                for (int i = 0; i < 6; i++) {
+                    int k = i;
+                    later(i, () -> {
+                        double h = 30 - k * 5;
+                        Vfx.at(x, y + h, z).vel(0, -60, 0).sprite(Sprite.SPARK).shape(Shape.STREAK).stretch(0.25).size(1.0, 0.5).life(0.1)
+                                .fadeIn(0).color(0xFFFFF0C8).spawn();
+                        Vfx.at(x, y + h, z).sprite(Sprite.GLOW).size(1.6, 0.8).life(0.1).fadeIn(0).color(0xC0FFC870).spawn();
+                    });
+                }
+                later(6, () -> blow(r, x, y + 1.0, z, 0, 1, 0.6, true));
+            }
+            case "hs_shard" -> {
+                double[] sun = nearestSun(x, y, z);
+                if (sun != null) {
+                    double dx = x - sun[0], dy = y - sun[1], dz = z - sun[2];
+                    Vfx.at(sun[0], sun[1], sun[2]).vel(dx / 0.4, dy / 0.4, dz / 0.4).sprite(Sprite.SHARD).size(0.5, 0.5).spin(12).life(0.4).fadeIn(0)
+                            .color(0xFFE8E0D0).smoke().spawn();
+                    Vfx.at(sun[0], sun[1], sun[2]).vel(dx / 0.4, dy / 0.4, dz / 0.4).sprite(Sprite.SPARK).shape(Shape.STREAK).stretch(0.08).size(0.5, 0.3)
+                            .life(0.4).fadeIn(0).color(0xE0FFD8A0).spawn();
+                }
+                ground(x, y - 0.75, z, 0.2, 1.4, 0.45, 0xA0FFD070);
+            }
+            case "hs_shard_hit" -> {
+                flash(x, y, z, 1.6, 0xD0FFF0D0, 0.12);
+                sparks(r, x, y, z, 14, 7, 0.12, 0xFFFFE0B0, 0.4);
+                for (int i = 0; i < 5; i++) Vfx.at(x, y, z).vel(r.nextGaussian() * 3, 2 + r.nextDouble() * 3, r.nextGaussian() * 3).sprite(Sprite.SHARD)
+                        .size(0.2, 0.15).spin(r.nextGaussian() * 8).gravity(18).life(0.8).color(0xFFC8C0B4, 0xC0807870).smoke().spawn();
+                shake(x, y, z, 0.12);
+            }
+            case "hs_well" -> {
+                // Dust and light spiralling in to the foot of the sun.
+                for (int i = 0; i < 40; i++) {
+                    double a = r.nextDouble() * Math.PI * 2, d = 6 + r.nextDouble() * 14;
+                    double px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d;
+                    double tx = -Math.cos(a) * d / 0.9 - Math.sin(a) * 6, tz = -Math.sin(a) * d / 0.9 + Math.cos(a) * 6;
+                    Vfx.at(px, y + 0.2 + r.nextDouble() * 1.5, pz).vel(tx, 0, tz).sprite(i % 3 == 0 ? Sprite.SMOKE : Sprite.GLOW).size(0.4, 0.1)
+                            .life(0.9).color(i % 3 == 0 ? DUST : 0xC0D8C8FF, 0x00D8C8FF).drag(0.2).spawn();
+                }
+                ground(x, y, z, 14, 1, 0.9, 0x709A80FF);
+            }
+            case "hs_implode" -> {
+                flash(x, y + 1, z, 8, 0xE0E8E0FF, 0.2);
+                for (int i = 0; i < 3; i++) {
+                    int k = i;
+                    later(i * 2, () -> ground(x, y, z, 0.5, 7 + k * 2, 0.5, k == 0 ? 0xE0FFFFFF : 0x909A80FF));
+                }
+                blow(r, x, y + 1, z, 0, 1, 1.0, false);
+            }
+            case "hs_nova_charge" -> {
+                // The sun swells: light pours in, the corona brightens.
+                for (int i = 0; i < 40; i++) {
+                    double a = r.nextDouble() * Math.PI * 2, b = (r.nextDouble() - 0.5) * Math.PI, d = 9 + r.nextDouble() * 6;
+                    double ox = Math.cos(a) * Math.cos(b) * d, oy = Math.sin(b) * d, oz = Math.sin(a) * Math.cos(b) * d;
+                    Vfx.at(x + ox, y + oy, z + oz).vel(-ox * 1.2, -oy * 1.2, -oz * 1.2).sprite(Sprite.SPARK).shape(Shape.STREAK).stretch(0.2)
+                            .size(0.3, 0.1).life(0.8).color(0xE0FFF0C0).spawn();
+                }
+                flash(x, y, z, 7, 0x80FFE0A0, 0.9);
+                shake(x, y, z, 0.15);
+            }
+            case "hs_nova" -> {
+                flash(x, y, z, 30, 0xF0FFFFFF, 0.35);
+                flash(x, y, z, 60, 0x90FFE0A0, 1.2);
+                for (int i = 0; i < 5; i++) {
+                    int k = i;
+                    later(i * 2, () -> {
+                        ground(x, y - 2.2, z, 1, 12 + k * 7, 0.9, k == 0 ? 0xF0FFFFFF : 0xA0FFD080);
+                        Vfx.at(x, y, z).shape(Shape.ARC).rot(k * 0.7).sprite(Sprite.RING).size(1, 18 + k * 6).stretch(1).life(0.8).color(0x90FFE8C0).spawn();
+                    });
+                }
+                for (int i = 0; i < 120; i++) {
+                    double a = r.nextDouble() * Math.PI * 2, b = (r.nextDouble() - 0.5) * Math.PI, sp = 20 + r.nextDouble() * 25;
+                    Vfx.at(x, y, z).vel(Math.cos(a) * Math.cos(b) * sp, Math.sin(b) * sp, Math.sin(a) * Math.cos(b) * sp).sprite(Sprite.SPARK).shape(Shape.STREAK)
+                            .stretch(0.5).size(0.5, 0.2).drag(1.5).life(1.0 + r.nextDouble() * 0.5).color(0xFFFFF0C8).spawn();
+                }
+                shake(x, y, z, 1.2);
+                dev.veyrath.mod.client.combat.ScreenFx.flash(0xFFF6E8, 0.9);
+            }
+            case "hs_flare", "hs_flare_red" -> {
+                int col = id.equals("hs_flare_red") ? 0xC0FF3A24 : 0xC0FFC060;
+                flash(x, y, z, 14, col, 0.8);
+                for (int i = 0; i < 80; i++) {
+                    double a = r.nextDouble() * Math.PI * 2, b = (r.nextDouble() - 0.5) * Math.PI, sp = 6 + r.nextDouble() * 10;
+                    Vfx.at(x, y, z).vel(Math.cos(a) * Math.cos(b) * sp, Math.sin(b) * sp, Math.sin(a) * Math.cos(b) * sp).sprite(Sprite.GLOW).size(0.35, 0.05)
+                            .drag(1.0).life(1.2 + r.nextDouble()).color(col | 0xFF000000).spawn();
+                }
+                shake(x, y, z, 0.6);
+            }
+            case "hs_crumble" -> {
+                // The outer ring goes: stones break loose and fall into the void, dust hangs.
+                for (int i = 0; i < 30; i++) {
+                    Vfx.at(x + r.nextGaussian() * 3, y - 0.5, z + r.nextGaussian() * 3).vel(r.nextGaussian(), 2 + r.nextDouble() * 3, r.nextGaussian())
+                            .sprite(Sprite.SHARD).size(0.6, 0.4).rot(r.nextDouble() * 6).spin(r.nextGaussian() * 4).gravity(16).life(2.5)
+                            .color(0xFFD8D0C4, 0xC0908880).smoke().spawn();
+                }
+                dust(r, x, y - 1, z, 16, 3, 1.6);
+                shake(x, y, z, 0.3);
+            }
             case "boss_awaken" -> {
                 flash(x, y + 2, z, 6, 0x60D8E0FF, 0.8);
                 dust(r, x, y, z, 30, 4, 1.4);
@@ -183,6 +310,23 @@ public final class BossEffects {
             }
             default -> flash(x, y, z, 1.5, WHITE, 0.2);
         }
+    }
+
+    /** The core of the nearest Hollow Sun to a point (clients), or null. */
+    private static double[] nearestSun(double x, double y, double z) {
+        var mc = Minecraft.getInstance();
+        if (mc.level == null) return null;
+        var box = new net.minecraft.world.phys.AABB(x - 60, y - 30, z - 60, x + 60, y + 40, z + 60);
+        double[] best = null;
+        double bd = Double.MAX_VALUE;
+        for (var e : mc.level.getEntitiesOfClass(dev.veyrath.mod.boss.HollowSunEntity.class, box, v -> true)) {
+            double d = e.distanceToSqr(x, y, z);
+            if (d < bd) {
+                bd = d;
+                best = new double[]{e.getX(), e.getY() + 1.5, e.getZ()};
+            }
+        }
+        return best;
     }
 
     // ------------------------------------------------------------------ building blocks

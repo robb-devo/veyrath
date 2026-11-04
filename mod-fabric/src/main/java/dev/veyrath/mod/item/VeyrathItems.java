@@ -37,8 +37,10 @@ public final class VeyrathItems {
         WREN_AND_THORN = weapon("wren_and_thorn", Weapons.TWIN_BLADES);
         SKYREACH = weapon("skyreach", Weapons.GLAIVE);
         VESPER_CODEX = weapon("vesper_codex", Weapons.GRIMOIRE);
-        OATH_SIGIL = dev.veyrath.mod.boss.BossEntities.sigil("oath_sigil", dev.veyrath.mod.boss.BossArenas.Arena.OATH_HALL);
+        OATH_SIGIL = dev.veyrath.mod.boss.BossEntities.OATH_SIGIL = dev.veyrath.mod.boss.BossEntities.sigil("oath_sigil", dev.veyrath.mod.boss.BossArenas.Arena.OATH_HALL);
         ALL.add(OATH_SIGIL);
+        dev.veyrath.mod.boss.BossEntities.SUN_SIGIL = dev.veyrath.mod.boss.BossEntities.sigil("sun_sigil", dev.veyrath.mod.boss.BossArenas.Arena.SUNLESS_CROWN);
+        ALL.add(dev.veyrath.mod.boss.BossEntities.SUN_SIGIL);
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, TAB, FabricCreativeModeTab.builder()
                 .title(Component.translatable("itemGroup.veyrath"))
                 .icon(() -> new ItemStack(OATHCLEAVER))

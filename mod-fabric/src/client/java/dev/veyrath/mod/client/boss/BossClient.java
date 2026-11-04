@@ -32,6 +32,9 @@ public final class BossClient {
     public static void init() {
         ModelLayerRegistry.registerModelLayer(VAREK, BossClient::varekMesh);
         EntityRendererRegistry.register(BossEntities.VAREK, ctx -> new FighterRenderer<>(ctx, VAREK, VeyrathMod.id("textures/entity/varek.png")));
+        // The Hollow Sun has no model: it is drawn as light by the effects engine.
+        EntityRendererRegistry.register(BossEntities.HOLLOW_SUN, net.minecraft.client.renderer.entity.NoopRenderer::new);
+        dev.veyrath.mod.client.vfx.Vfx.addBody(new HollowSunBody());
         ClientPlayNetworking.registerGlobalReceiver(CombatNet.BossIntroS2C.TYPE, (msg, ctx) -> VeyrathHud.bossIntro(msg.name(), msg.epithet()));
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
             if (mc.level == null || mc.isPaused() || mc.player == null) return;

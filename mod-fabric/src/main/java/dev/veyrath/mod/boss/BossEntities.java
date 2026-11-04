@@ -28,7 +28,12 @@ public final class BossEntities {
             EntityType.Builder.<VarekEntity>of(VarekEntity::new, MobCategory.MONSTER).sized(0.7f, 1.9f).eyeHeight(1.65f)
                     .clientTrackingRange(16).updateInterval(1).fireImmune());
 
-    public static Item OATH_SIGIL;
+    /** A 3-block sphere of rings; it floats (no gravity) over the Crown. */
+    public static final EntityType<HollowSunEntity> HOLLOW_SUN = register("hollow_sun",
+            EntityType.Builder.<HollowSunEntity>of(HollowSunEntity::new, MobCategory.MONSTER).sized(3.0f, 3.0f).eyeHeight(1.5f)
+                    .clientTrackingRange(16).updateInterval(1).fireImmune());
+
+    public static Item OATH_SIGIL, SUN_SIGIL;
 
     private static <T extends Entity> EntityType<T> register(String name, EntityType.Builder<T> builder) {
         ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, VeyrathMod.id(name));
@@ -37,6 +42,7 @@ public final class BossEntities {
 
     public static void register() {
         FabricDefaultAttributeRegistry.register(VAREK, VarekEntity.createAttributes());
+        FabricDefaultAttributeRegistry.register(HOLLOW_SUN, HollowSunEntity.createAttributes());
         VeyrathMod.LOG.debug("Varek scale {}", Varek.SCALE);
     }
 

@@ -502,3 +502,13 @@ poise and hit-stop work against bosses for free. Each attack's windup is its tel
 (glint, flare, ground mark) when the attack starts. A boss's window effects and sounds are sent when
 the window opens, so big blows read even when they miss.
 **Why:** one combat system for everything; bosses differ in data and presentation, not in rules.
+
+## TD-037 — Blasts and bodies of light
+
+**Decision:** attacks that are not swings (a falling star, a beam, a nova) go through
+`CombatServer.blast`: every target in the sphere (optionally only those in plain sight of the
+source) receives the hit through its own fighter, so block, parry, dodge and i-frames apply as to a
+blow. A boss made of light (the Hollow Sun) has no entity model: it is a `Vfx.Body` drawn every
+frame by our effects engine in both passes (additive glow, soft lit), from our atlas sprites.
+**Why:** one hit resolution for every kind of attack; and a star should look like light, not a
+textured cube.

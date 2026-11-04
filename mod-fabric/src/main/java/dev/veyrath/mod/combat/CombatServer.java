@@ -276,6 +276,49 @@ public final class CombatServer {
         ENTRIES.remove(e.getId());
     }
 
+    /** The fighter of an entity that has one (bosses, players in stance), or null. */
+    public static Fighter fighterOf(LivingEntity e) {
+        Entry en = ENTRIES.get(e.getId());
+        return en == null || en.entity != e ? null : en.fighter;
+    }
+
+    /**
+     * A blast that is not a swing: a boss's falling star, beam or nova. Everything it can strike
+     * inside the sphere (and, with {@code needSight}, in plain sight of the source) receives the
+     * hit through its own fighter, so blocks, parries, dodges and their i-frames count as against
+     * a blow. {@code already} (may be null) holds ids hit before and is filled.
+     */
+    public static int blast(LivingEntity source, net.minecraft.world.phys.Vec3 center, double radius, HitSpec spec, boolean needSight,
+                            java.util.Set<Integer> already) {
+        if (!(source.level() instanceof ServerLevel level)) return 0;
+        Entry ae = entryFor(source);
+        int n = 0;
+        AABB box = new AABB(center, center).inflate(radius);
+        for (LivingEntity d : level.getEntitiesOfClass(LivingEntity.class, box, t -> canStrike(source, t))) {
+            if (d.position().add(0, d.getBbHeight() * 0.5, 0).distanceTo(center) > radius + d.getBbWidth() * 0.5) continue;
+            if (already != null && already.contains(d.getId())) continue;
+            if (needSight && !LineOfSight.clear(level, source, d)) continue;
+            if (already != null) already.add(d.getId());
+            Entry de = entryFor(d);
+            if (!de.player) de.fighter.yaw = d.getYRot();
+            net.minecraft.world.phys.Vec3 dp = d.position();
+            Vec3 dir = new Vec3(dp.x - center.x, 0, dp.z - center.z);
+            if (dir.lengthSq() < 1e-6) dir = new Vec3(0, 0, 1);
+            Outcome o = de.fighter.receive(ae.fighter, spec, 0, dir.normalize());
+            count(o);
+            double damage = o.damage() * (ae.mind != null ? ae.mind.brain.damageScale() : 1);
+            if (!de.player && o.velocity() != null) de.fighter.queueVelocity(o.velocity());
+            if (o.dealsDamage()) hurt(level, d, level.damageSources().source(CombatContent.DAMAGE, source), (float) damage);
+            net.minecraft.world.phys.Vec3 at = dp.add(0, d.getBbHeight() * 0.6, 0);
+            playCues(level, null, at, o.sfx());
+            if (o.perfect() && o.result() == Outcome.Result.DODGED) SlowMotion.trigger(level.getServer(), 10, 12);
+            Outcome sent = withVelocities(o, damage, de.player ? o.velocity() : null, null);
+            sendHit(level, source, d, sent, at, "", 0, de.player ? d.getYRot() : de.facing);
+            n++;
+        }
+        return n;
+    }
+
     /** A VEYRATH effect at a point, seen by everyone tracking the source. */
     public static void vfx(LivingEntity source, String id, double x, double y, double z) {
         broadcastVfx(source, id, x, y, z);

@@ -232,6 +232,9 @@ selected there) and set it back afterwards.
 - **boss** (`BossGameTest`, screenshots `b*`): the Oath Hall is built, Varek sleeps until the
   player walks in, wakes (name card, boss bar, boss music), runs at least three different attacks in
   each of his three phases, lands blows on a sturdy player, the oath strike comes in phase 3, he dies.
+  Then the Hollow Sun (screenshots `s*`): it wakes, casts at least three different casts in phase 1,
+  the outer ring breaks in phase 2, the well leaves it exhausted, the nova comes in phase 3 and
+  strikes a player in the open. `-Pveyrath.tests=varek` or `sun` runs one of the two.
 - **hud** (`HudGameTest`, screenshots `hud_01`–`hud_06`): our choir on the title screen, an
   explore piece once in the world and no vanilla music, tension music near hostiles, combat music
   after a hit; the HUD out of stance (items, hurt vitals, armour, XP, effects, compass with the

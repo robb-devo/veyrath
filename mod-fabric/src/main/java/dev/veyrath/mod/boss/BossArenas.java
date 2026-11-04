@@ -27,7 +27,8 @@ public final class BossArenas {
     private BossArenas() {}
 
     public enum Arena {
-        OATH_HALL("oath_hall", 1000, 0, 24);
+        OATH_HALL("oath_hall", 1000, 0, 24),
+        SUNLESS_CROWN("sunless_crown", 2000, 0, 23);
 
         final String id;
         final int cx, cz, radius;
@@ -41,7 +42,7 @@ public final class BossArenas {
 
         Vec3 entry() { return new Vec3(cx + 0.5, FLOOR, cz + radius - 5.5); }
 
-        Vec3 bossMark() { return new Vec3(cx + 0.5, FLOOR, cz - 9.5); }
+        Vec3 bossMark() { return this == SUNLESS_CROWN ? new Vec3(cx + 0.5, FLOOR, cz + 0.5) : new Vec3(cx + 0.5, FLOOR, cz - 9.5); }
 
         AABB bounds() { return new AABB(cx - radius - 4, FLOOR - 40, cz - radius - 4, cx + radius + 5, FLOOR + 40, cz + radius + 5); }
 
@@ -73,11 +74,12 @@ public final class BossArenas {
         if (!there.isEmpty()) return there.getFirst();
         EntityType<? extends BossEntity> type = switch (a) {
             case OATH_HALL -> BossEntities.VAREK;
+            case SUNLESS_CROWN -> BossEntities.HOLLOW_SUN;
         };
         BossEntity b = type.create(level, EntitySpawnReason.COMMAND);
         if (b == null) return null;
         Vec3 m = a.bossMark();
-        b.snapTo(m.x, m.y, m.z, 0, 0);
+        b.snapTo(m.x, m.y + (a == Arena.SUNLESS_CROWN ? 2.2 : 0), m.z, 0, 0);
         b.setYHeadRot(0);
         b.setYBodyRot(0);
         b.setHome(m);
@@ -110,6 +112,7 @@ public final class BossArenas {
     static void build(ServerLevel l, Arena a) {
         switch (a) {
             case OATH_HALL -> buildOathHall(l, a);
+            case SUNLESS_CROWN -> buildCrown(l, a);
         }
         VeyrathMod.LOG.info("Built boss arena {}", a.id);
     }
@@ -187,6 +190,84 @@ public final class BossArenas {
         set(l, cx - 1, FLOOR + 3, cz - R + 3, Blocks.POLISHED_BLACKSTONE_SLAB.defaultBlockState());
         set(l, cx + 1, FLOOR + 3, cz - R + 3, Blocks.CRACKED_POLISHED_BLACKSTONE_BRICKS.defaultBlockState());
         set(l, cx, FLOOR - 1, cz, Blocks.CHISELED_POLISHED_BLACKSTONE.defaultBlockState());
+    }
+
+    /** Inner floor radius of the Crown; the ring outside it breaks away in phase 2. */
+    static final int CROWN_INNER = 14;
+
+    /**
+     * The Sunless Crown: a pale stone ring-island in the void, gold veins, a sunken dial at the
+     * centre, four black monoliths (the only cover from the nova) and an outer ring of cracked
+     * stone that falls away when the sun shatters it.
+     */
+    private static void buildCrown(ServerLevel l, Arena a) {
+        int R = a.radius, cx = a.cx, cz = a.cz;
+        for (int x = -R - 2; x <= R + 2; x++) {
+            for (int z = -R - 2; z <= R + 2; z++) {
+                double r = Math.sqrt(x * x + z * z);
+                if (r > R + 0.6) continue;
+                for (int y = FLOOR; y <= FLOOR + 14; y++) set(l, cx + x, y, cz + z, Blocks.AIR.defaultBlockState());
+                boolean outer = r > CROWN_INNER + 0.5;
+                int depth = outer ? 2 + (int) (hash(x, 2, z) * 2) : (int) Math.round(3 + (CROWN_INNER + 1 - r) * 0.9 + hash(x, 0, z) * 3);
+                for (int k = 2; k <= depth; k++) {
+                    set(l, cx + x, FLOOR - k, cz + z, hash(x, FLOOR - k, z) < 0.6 ? Blocks.CALCITE.defaultBlockState() : Blocks.SMOOTH_BASALT.defaultBlockState());
+                }
+                set(l, cx + x, FLOOR - 1, cz + z, crownFloor(x, z, r, outer));
+                if (r > R - 0.5 && hash(x, 9, z) < 0.45) set(l, cx + x, FLOOR, cz + z, Blocks.POLISHED_DIORITE_SLAB.defaultBlockState());
+            }
+        }
+        for (int k = 0; k < 4; k++) {
+            double ang = Math.toRadians(45 + 90 * k);
+            int px = (int) Math.round(Math.cos(ang) * 9), pz = (int) Math.round(Math.sin(ang) * 9);
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    int h = dx == 0 && dz == 0 ? 8 : 6 + (int) (hash(k, dx, dz) * 2);
+                    for (int y = 0; y < h; y++) set(l, cx + px + dx, FLOOR + y, cz + pz + dz, y == h - 1 && dx == 0 && dz == 0
+                            ? Blocks.GILDED_BLACKSTONE.defaultBlockState() : Blocks.POLISHED_BLACKSTONE.defaultBlockState());
+                }
+            }
+        }
+        set(l, cx, FLOOR - 1, cz, Blocks.CHISELED_POLISHED_BLACKSTONE.defaultBlockState());
+    }
+
+    private static BlockState crownFloor(int x, int z, double r, boolean outer) {
+        if (r < 1.2) return Blocks.CHISELED_POLISHED_BLACKSTONE.defaultBlockState();
+        if (r < 4.5) {
+            double ang = Math.toDegrees(Math.atan2(z, x));
+            double m = ((ang % 30) + 30) % 30;
+            boolean spoke = r * Math.sin(Math.toRadians(Math.min(m, 30 - m))) < 0.5;
+            return spoke ? Blocks.POLISHED_BLACKSTONE_BRICKS.defaultBlockState() : Blocks.SMOOTH_QUARTZ.defaultBlockState();
+        }
+        if (r < 5.5) return Blocks.POLISHED_BLACKSTONE_BRICKS.defaultBlockState();
+        double h = hash(x, 3, z);
+        if (outer) return h < 0.35 ? Blocks.CRACKED_STONE_BRICKS.defaultBlockState() : h < 0.5 ? Blocks.TUFF_BRICKS.defaultBlockState()
+                : Blocks.POLISHED_DIORITE.defaultBlockState();
+        // Gold veins wander through pale stone.
+        double vein = Math.abs(Math.sin(x * 0.45 + Math.sin(z * 0.3) * 2.2) + Math.cos(z * 0.41 + x * 0.12));
+        if (vein < 0.06) return Blocks.RAW_GOLD_BLOCK.defaultBlockState();
+        return h < 0.2 ? Blocks.CALCITE.defaultBlockState() : h < 0.5 ? Blocks.POLISHED_DIORITE.defaultBlockState() : Blocks.SMOOTH_QUARTZ.defaultBlockState();
+    }
+
+    /** Phase 2 of the Hollow Sun: the outer ring falls into the void (the effect shows the stones going). */
+    static void shatter(ServerLevel l, Arena a, BossEntity source) {
+        int R = a.radius, cx = a.cx, cz = a.cz;
+        for (int x = -R - 1; x <= R + 1; x++) {
+            for (int z = -R - 1; z <= R + 1; z++) {
+                double r = Math.sqrt(x * x + z * z);
+                if (r <= CROWN_INNER + 0.5 || r > R + 0.6) continue;
+                for (int y = FLOOR - 6; y <= FLOOR + 1; y++) set(l, cx + x, y, cz + z, Blocks.AIR.defaultBlockState());
+            }
+        }
+        for (int k = 0; k < 16; k++) {
+            double ang = k * Math.PI / 8;
+            double d = (CROWN_INNER + R) / 2.0;
+            dev.veyrath.mod.combat.CombatServer.vfx(source, "hs_crumble", cx + 0.5 + Math.cos(ang) * d, FLOOR, cz + 0.5 + Math.sin(ang) * d);
+        }
+    }
+
+    /** Puts a broken arena back (after a reset). */
+    static void restore(ServerLevel l, Arena a) {
+        if (a == Arena.SUNLESS_CROWN && l.getBlockState(new BlockPos(a.cx + a.radius - 2, FLOOR - 1, a.cz)).isAir()) build(l, a);
     }
 
     private static BlockState hallFloor(int x, int z, double r, int R) {
