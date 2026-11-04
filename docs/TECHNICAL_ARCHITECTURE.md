@@ -143,6 +143,31 @@ The world spans y −256 to 1023 (1280 blocks, 80 sections) with sea level at 64
 atlas applies a soft ceiling at `maxY − 200`, so the highest ground stays at or below y943. That
 leaves room for trees and floating islands above.
 
+## Combat network protocol (Chapter 02)
+
+Fabric custom payloads, ids `veyrath:<name>`, defined in `mod-fabric/.../combat/CombatNet.java`.
+The client predicts its own fighter; the server's copy of every fighter is the authority and the
+only side that applies damage (TD-021). Singleplayer uses the same protocol over the integrated
+server, so a dedicated-server build needs no second code path.
+
+| Payload | Direction | Fields | Meaning |
+|---|---|---|---|
+| `stance` | client → server | on | Enter or leave combat stance |
+| `action` | client → server | seq, action, move, moveX, moveZ, aimYaw, yaw, held | An input the client accepted and the move it started; the server's copy accepts it only if it would start the same move (late string follow-ups within the hit-stop margin, TD-028) |
+| `release` | client → server | seq, move, level | Release of a charged heavy with its charge level |
+| `held` | client → server | held (block, heavy bits) | Change of held keys |
+| `hit` | server → clients | attacker, target, outcome, contact point, move, window, defenderYaw | A resolved strike: result, damage, reaction, hit-stop, velocities, effect and sound ids |
+| `anim` | server → clients | entity, clip, fade | A fighter's move clip for remote viewers |
+| `base_pose` | server → clients | entity, clip | A fighter's base layer (idle, block hold) |
+| `stance_of` | server → clients | entity, on | Another entity entered or left stance |
+| `state` | server → owner | stamina, aether, gauge, refill | Resource sync for the local fighter |
+| `reject` | server → owner | seq | The server's copy could not start that input after its retry window; the client cancels the move |
+
+Multiplayer later: inputs are already sequenced and validated against the server's own fighter;
+what is missing is lag compensation for other players' hurtboxes, and slow motion is global
+(the server tick rate), which a multiplayer build would replace with local effects
+(CHAPTER_02_PLAN.md, Risks).
+
 ## Extension points for later Chapters
 
 These hooks exist now, or are designed and planned for Chapter 01. Nothing from later Chapters

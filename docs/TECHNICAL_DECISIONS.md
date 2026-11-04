@@ -395,10 +395,12 @@ Elderbough forest either way. The camera was never inside terrain in any of the 
 
 **Status:** Accepted · 2026-11-04
 
-**Decision.** Before hit detection, a target counts only if a straight line from the attacker's
+**Decision.** A contact found by hit detection counts only if a straight line from the attacker's
 chest reaches the target's centre, head or legs without crossing a block's collision shape. The
 server checks it (it decides), and the client's prediction checks it too, so no impact is shown
-for a blow the server will not count. `/veyrath combat shapes` shows the server's hit shapes as
+for a blow the server will not count. The rays are cast per contact, not per nearby entity and
+tick: checking every candidate first cost the arena's combat code 245 µs per tick with ten husks
+instead of about 100. `/veyrath combat shapes` shows the server's hit shapes as
 dust (red limb shapes, amber area shapes) for debugging.
 
 **Why.** The Chapter 02 plan requires "no hits through solid blocks". Without the check, a fist
