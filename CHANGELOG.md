@@ -30,6 +30,7 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   vignette and impact zoom can be turned down or off.
 - The stance camera cranes up over a slope or wall behind the player instead of closing in on
   the head (TD-029).
+- Strikes no longer pass through walls (TD-030); `/veyrath combat shapes` shows the hit shapes.
 - Game tests `combat`, `arena` and `terrain` (the stance camera on VEYRATH terrain) with
   screenshots; the arena test logs a performance line.
 

@@ -1,6 +1,6 @@
 # Chapter status
 
-Last updated: 2026-11-03 · Branch `ch02-combat` · Version `0.2.0-ch02`
+Last updated: 2026-11-04 · Branch `ch02-combat` · Version `0.2.0-ch02`
 
 Authorized scope: **Chapter 00**, **Chapter 01** (The World) and, since 2026-11-03, **Chapter 02**
 (Player Controller & Combat Engine). Chapter 03 and later must not start without the owner's
@@ -12,12 +12,14 @@ Read this first when resuming. A ready-to-paste prompt for a new session is in
 [../HANDOFF.md](../HANDOFF.md).
 
 - **Where we are.** Chapter 01 was delivered for the owner's test (acceptance report: the Claude
-  Doc "VEYRATH Chapter 01 acceptance report"). Chapter 02 is in progress on `ch02-combat`: the
-  combat core, the Minecraft adapter and the in-game combat test are done and pass on the owner's
-  PC with and without the full pack; the Proving Grounds (WP9) are written and being compiled and
-  tested on the PC. Plan: [CHAPTER_02_PLAN.md](CHAPTER_02_PLAN.md).
-- **Open (Chapter 02).** WP9 in-game verification, WP7 polish, WP10 performance numbers, WP11
-  report. The owner's launcher profile still holds the Chapter 01 build.
+  Doc "VEYRATH Chapter 01 acceptance report"); his first impression (2026-11-04) is in the
+  criteria table below. Chapter 02 is implemented, tested in game (vanilla, full pack and with
+  Complementary Unbound) and documented; its acceptance report (Claude Doc "VEYRATH Chapter 02
+  acceptance report") is presented and the chapter stops there. Build `0.2.0-ch02` is installed in
+  the owner's VEYRATH launcher profile. Plan: [CHAPTER_02_PLAN.md](CHAPTER_02_PLAN.md). The
+  owner's original directive: [MASTER_DIRECTIVE.md](MASTER_DIRECTIVE.md).
+- **Open (Chapter 02).** The owner's own play test: combat feel, Duelist tells and fairness per
+  style, camera comfort, effect strength. Chapter 03 only after his explicit approval.
 - **Open (Chapter 01).** The owner's own launcher start; pale far terrain with shaders; Photon and
   Bliss render wrong; not built: VEYRATH blocks and textures, lake-outlet falls and hanging valleys,
   a DH answer that never waits for a realm build. See Known limitations below.
@@ -119,6 +121,19 @@ and preview tool, not yet seen in Minecraft), **Partial**, **Not started** and *
   lit; ground cover is thin in places (single flowers between drifts since `15455c0`: 29–31
   within 32 blocks of spawn on seed 1, too small to see from 40 blocks up).
 - **Repository size:** `docs/media/ingame` holds about 150 MB of PNG screenshots.
+
+### Chapter 02 limitations
+
+- **No combat in water:** the stance does not open while the player is in water (by design for
+  now; swimming combat is not planned).
+- **Camera in tight spots:** on steep slopes the camera still comes within 1.6 blocks of the eyes
+  in some views (7 of 72 on the rift rim, 17 of 72 on a summit, half as many as before the crane).
+- **Shader frame dips:** with Complementary Unbound single samples of 30 and 40 FPS in the arena
+  (averages 127–136); not investigated.
+- **Vanilla look left on screen:** vanilla husks as test opponents, vanilla particles for impacts,
+  vanilla HUD hearts and hunger. VEYRATH's own impact meshes, sounds and HUD art are Chapter 03
+  material (weapons and audio).
+- **Judged only by tests so far:** feel, readability and fairness need the owner's hands.
 
 ## Session log
 
@@ -377,3 +392,27 @@ spawn screenshots, taken from 40 blocks above, they are not distinguishable.
 `veyrath-0.1.0-ch01.jar` SHA-256 `DF7D275B6352C5D36C0D6BBE2EC248E89320630A6D4ED8C400A1FCB6379D943F`.
 An offline start in that folder with the launcher's Java runtime logged `Loading 91 mods` and
 `VEYRATH initialised`; I stopped it after 50 s at the title screen.
+
+### Device session 5 (2026-11-04, `robbs-strix`, Chapter 02 completion)
+
+**Completed**
+- Saved the owner's Master Development Directive verbatim (`docs/MASTER_DIRECTIVE.md`) and his
+  first Chapter 01 impression.
+- Arena test with its performance phase run vanilla, with the full pack and with Complementary
+  Unbound. Found that DH generated LODs of the empty arena dimension (full pack 75 FPS); fixed
+  with empty LODs (TD-025): 236 FPS.
+- Feel and effects: impact flash, slow-motion vignette, impact zoom, ultimate camera path, white
+  hit flash instead of the red tint, summed barrage numbers, comfort settings (TD-027).
+- Unbound Fist fully unblockable (TD-026): in a shader run the Duelist had blocked all 12 barrage
+  hits. The arena test now lands it on the Duelist (13 of 13).
+- Server accepts late string follow-ups within the hit-stop margin (TD-028), found by a rejected
+  cross in the full-pack arena run; inputs lost to a landing hit are counted apart.
+- New `TerrainCameraGameTest` on seed 1 terrain; the camera cranes up over slopes (TD-029).
+- Combat test made deterministic at the launcher (husk without AI until the jab connects).
+- Docs: benchmarks, testing guide §11, decisions TD-025 to TD-029, dependencies, changelog,
+  screenshots. Version 0.2.0-ch02 built and installed in the owner's profile.
+
+**Tests:** 44 JUnit tests pass. Game tests `combat`, `arena`, `terrain` pass (combat and arena
+vanilla and with the full pack, arena also with Complementary Unbound).
+
+**Next:** the owner's review and play test; Chapter 03 only on his go-ahead.

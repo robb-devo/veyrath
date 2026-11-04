@@ -1,6 +1,6 @@
 # VEYRATH: handoff for the next session
 
-Last updated: 2026-11-03 23:55 UTC, branch `ch02-combat`. Kept current after every work package.
+Last updated: 2026-11-04 04:35 local, branch `ch02-combat`. Kept current after every work package.
 
 **How to use this file.** Open a new Claude Code chat in `C:\Users\Robbi\IdeaProjects\veyrath`
 (on the laptop) or in a cloud session with the repository, then paste everything in the box below
@@ -30,7 +30,7 @@ Owner's standing rules (verbatim where quoted):
 - "Ask questions only when an actual decision cannot reasonably be made independently."
 - "Do not spend excessive time writing documentation instead of developing the actual product."
 - Chapters are gated: "Do not begin any future Chapter without explicit approval." Chapter 02
-  (Player Controller & Combat Engine) is approved and in progress. Chapters 03 (weapons, audio),
+  (Player Controller & Combat Engine) is approved and done (acceptance report presented 2026-11-04). Chapters 03 (weapons, audio),
   04 (bosses), 05 (dragon) need his explicit go-ahead. Each chapter ends with its own acceptance
   report, then stop and present.
 - 2026-11-04: "we wanna basically abuse minecraft as much as we can, and only use it as an
@@ -47,56 +47,45 @@ Owner's standing rules (verbatim where quoted):
 
 ## Where things stand (Chapter 02)
 
-Done and verified:
+**Chapter 02 is implemented, tested and documented; its acceptance report is presented to the
+owner and the chapter is stopped there.** Chapter 03 (weapons and audio) needs his explicit
+go-ahead. Version `0.2.0-ch02`, installed in his VEYRATH launcher profile.
 
-- **Combat core** `combat/` (pure Java, 43 JUnit tests pass): fighter state machine, input buffer,
-  moves with frame data and cancel windows, bone-attached swept hit shapes, block, parry (4 ticks),
-  dodge i-frames, perfect dodge, reactions (flinch, stagger, launch and juggle decay, knockdown,
-  guard break), stamina, Aether, Unbound gauge, poise, reaction grace (no stun-lock by crowds),
-  attack dashes stop at their target, headless sim, unarmed moveset and clips.
-- **Duelist AI** `combat/.../ai/` (`DuelistBrain`, `Style`, `Reach`; tests in `DuelistTest`):
-  sees with a reaction delay, telegraphs every attack from neutral at a fixed lead, blocks,
-  parries and dodges only what it has seen, pokes, punishes openings, three styles (apprentice,
-  adept, master). Only in the headless sim so far, not in game.
-- **Minecraft adapter** `mod-fabric/`: stance key Z, action camera, camera-relative movement,
-  client prediction with server-authoritative follower copies (`CombatServer`), hit events, poses
-  on players and humanoid mobs, impact effects, slow motion, HUD (bars bottom left, ability slots
-  in the hotbar's place while in stance, combo counter).
-- **In-game test** `mod-fabric/src/gametest/.../CombatGameTest.java` passes on the laptop, both
-  vanilla-only and with the full pack (`-Pveyrath.fullPack=true`): ground strings kill a husk,
-  launcher lifts it ~4 blocks, block stops husk attacks, all three abilities and the ultimate hit
-  a group, 0 rejected inputs. 12 screenshots in `docs/media/combat/` (commit 93e42a7).
-- Grounded bodies keep vanilla's resting downward speed every tick (98290e9, then 2f6de35), so
-  hit-stop no longer makes the client think it is airborne (found by the per-tick trace in
-  ae4e782). The first half was verified in game; the second half needs one combat test re-run.
-- **Proving Grounds (WP9) written and compiling** (2f6de35, device fixes 777dcb0):
-  `/veyrath arena [leave | duelist <apprentice|adept|master> | dummy | reset]`. Arena dimension
-  `veyrath:proving_grounds` (floating stone arena built on first entry), rounds with countdown,
-  VICTORY/DEFEAT, no deaths there; `DuelistEntity` driven by `DuelistBrain` through
-  `CombatServer.drive` (START_SERVER_TICK); `TrainingDummyEntity` with damage/DPS name; damage
-  numbers on the HUD (`DamageNumbers`); original textures (`tools/textures/paint_arena_textures.py`).
-  Test: `gradlew :mod-fabric:runClientGameTest -Pveyrath.tests=arena` (`ArenaGameTest`, includes
-  a performance phase with ten husks). **Its first in-game run was in progress at this update.**
+Done and verified in game (2026-11-04, laptop `robbs-strix`):
 
-Not done yet (Chapter 02 plan, docs/CHAPTER_02_PLAN.md work packages):
+- **Combat core** `combat/` (pure Java, 44 JUnit tests): fighter, input buffer, moves with frame
+  data, swept bone hit shapes, block, parry, dodge, reactions, resources, reaction grace, unarmed
+  moveset, three abilities, ultimate Unbound Fist. Server follower accepts late string follow-ups
+  within the move's hit-stop margin (TD-028).
+- **Duelist AI** (`DuelistBrain`): reaction delay, tells, defends only what it saw, three styles.
+- **Minecraft adapter** `mod-fabric/`: stance (Z), action camera with lock-on and a crane over
+  terrain (TD-029), prediction with server authority, poses, HUD, damage numbers (light hits sum
+  up), impact flash, slow-motion vignette, impact zoom, white hit flash instead of the red tint,
+  ultimate camera path. Comfort settings in `config/veyrath-client.properties`.
+- **Proving Grounds** `/veyrath arena`: dimension, dummy with DPS, Duelist rounds; DH gets empty
+  LODs there (TD-025, this fixed 75 → 236 FPS with the full pack).
+- **Game tests**, all passing vanilla and with the full pack: `combat`, `arena` (also with
+  Complementary Unbound), `terrain` (camera on seed 1 terrain). Screenshots in
+  `docs/media/combat/`, `docs/media/arena/`, `docs/media/terrain_camera/`. Numbers in
+  docs/PERFORMANCE_BENCHMARKS.md ("Chapter 02").
+- The owner's original directive is in docs/MASTER_DIRECTIVE.md (verbatim).
 
-1. **WP9 in game**: run the arena test (vanilla and `-Pveyrath.fullPack=true`), look at the
-   screenshots `arena_a01..a06`, fix what is wrong, commit the screenshots to `docs/media/arena/`.
-   Then play-feel checks the test cannot judge: Duelist readability (tells), fairness per style.
-2. **WP7 polish**: Gale Step now uses a lighter gust (0e5a568, not yet seen in game); slow motion
-   and camera polish.
-3. **WP10**: FPS and server tick time in the arena during combat, with and without shaders, from
-   the arena test's performance line, into docs/PERFORMANCE_BENCHMARKS.md. Never estimate.
-4. **Docs**: CHAPTER_STATUS has the Chapter 02 table (update states as WPs finish);
-   TECHNICAL_DECISIONS has TD-020 to TD-024; still to do: TESTING_GUIDE (arena test),
-   DEPENDENCIES (no new dependencies so far), CHANGELOG.
-5. **WP11 acceptance report** (a Claude Doc like the Chapter 01 one:
-   https://claude.ai/artifact/Ets2zLsvDUvLGv16qBpxRC), then stop and present.
-6. The owner's launcher profile still holds the Chapter 01 build. Install the Chapter 02 build with
-   `tools\install\Install-Veyrath.cmd` (only touches the VEYRATH instance) before he tests.
+Open, needs the owner's hands (no test can judge it): combat feel, Duelist tell readability and
+fairness per style, camera comfort, effect strength. His first Chapter 01 impression (2026-11-04):
+the world looks very good; some biome borders are a hard line (fine-tuning item).
 
-Known issues: a dark effect icon in late screenshots is Hunger from husk hits (vanilla). Photon
-and Bliss shaders render wrong with DH; Complementary Unbound works (Chapter 01 note).
+Known limitations: the stance does not open in water; the camera still comes close in tight
+spots on steep slopes (crane halves it); Complementary Unbound shows single low FPS samples (30
+and 40) in the arena, not investigated; Photon and Bliss render wrong with DH; the barrage is
+unblockable now (TD-026), answer is the dodge.
+
+## Next steps
+
+1. Wait for the owner's review of the Chapter 02 acceptance report and his own play test.
+2. Fix what he reports. Likely candidates: tell readability, Duelist fairness per style, camera.
+3. Chapter 01 fine-tuning when he asks: soft biome borders (blend surface and vegetation).
+4. Chapter 03 (weapons and audio) only after his explicit approval; start with a plan like
+   docs/CHAPTER_02_PLAN.md.
 
 ## Build and test
 
@@ -108,6 +97,7 @@ and Bliss shaders render wrong with DH; Complementary Unbound works (Chapter 01 
   `gradlew :mod-fabric:runClientGameTest -Pveyrath.tests=combat` and the same with
   `-Pveyrath.fullPack=true`. Run directory `mod-fabric/run/clientGameTest`; screenshots go to its
   `screenshots/` folder.
+- Arena and terrain game tests: `-Pveyrath.tests=arena`, `-Pveyrath.tests=terrain` (TESTING_GUIDE §11).
 - In a dev client: `gradlew :mod-fabric:runClient`, create a world, press Z for stance.
   `/veyrath combat stats` shows accepted and rejected inputs; `/veyrath combat refill`.
 

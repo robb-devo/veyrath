@@ -390,3 +390,18 @@ collapsed onto the player's head whenever the slope rose behind it. Measured by
 `TerrainCameraGameTest` (seed 1, 72 views per spot): views closer than 1.6 blocks to the eyes
 went from 16 to 7 on the rift rim and from 32 to 17 on the summit; none in the hoodoo grove or the
 Elderbough forest either way. The camera was never inside terrain in any of the 576 views.
+
+## TD-030 — Strikes need a clear line through terrain
+
+**Status:** Accepted · 2026-11-04
+
+**Decision.** Before hit detection, a target counts only if a straight line from the attacker's
+chest reaches the target's centre, head or legs without crossing a block's collision shape. The
+server checks it (it decides), and the client's prediction checks it too, so no impact is shown
+for a blow the server will not count. `/veyrath combat shapes` shows the server's hit shapes as
+dust (red limb shapes, amber area shapes) for debugging.
+
+**Why.** The Chapter 02 plan requires "no hits through solid blocks". Without the check, a fist
+capsule (or Quake Palm's 6.5-block cone) reached through a wall. Verified by the combat game
+test: three jabs at a husk behind a one-block stone wall do nothing; the same jab lands once the
+wall is gone.

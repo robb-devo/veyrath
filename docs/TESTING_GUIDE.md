@@ -205,7 +205,9 @@ selected there) and set it back afterwards.
 
 - **combat** (`CombatGameTest`, screenshots `c01`–`c12`): ground strings kill a husk, the
   launcher lifts it more than 1.5 blocks, block stops a husk's attacks, the three abilities and
-  the ultimate hit a group of three, no input is rejected, the stance turns off again. A per-tick
+  the ultimate hit a group of three, strikes do not pass through a stone wall (and land once it
+  is gone), no input is rejected except ones that met a landing hit, the stance turns off again.
+  Screenshot `c13` shows the hit shapes (`/veyrath combat shapes`). A per-tick
   trace of client and server fighter is logged for the launcher and air string.
 - **arena** (`ArenaGameTest`, screenshots `a01`–`a08`): enters the Proving Grounds, reads the
   training dummy's DPS, spars a round with the adept Duelist (it must close in, tell and land
