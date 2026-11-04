@@ -28,7 +28,39 @@ public final class ActionCamera {
     private static long lastFrame, lastMouse;
     private static float shakeTime;
 
-    public record View(float yaw, float pitch, Vec3 pivot, float distance) {}
+    public record View(float yaw, float pitch, Vec3 pivot, float distance) {
+        /** The same view craned up: higher pivot, looking further down (see {@link #settle}). */
+        public View craned() {
+            return new View(yaw, Mth.clamp(pitch + CRANE_PITCH, PITCH_MIN, PITCH_MAX), pivot.add(0, CRANE_LIFT, 0), distance);
+        }
+    }
+
+    /** Crane on occlusion: degrees of extra pitch and blocks of extra pivot height at full crane. */
+    static final float CRANE_PITCH = 22;
+    static final double CRANE_LIFT = 0.7;
+    private static double crane, lastDt;
+
+    /**
+     * When terrain behind the player pulls the camera in to less than half its distance (a slope,
+     * a cliff wall), the camera cranes up and looks down over the obstacle instead of collapsing
+     * onto the player's head, if that view is clearly freer. {@code plain} and {@code craned} are
+     * the fractions of the wanted distance the collision check allows for each. Eased both ways
+     * and held in between (hysteresis), so it does not flicker at the threshold.
+     */
+    public static View settle(View plainView, double plain, double craned) {
+        double target = !CombatSettings.cameraCrane() ? 0
+                : plain < 0.5 && craned > plain + 0.2 ? 1 : plain > 0.8 ? 0 : crane > 0.5 ? 1 : 0;
+        crane += (target - crane) * Math.min(1, lastDt * 5);
+        if (crane < 1e-3) {
+            crane = 0;
+            return plainView;
+        }
+        double k = crane * crane * (3 - 2 * crane);
+        View c = plainView.craned();
+        return new View(plainView.yaw(), (float) Mth.lerp(k, plainView.pitch(), c.pitch()),
+                new Vec3(plainView.pivot().x, Mth.lerp(k, plainView.pivot().y, c.pivot().y), plainView.pivot().z),
+                plainView.distance());
+    }
 
     static void enter(Entity player) {
         yaw = player.getYRot();
@@ -79,6 +111,7 @@ public final class ActionCamera {
         long now = System.nanoTime();
         double dt = lastFrame == 0 ? 0 : Math.min(0.1, (now - lastFrame) / 1e9);
         lastFrame = now;
+        lastDt = dt;
 
         Entity lock = LocalCombat.lockTarget();
         if (lock != null && now - lastMouse > 400_000_000L) {
@@ -191,6 +224,7 @@ public final class ActionCamera {
     }
 
     static void reset() {
+        crane = 0;
         trauma = 0;
         punch = 0;
         cine = 0;

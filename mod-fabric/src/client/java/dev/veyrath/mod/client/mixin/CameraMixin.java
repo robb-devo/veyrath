@@ -13,7 +13,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /**
  * Combat stance camera: after vanilla placed the third-person camera, re-place it from the action
  * camera's own yaw and pitch around a pivot above the player, pulled back with vanilla's collision
- * check (getMaxZoom) so it never enters terrain.
+ * check (getMaxZoom) so it never enters terrain. When terrain behind the player would pull it in
+ * close, it cranes up over the obstacle ({@link ActionCamera#settle}).
  */
 @Mixin(Camera.class)
 public abstract class CameraMixin {
@@ -35,8 +36,17 @@ public abstract class CameraMixin {
     private void veyrath$actionCamera(float partialTick, CallbackInfo ci) {
         if (!this.detached || !ActionCamera.controls(this.entity)) return;
         ActionCamera.View v = ActionCamera.view(this.entity, partialTick);
+        // Probe how far back the camera gets as it is and craned up, then let the camera choose.
         this.setRotation(v.yaw(), v.pitch());
         this.setPosition(v.pivot());
-        this.move(-this.getMaxZoom(v.distance()), 0.0F, 0.0F);
+        float plain = this.getMaxZoom(v.distance());
+        ActionCamera.View up = v.craned();
+        this.setRotation(up.yaw(), up.pitch());
+        this.setPosition(up.pivot());
+        float craned = this.getMaxZoom(up.distance());
+        ActionCamera.View f = ActionCamera.settle(v, plain / v.distance(), craned / up.distance());
+        this.setRotation(f.yaw(), f.pitch());
+        this.setPosition(f.pivot());
+        this.move(-this.getMaxZoom(f.distance()), 0.0F, 0.0F);
     }
 }

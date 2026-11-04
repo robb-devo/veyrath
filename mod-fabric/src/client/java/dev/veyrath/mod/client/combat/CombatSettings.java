@@ -32,12 +32,18 @@ public final class CombatSettings {
     private static boolean slowMotionVignette = true;
     /** Camera pull-in on heavy impacts. */
     private static boolean impactZoom = true;
+    /** The camera cranes up over terrain behind the player instead of closing in on the head. */
+    private static boolean cameraCrane = true;
 
     public static double screenShake() { return screenShake; }
     public static boolean screenFlash() { return screenFlash; }
     public static boolean cinematicCamera() { return cinematicCamera; }
     public static boolean slowMotionVignette() { return slowMotionVignette; }
     public static boolean impactZoom() { return impactZoom; }
+    public static boolean cameraCrane() { return cameraCrane; }
+
+    /** For game tests that compare a view with and without the crane. */
+    public static void setCameraCrane(boolean on) { cameraCrane = on; }
 
     public static void load() {
         Path file = FabricLoader.getInstance().getConfigDir().resolve(FILE);
@@ -54,6 +60,7 @@ public final class CombatSettings {
         cinematicCamera = flag(p, "cinematicCamera", cinematicCamera);
         slowMotionVignette = flag(p, "slowMotionVignette", slowMotionVignette);
         impactZoom = flag(p, "impactZoom", impactZoom);
+        cameraCrane = flag(p, "cameraCrane", cameraCrane);
         if (!Files.isRegularFile(file)) write(file);
     }
 
@@ -70,6 +77,8 @@ public final class CombatSettings {
                 "slowMotionVignette=" + slowMotionVignette,
                 "# Camera pull-in on heavy impacts.",
                 "impactZoom=" + impactZoom,
+                "# The camera rises over a slope or wall behind you instead of closing in on your head.",
+                "cameraCrane=" + cameraCrane,
                 "");
         try {
             Files.createDirectories(file.getParent());
