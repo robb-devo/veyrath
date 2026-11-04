@@ -205,7 +205,9 @@ public final class UnarmedMoves {
                 .tracking(30, 15).blend(1);
         for (int k = 0; k <= 11; k++) {
             int t = 16 + 2 * k;
-            ult.hit(t, t, HitSpec.of(1.2).stun(8, 6).push(0.02).hitstop(1).shake(0.12).guard(6).gauge(0).unparryable()
+            // Nothing of the ultimate can be blocked or parried: a full gauge buys a sure hit once it
+            // connects. The answer is to dodge the dash in (the attacker is invulnerable throughout).
+            ult.hit(t, t, HitSpec.of(1.2).stun(8, 6).push(0.02).hitstop(1).shake(0.12).guard(6).gauge(0).unblockable().unparryable()
                     .fx("impact_light", "barrage").build(), k % 2 == 0 ? rightFist() : leftFist(), HitShape.sphere(0, 1.2, 1.3, 1.3));
         }
         ult.hit(48, 49, HitSpec.of(18).reaction(Reaction.KNOCKBACK).stun(30, 20).push(2.2).lift(0.55).hitstop(8).shake(1.0)
