@@ -336,6 +336,8 @@ public final class LocalCombat {
             CombatEffects.impact(mc.level, spec.vfx(), s.point(), fighter.yaw);
             CombatEffects.sound(mc.level, spec.sfx(), s.point());
             ActionCamera.addTrauma(spec.shake());
+            ScreenFx.impact(spec.vfx());
+            HitFlash.mark(s.target().id(), spec.hitstop());
         }
     }
 

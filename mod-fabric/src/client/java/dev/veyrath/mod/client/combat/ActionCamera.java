@@ -33,7 +33,7 @@ public final class ActionCamera {
     static void enter(Entity player) {
         yaw = player.getYRot();
         pitch = Mth.clamp(player.getXRot(), PITCH_MIN, PITCH_MAX);
-        trauma = 0;
+        reset();
         lastFrame = 0;
     }
 
@@ -54,8 +54,25 @@ public final class ActionCamera {
     }
 
     public static void addTrauma(double amount) {
-        trauma = Math.min(1, trauma + Math.max(0, amount));
+        trauma = Math.min(1, trauma + Math.max(0, amount) * CombatSettings.screenShake());
     }
+
+    /**
+     * Impact zoom: the camera is pulled in by up to {@link #PUNCH_ZOOM} of its distance and springs
+     * back within a quarter second. Stands in for an FOV kick and keeps the target framed.
+     */
+    public static void punch(double amount) {
+        if (CombatSettings.impactZoom()) punch = Math.min(1, Math.max(punch, amount));
+    }
+
+    static final double PUNCH_ZOOM = 0.16;
+    /** Seconds the cinematic camera takes to blend in (and a little longer to blend out). */
+    static final double CINE_BLEND = 0.18;
+
+    private static double punch, cine;
+    /** Which side of the fighter the cinematic camera swings to: +1 or -1, chosen per ultimate. */
+    private static int cineSide = 1;
+    private static Shot lastShot = Shot.NONE;
 
     /** Camera for this frame (Camera.alignWithEntity tail). */
     public static View view(Entity e, float partialTick) {
@@ -75,10 +92,114 @@ public final class ActionCamera {
         double t2 = trauma * trauma;
         float sy = (float) (t2 * 4.0 * noise(shakeTime * 31, 0.0));
         float sp = (float) (t2 * 3.0 * noise(shakeTime * 29, 7.1));
+        punch = Math.max(0, punch - dt * 4.5);
+
+        // The ultimate's camera path, blended over the orbit camera.
+        Shot shot = cinematicShot(partialTick);
+        if (shot != Shot.NONE && cine == 0) cineSide = clearerSide(e, partialTick);
+        if (shot != Shot.NONE) lastShot = shot;
+        double wantCine = shot == Shot.NONE ? 0 : 1;
+        cine += (wantCine - cine) * Math.min(1, dt / (wantCine > cine ? CINE_BLEND : CINE_BLEND * 1.6));
+        if (cine < 1e-3) cine = 0;
+
+        float viewYaw = yaw, viewPitch = pitch;
+        float dist = DISTANCE;
+        double lift = 0;
+        if (cine > 0) {
+            Shot s = shot == Shot.NONE ? lastShot : shot;
+            float facing = LocalCombat.renderYaw(partialTick);
+            double k = smooth(cine);
+            viewYaw = yaw + (float) (Mth.wrapDegrees(facing + cineSide * s.yawOffset - yaw) * k);
+            viewPitch = (float) Mth.lerp(k, pitch, s.pitch);
+            dist = (float) Mth.lerp(k, DISTANCE, s.distance);
+            lift = s.lift * k;
+        }
+        dist *= (float) (1 - PUNCH_ZOOM * smooth(punch));
 
         Vec3 feet = e.getPosition(partialTick);
-        Vec3 pivot = new Vec3(feet.x, feet.y + PIVOT_HEIGHT * scale(e), feet.z);
-        return new View(yaw + sy, pitch + sp, pivot, DISTANCE * scale(e));
+        Vec3 pivot = new Vec3(feet.x, feet.y + (PIVOT_HEIGHT + lift) * scale(e), feet.z);
+        return new View(viewYaw + sy, viewPitch + sp, pivot, dist * scale(e));
+    }
+
+    /**
+     * Shots of a cinematic move by its tick: a low angle on the dash in, a slow side orbit through
+     * the barrage, then a wide side view for the finisher and its shockwave.
+     */
+    enum Shot {
+        NONE(0, 0, DISTANCE, 0),
+        DASH(32, -6, 3.4f, -0.5),
+        // The barrage looks down from above head height, so a crowd around the target does not
+        // fill the frame, and cranes up slowly while it lasts.
+        BARRAGE(80, 20, 3.6f, 0),
+        BARRAGE_LATE(100, 26, 3.6f, 0),
+        FINISHER(92, 14, 6.2f, 0.2);
+
+        final float yawOffset, pitch, distance;
+        final double lift;
+
+        Shot(float yawOffset, float pitch, float distance, double lift) {
+            this.yawOffset = yawOffset;
+            this.pitch = pitch;
+            this.distance = distance;
+            this.lift = lift;
+        }
+    }
+
+    private static Shot cinematicShot(float partialTick) {
+        if (!CombatSettings.cinematicCamera()) return Shot.NONE;
+        var f = LocalCombat.fighter();
+        if (f == null || f.phase() != dev.veyrath.combat.fighter.Fighter.Phase.MOVE || f.move() == null || !f.move().cinematic) {
+            return Shot.NONE;
+        }
+        // Shots follow the move's own hit windows: the dash runs until the first hit, the barrage
+        // until the last (the finisher), and the camera hands back a little before the move ends.
+        var m = f.move();
+        int t = f.moveTick();
+        if (t >= m.duration - 6) return Shot.NONE;
+        if (m.hits.isEmpty()) return Shot.DASH;
+        int first = m.hits.getFirst().from(), last = m.hits.getLast().from();
+        if (t < first - 1) return Shot.DASH;
+        if (t < last - 2) return t < (first + last) / 2 ? Shot.BARRAGE : Shot.BARRAGE_LATE;
+        return Shot.FINISHER;
+    }
+
+    /**
+     * The side for the cinematic camera with fewer bodies between it and the fighter, so a crowd
+     * around the target does not fill the frame. Checked once, when the cinematic starts.
+     */
+    private static int clearerSide(Entity e, float partialTick) {
+        var level = e.level();
+        float facing = LocalCombat.renderYaw(partialTick);
+        Vec3 feet = e.getPosition(partialTick);
+        int best = 1, bestCount = Integer.MAX_VALUE;
+        for (int side : new int[]{1, -1}) {
+            // The camera sits DISTANCE behind the view direction; sample the line from fighter to camera.
+            double yawR = Math.toRadians(facing + side * Shot.BARRAGE.yawOffset);
+            double bx = Math.sin(yawR), bz = -Math.cos(yawR);
+            int count = 0;
+            for (double d = 1.0; d <= Shot.BARRAGE.distance + 0.5; d += 1.0) {
+                var box = new net.minecraft.world.phys.AABB(feet.x + bx * d - 0.6, feet.y, feet.z + bz * d - 0.6,
+                        feet.x + bx * d + 0.6, feet.y + 2.2, feet.z + bz * d + 0.6);
+                count += level.getEntities(e, box, x -> x instanceof net.minecraft.world.entity.LivingEntity).size();
+            }
+            if (count < bestCount) {
+                bestCount = count;
+                best = side;
+            }
+        }
+        return best;
+    }
+
+    static void reset() {
+        trauma = 0;
+        punch = 0;
+        cine = 0;
+        lastShot = Shot.NONE;
+    }
+
+    private static double smooth(double x) {
+        x = Math.clamp(x, 0, 1);
+        return x * x * (3 - 2 * x);
     }
 
     private static float scale(Entity e) {

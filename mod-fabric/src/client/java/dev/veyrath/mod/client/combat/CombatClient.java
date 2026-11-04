@@ -24,6 +24,7 @@ public final class CombatClient {
     public static KeyMapping STANCE_KEY;
 
     public static void init() {
+        CombatSettings.load();
         STANCE_KEY = KeyMappingHelper.registerKeyMapping(
                 new KeyMapping("key.veyrath.stance", InputConstants.KEY_Z, CATEGORY));
 
@@ -36,6 +37,9 @@ public final class CombatClient {
             LocalCombat.reset();
             CombatAnimations.clear();
             DamageNumbers.clear();
+            ScreenFx.clear();
+            HitFlash.clear();
+            ActionCamera.reset();
         });
 
         ClientPlayNetworking.registerGlobalReceiver(CombatNet.HitS2C.TYPE, (msg, ctx) -> onHit(ctx.client(), msg));
@@ -53,6 +57,8 @@ public final class CombatClient {
 
         HudElementRegistry.attachElementAfter(VanillaHudElements.HOTBAR, VeyrathMod.id("combat"), CombatHud::extract);
         HudElementRegistry.addFirst(VeyrathMod.id("damage_numbers"), DamageNumbers::extract);
+        // Flashes and the slow-motion vignette sit under everything else, damage numbers included.
+        HudElementRegistry.addFirst(VeyrathMod.id("screen_fx"), ScreenFx::extract);
         // In stance the ability slots take the hotbar's place (keys 1-4 are abilities there, and the
         // held item is hidden); the crosshair means nothing with a free camera. Hearts, armour, food
         // and air stay.
@@ -79,7 +85,10 @@ public final class CombatClient {
             if (byMe) CombatEffects.sound(level, o.sfx(), at);
         }
         if (byMe || onMe) ActionCamera.addTrauma(predicted ? 0 : o.shake());
-        if (byMe || onMe) DamageNumbers.add(at, o, byMe);
+        // Predicted hits showed their accents already; other outcomes (parry, guard break, dodge) show now.
+        if ((byMe || onMe) && (!predicted || o.result() != Outcome.Result.HIT)) ScreenFx.onOutcome(o, o.vfx(), byMe);
+        if (o.result() == Outcome.Result.HIT || o.result() == Outcome.Result.ARMORED || o.result() == Outcome.Result.GUARD_BREAK) HitFlash.mark(h.target(), o.hitstop());
+        if (byMe || onMe) DamageNumbers.add(h.target(), at, o, byMe);
 
         if (onMe) {
             if (LocalCombat.active()) LocalCombat.struck(o);
