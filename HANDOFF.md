@@ -124,7 +124,8 @@ framework (TD-032), the Oathcleaver greatsword (playable, all moves land in the 
    owner UUID saved). WP8 audio+fx DONE first version (client/dragon/DragonFx, sound marks in DragonAnimator.beats,
    build_dragon_sounds.py). WP2 art pass 1 DONE; wing-knuckle gait DONE (IK: tools/models/pose_solve.py solve <spec> [out],
    probe <pose>, merge <files>); glowing eyes DONE; FPS in PERFORMANCE_BENCHMARKS; resting/look-around (DragonState.REST,
-   pose "lie") and the saddle (build_dragon.py saddle()) DONE. Next: frills, unridden
+   pose "lie") and the saddle (build_dragon.py saddle()) DONE. Chapter 04+05 acceptance report draft:
+   https://claude.ai/artifact/F8ZQdFJXWERLFzmVhC7Aq8 (waiting on the owner's play test; then tuning and close). Next: frills, unridden
    behaviour (follow the owner, wander, sit), shader check with Complementary, FPS with her in
    view, the Chapter 05 acceptance report (and the Chapter 04 report after the owner's boss test), unridden AI (follow, idle wander), FPS numbers.
    Game test `dragon` = turntable + state gallery + ride (takeoff, flight, glide, dive, land).
