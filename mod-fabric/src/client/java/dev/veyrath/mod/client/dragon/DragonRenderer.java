@@ -94,8 +94,40 @@ public class DragonRenderer extends EntityRenderer<DragonEntity, DragonRenderer.
                 vert(vc, pose2, p, n, m, c, light);
             }
         });
+        // Her eyes glow storm-blue in any light: drawn again, full bright and light-adding.
+        final int[] eyes = eyeTriangles(m);
+        if (eyes.length > 0) {
+            collector.submitCustomGeometry(poses, RenderTypes.eyes(TEXTURE), (pose2, vc) -> {
+                for (int i = 0; i < eyes.length; i += 3) {
+                    int a = eyes[i], b = eyes[i + 1], c = eyes[i + 2];
+                    vert(vc, pose2, p, n, m, a, 0xF000F0);
+                    vert(vc, pose2, p, n, m, b, 0xF000F0);
+                    vert(vc, pose2, p, n, m, c, 0xF000F0);
+                    vert(vc, pose2, p, n, m, c, 0xF000F0);
+                }
+            });
+        }
         poses.popPose();
         super.submit(s, poses, collector, camera);
+    }
+
+    private static int[] eyeTris;
+
+    /** Triangles painted from the eye region of the texture atlas (see build_dragon.py UVR "eye"). */
+    private static int[] eyeTriangles(SkinnedMesh m) {
+        if (eyeTris != null) return eyeTris;
+        java.util.List<Integer> out = new java.util.ArrayList<>();
+        for (int i = 0; i < m.tris.length; i += 3) {
+            boolean all = true;
+            for (int k = 0; k < 3 && all; k++) {
+                int v = m.tris[i + k];
+                float u = m.u(v), vv = m.v(v);
+                all = u >= 0.375f && u < 0.5f && vv >= 0.875f && vv <= 1f;
+            }
+            if (all) for (int k = 0; k < 3; k++) out.add(m.tris[i + k]);
+        }
+        eyeTris = out.stream().mapToInt(Integer::intValue).toArray();
+        return eyeTris;
     }
 
     private static void vert(com.mojang.blaze3d.vertex.VertexConsumer vc, PoseStack.Pose pose, float[] p, float[] n, SkinnedMesh m, int v, int light) {

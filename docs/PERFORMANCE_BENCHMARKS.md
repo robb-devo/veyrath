@@ -152,3 +152,13 @@ cost two thirds of the frame rate and is fixed (TD-025).
 
 **Not measured:** frame-time percentiles, a fight in VEYRATH terrain (not the void arena), many
 Duelists at once, memory over a long session.
+
+## Chapter 05: the dragon (2026-11-05)
+
+Measured in the dragon client game test (`-Pveyrath.tests=dragon`), development run on the owner's
+PC, 1920x1080, superflat test world, no shaders, the test run's own render distance: riding Vaelith
+in flight with her filling much of the view, **229 FPS average, 207 lowest** (6 samples of
+`Minecraft.getFps()` over 3 s). Her mesh (12 119 vertices, 20 586 triangles, 56 bones) is skinned
+on the CPU every frame. Not yet measured: the full pack with Complementary shaders on VEYRATH
+terrain, and several dragons in view.
+

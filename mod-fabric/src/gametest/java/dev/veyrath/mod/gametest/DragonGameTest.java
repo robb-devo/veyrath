@@ -91,6 +91,15 @@ public final class DragonGameTest implements FabricClientGameTest {
         double climbY = context.computeOnClient(mc -> mc.player.getVehicle().getY());
         check(climbY > y + 6, "she climbs (" + Math.round(climbY - y) + " blocks)");
         shot(context, "dr_03_flight");
+        // Frame rate while riding her in flight (she fills much of the view).
+        int min = Integer.MAX_VALUE, sum = 0;
+        for (int k = 0; k < 6; k++) {
+            context.waitTicks(10);
+            int fps = context.computeOnClient(mc -> mc.getFps());
+            min = Math.min(min, fps);
+            sum += fps;
+        }
+        LOG.info("performance: riding in flight, FPS average {} lowest {} (6 samples over 3 s)", sum / 6, min);
         context.runOnClient(mc -> mc.player.setYRot(mc.player.getYRot() + 70));
         context.waitTicks(30);
         shot(context, "dr_04_turn");

@@ -122,7 +122,8 @@ framework (TD-032), the Oathcleaver greatsword (playable, all moves land in the 
    DragonEntity.clientKeys set in client/dragon/DragonClient), WP6 camera DONE (DragonClient.view,
    hooked in CameraMixin). WP7 Storm Horn DONE first version (dragon/StormHorn, DragonEntity modes STAY/ARRIVE/DEPART,
    owner UUID saved). WP8 audio+fx DONE first version (client/dragon/DragonFx, sound marks in DragonAnimator.beats,
-   build_dragon_sounds.py). WP2 art pass 1 DONE. Next: more art (gait on wing knuckles, frills, eye glow), unridden
+   build_dragon_sounds.py). WP2 art pass 1 DONE; wing-knuckle gait DONE (IK: tools/models/pose_solve.py solve <spec> [out],
+   probe <pose>, merge <files>); glowing eyes DONE; FPS in PERFORMANCE_BENCHMARKS. Next: frills, unridden
    behaviour (follow the owner, wander, sit), shader check with Complementary, FPS with her in
    view, the Chapter 05 acceptance report (and the Chapter 04 report after the owner's boss test), unridden AI (follow, idle wander), FPS numbers.
    Game test `dragon` = turntable + state gallery + ride (takeoff, flight, glide, dive, land).

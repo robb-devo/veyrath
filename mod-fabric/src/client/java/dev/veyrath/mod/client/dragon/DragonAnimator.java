@@ -25,8 +25,11 @@ public final class DragonAnimator {
     static final Map<DragonState, Clip> CLIPS = new HashMap<>();
     static {
         CLIPS.put(DragonState.IDLE, new Clip("idle", 80, true, new Key(0, "stand"), new Key(80, "stand")));
-        CLIPS.put(DragonState.WALK, new Clip("walk", 36, true, new Key(0, "walk_a"), new Key(18, "walk_b"), new Key(36, "walk_a")));
-        CLIPS.put(DragonState.RUN, new Clip("run", 20, true, new Key(0, "walk_a"), new Key(10, "walk_b"), new Key(20, "walk_a")));
+        // Four-beat gait on hind feet and wing knuckles (diagonal pairs), solved by tools/models/pose_solve.py.
+        CLIPS.put(DragonState.WALK, new Clip("walk", 48, true, new Key(0, "walk_a"), new Key(12, "walk_pass_ab"), new Key(24, "walk_b"),
+                new Key(36, "walk_pass_ba"), new Key(48, "walk_a")));
+        CLIPS.put(DragonState.RUN, new Clip("run", 28, true, new Key(0, "walk_a"), new Key(7, "walk_pass_ab"), new Key(14, "walk_b"),
+                new Key(21, "walk_pass_ba"), new Key(28, "walk_a")));
         CLIPS.put(DragonState.TAKEOFF, new Clip("takeoff", 24, false, new Key(0, "crouch"), new Key(8, "flap_up"), new Key(16, "flap_down"), new Key(24, "flap_up")));
         CLIPS.put(DragonState.FLAP, new Clip("flap", 22, true, new Key(0, "flap_up"), new Key(11, "flap_down"), new Key(22, "flap_up")));
         CLIPS.put(DragonState.GLIDE, new Clip("glide", 60, true, new Key(0, "glide"), new Key(60, "glide")));
@@ -124,8 +127,8 @@ public final class DragonAnimator {
             case FLAP -> new float[]{11};
             case TAKEOFF -> new float[]{16};
             case HOVER -> new float[]{9};
-            case WALK -> new float[]{0, 18};
-            case RUN -> new float[]{0, 10};
+            case WALK -> new float[]{0, 24};
+            case RUN -> new float[]{0, 14};
             default -> new float[0];
         };
         String what = tr.state == DragonState.WALK || tr.state == DragonState.RUN ? "step" : "wingbeat";
