@@ -50,6 +50,9 @@ public class DragonEntity extends PathfinderMob {
     public enum Mode { STAY, ARRIVE, DEPART }
     private Mode mode = Mode.STAY;
     private int modeTicks;
+    /** Ticks she has stood idle; after a while she lies down to rest. */
+    private int idleTicks;
+    private boolean resting;
     private int takeoff, landing, roar;
     private Vec3 lastPos;
 
@@ -100,6 +103,7 @@ public class DragonEntity extends PathfinderMob {
     @Override
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (isVehicle() || player.isSecondaryUseActive()) return super.mobInteract(player, hand);
+        wake();
         if (!level().isClientSide()) player.startRiding(this);
         return InteractionResult.SUCCESS;
     }
@@ -115,7 +119,7 @@ public class DragonEntity extends PathfinderMob {
     /** The saddle: over the shoulders, where the spine meets the neck. */
     @Override
     protected Vec3 getPassengerAttachmentPoint(Entity rider, EntityDimensions dims, float scale) {
-        return new Vec3(0, 3.95, 1.2);
+        return new Vec3(0, 4.05, 1.2);
     }
 
     @Override
@@ -230,6 +234,32 @@ public class DragonEntity extends PathfinderMob {
     public void call() {
         mode = Mode.ARRIVE;
         modeTicks = 0;
+        wake();
+    }
+
+    /** Up from resting. */
+    public void wake() {
+        resting = false;
+        idleTicks = 0;
+    }
+
+    public boolean resting() { return resting; }
+
+    /** Idle on the ground: her head follows the nearest player in sight; she turns her body if they go round her. */
+    private void lookAround() {
+        Player p = level().getNearestPlayer(this, 24);
+        if (p == null || resting) return;
+        Vec3 to = p.getEyePosition().subtract(getEyePosition());
+        float yaw = (float) Math.toDegrees(Math.atan2(-to.x, to.z));
+        float pitch = (float) -Math.toDegrees(Math.atan2(to.y, Math.max(0.5, to.horizontalDistance())));
+        float d = Mth.wrapDegrees(yaw - getYHeadRot());
+        setYHeadRot(getYHeadRot() + Mth.clamp(d, -4, 4));
+        setXRot(getXRot() + Mth.clamp(pitch - getXRot(), -3, 3));
+        if (Math.abs(Mth.wrapDegrees(yaw - getYRot())) > 95) {
+            float b = Mth.clamp(Mth.wrapDegrees(yaw - getYRot()), -2.5f, 2.5f);
+            setYRot(getYRot() + b);
+            setYBodyRot(getYRot());
+        }
     }
 
     /** Sent away: she takes off and leaves, and is gone once out of sight. */
@@ -271,8 +301,20 @@ public class DragonEntity extends PathfinderMob {
         modeTicks++;
         switch (mode) {
             case STAY -> {
-                if (flying()) glideDown();
-                else stand();
+                if (flying()) {
+                    glideDown();
+                    return;
+                }
+                stand();
+                lookAround();
+                // A quiet stretch and she lies down; someone coming close rouses her.
+                Player near = level().getNearestPlayer(this, 5.5);
+                if (resting && near != null) {
+                    resting = false;
+                    idleTicks = 0;
+                } else if (!resting && ++idleTicks > 600 && near == null) {
+                    resting = true;
+                }
             }
             case DEPART -> {
                 double yr = Math.toRadians(getYRot());
@@ -423,6 +465,7 @@ public class DragonEntity extends PathfinderMob {
         if (landing > 0) return DragonState.LAND;
         if (roar > 0) return DragonState.ROAR;
         if (isVehicle() && h < 0.02) return DragonState.CROUCH;
+        if (resting && !isVehicle()) return DragonState.REST;
         return h > 0.24 ? DragonState.RUN : h > 0.03 ? DragonState.WALK : DragonState.IDLE;
     }
 

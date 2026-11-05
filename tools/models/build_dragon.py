@@ -129,7 +129,9 @@ UVR = {
     "plate": (0.25, 0.75, 0.5, 0.875),
     "claw": (0.25, 0.875, 0.375, 1.0),
     "eye": (0.375, 0.875, 0.5, 1.0),
-    "membrane": (0.5, 0.5, 1.0, 1.0),
+    "membrane": (0.5, 0.5, 1.0, 0.9375),
+    "saddle": (0.5, 0.9375, 0.75, 1.0),
+    "strap": (0.75, 0.9375, 1.0, 1.0),
 }
 
 
@@ -284,8 +286,9 @@ def build():
 
     # Torso: from just behind the hips to the base of the neck, deepest at the chest.
     torso_pts = catmull([HEAD["pelvis"] + v(0, 0, -0.6)] + [HEAD[b] for b in spine] + [HEAD["neck1"]], 40)
-    tube(torso_pts, lambda s: 1.15 + 0.42 * math.sin(math.pi * min(1, s * 1.15)) - 0.35 * max(0, s - 0.85) / 0.15,
-         "body", lambda p, s: chain_weights(p, spine + ["neck1"]), ring=24, squash=lambda s: (1.1, 1.0), cap_end=False, belly=0.25)
+    torso_r = lambda s: 1.15 + 0.42 * math.sin(math.pi * min(1, s * 1.15)) - 0.35 * max(0, s - 0.85) / 0.15
+    tube(torso_pts, torso_r, "body", lambda p, s: chain_weights(p, spine + ["neck1"]), ring=24, squash=lambda s: (1.1, 1.0), cap_end=False, belly=0.25)
+    saddle(torso_pts, torso_r, spine)
 
     # Neck: long and tapering into the skull.
     neck_pts = catmull([HEAD[b] for b in neck], 48)
@@ -350,6 +353,8 @@ def build():
         if len(seg) < 3:
             continue
         s = k / 112
+        if 0.2 <= seg[1][2] <= 2.2:
+            continue  # the saddle sits here
         h = 0.18 + 0.55 * math.exp(-((s - 0.42) / 0.18) ** 2) + 0.12 * math.sin(s * 30) ** 2
         blade(seg, lambda t, h=h: h * math.sin(math.pi * t) ** 0.8 + 0.02, 0.035, "plate",
               lambda p, t: chain_weights(p, neck + spine[::-1] + tail[1:]), lean=v(0, 0, -0.35))
@@ -404,6 +409,63 @@ def build():
         inner_b = resample(list(reversed(finger_lines[2])) + flank[::max(1, n // 6)], n)
         membrane(inner_a, inner_b, "membrane", wweights, rows=10, sag=0.3, u0=0.0, u1=0.3)
         del lead, f2, f3
+
+
+def saddle(torso_pts, torso_r, spine):
+    """Leather seat over spine1 (where the rider sits): a shell lying on the back between z 0.4 and
+    2.0, its front (pommel) and back (cantle) raised, and two girth straps round the body."""
+    tans, sides, ups = frame_along(torso_pts)
+    n = len(torso_pts)
+    zs = [p[2] for p in torso_pts]
+    idx = [i for i in range(n) if 0.4 <= zs[i] <= 2.0]
+    if len(idx) < 3:
+        return
+    span = math.radians(68)
+    cols = 12
+    for face, lift in ((1, 0.11), (-1, 0.05)):
+        rows = []
+        for r_i, i in enumerate(idx):
+            s = i / (n - 1)
+            r = torso_r(s) * 1.0 + lift
+            t = r_i / (len(idx) - 1)
+            # Pommel and cantle: the ends rise.
+            rise = 0.22 * max(0.0, 1 - t / 0.18) + 0.16 * max(0.0, (t - 0.82) / 0.18)
+            row = []
+            for c in range(cols + 1):
+                a = math.pi / 2 - span + 2 * span * c / cols
+                ca, sa = math.cos(a), math.sin(a)
+                q = torso_pts[i] + sides[i] * ca * r * 1.1 + ups[i] * sa * (r + rise * sa)
+                nrm = (sides[i] * ca + ups[i] * sa) * face
+                row.append(add_vertex(q, nrm, uvmap("saddle", c / cols, t), chain_weights(torso_pts[i], spine)))
+            rows.append(row)
+        for r_i in range(len(rows) - 1):
+            for c in range(cols):
+                a, b, cc, d = rows[r_i][c], rows[r_i][c + 1], rows[r_i + 1][c + 1], rows[r_i + 1][c]
+                if face > 0:
+                    tri(a, d, cc)
+                    tri(a, cc, b)
+                else:
+                    tri(a, cc, d)
+                    tri(a, b, cc)
+    # Girth straps: thin bands right round the body just in front of and behind the seat.
+    for zt in (0.55, 1.85):
+        i = min(range(n), key=lambda k: abs(zs[k] - zt))
+        s = i / (n - 1)
+        r = torso_r(s) + 0.04
+        ring_ids = []
+        for half in (-0.06, 0.06):
+            row = []
+            for c in range(25):
+                a = 2 * math.pi * c / 24
+                ca, sa = math.cos(a), math.sin(a)
+                yk = sa * (1 - 0.25 * max(0.0, -sa))
+                q = torso_pts[i] + tans[i] * half + sides[i] * ca * r * 1.1 + ups[i] * yk * r
+                row.append(add_vertex(q, sides[i] * ca + ups[i] * sa, uvmap("strap", c / 24, 0.5 + half * 4), chain_weights(torso_pts[i], spine)))
+            ring_ids.append(row)
+        for c in range(24):
+            a, b, cc, d = ring_ids[0][c], ring_ids[0][c + 1], ring_ids[1][c + 1], ring_ids[1][c]
+            tri(a, d, cc)
+            tri(a, cc, b)
 
 
 def chain_weights_any(p, names, side):
@@ -512,6 +574,20 @@ def paint(size=2048):
     img[m] = np.clip((slate_dark * (0.8 + 0.6 * lv[..., None]) + blue * 0.15 * lv[..., None] ** 3)[m], 0, 1)
     m, lu, lv = region("eye")
     img[m] = np.array([0.55, 0.85, 1.0])
+    m, lu, lv = region("saddle")
+    leather = np.array([0.34, 0.19, 0.10]) * (0.85 + 0.2 * np.sin(lu * 40) * np.sin(lv * 25))[..., None]
+    edge = (np.minimum(np.minimum(lu, 1 - lu), np.minimum(lv, 1 - lv)) < 0.06)
+    stitch = edge & ((np.floor(lu * 80) + np.floor(lv * 20)) % 2 == 0)
+    leather = np.where(edge[..., None], leather * 0.7, leather)
+    leather = np.where(stitch[..., None], np.array([0.78, 0.68, 0.48]), leather)
+    tool = np.abs(np.sin(lu * 18) * np.sin(lv * 6)) > 0.92
+    leather = np.where(tool[..., None], leather * 0.75, leather)
+    img[m] = np.clip(leather[m], 0, 1)
+    m, lu, lv = region("strap")
+    strap = np.array([0.16, 0.10, 0.07]) * (0.9 + 0.2 * lv[..., None])
+    buckle = (np.abs(((lu * 6) % 1) - 0.5) < 0.08)
+    strap = np.where(buckle[..., None], np.array([0.78, 0.62, 0.32]), strap)
+    img[m] = np.clip(strap[m], 0, 1)
     m, lu, lv = region("membrane")
     # Membrane: dusk blue, veins radiating from the wrist (u along the span, v towards the trailing edge).
     veins = np.exp(-((np.sin(lu * 70 + np.sin(lv * 6) * 1.5)) ** 2) / 0.01) * 0.6

@@ -38,6 +38,7 @@ public final class DragonAnimator {
         CLIPS.put(DragonState.LAND, new Clip("land", 24, false, new Key(0, "land"), new Key(10, "hover"), new Key(24, "crouch")));
         CLIPS.put(DragonState.ROAR, new Clip("roar", 50, false, new Key(0, "stand"), new Key(12, "roar"), new Key(38, "roar"), new Key(50, "stand")));
         CLIPS.put(DragonState.CROUCH, new Clip("crouch", 30, true, new Key(0, "crouch"), new Key(30, "crouch")));
+        CLIPS.put(DragonState.REST, new Clip("rest", 120, true, new Key(0, "lie"), new Key(120, "lie")));
     }
 
     static final class Track {
@@ -80,7 +81,9 @@ public final class DragonAnimator {
         tr.time += dt * speed;
         beats(e, tr, before, tr.time);
         tr.prevTime += dt;
-        tr.blend = Math.min(1, tr.blend + dt / 7f);
+        // Lying down and getting up take their time; everything else blends quickly.
+        float blendTicks = tr.state == DragonState.REST ? 45 : tr.previous == DragonState.REST ? 28 : 7;
+        tr.blend = Math.min(1, tr.blend + dt / blendTicks);
 
         sample(CLIPS.get(tr.state), tr.time, poses, tr.scratch);
         if (tr.blend < 1) {
@@ -104,8 +107,10 @@ public final class DragonAnimator {
         // Neck looks toward the look direction (spread down the chain), head finishes the turn.
         float ly = Mth.clamp(Mth.wrapDegrees(lookYaw - yaw), -70, 70) * Mth.DEG_TO_RAD;
         float lp = Mth.clamp(lookPitch, -35, 35) * Mth.DEG_TO_RAD;
-        for (int i = 0; i < neck.length; i++) add(p, neck[i], lp * 0.12f, -ly * 0.14f, 0);
-        add(p, head, lp * 0.3f, -ly * 0.2f, 0);
+        // Resting, she barely lifts her head to look.
+        float look = want == DragonState.REST ? 0.15f : 1f;
+        for (int i = 0; i < neck.length; i++) add(p, neck[i], lp * 0.12f * look, -ly * 0.14f * look, 0);
+        add(p, head, lp * 0.3f * look, -ly * 0.2f * look, 0);
         // Tail: idle sway plus lag behind turns.
         for (int i = 0; i < tail.length; i++) {
             float sway = (float) Math.sin(t * (flying ? 1.6 : 0.9) - i * 0.55) * (flying ? 0.04f : 0.07f);
@@ -137,7 +142,7 @@ public final class DragonAnimator {
             boolean crossed = b >= a ? (m > a && m <= b) : (m > a || m <= b);
             if (crossed) DragonFx.event(e, what);
         }
-        if (tr.state == DragonState.IDLE || tr.state == DragonState.CROUCH) {
+        if (tr.state == DragonState.IDLE || tr.state == DragonState.CROUCH || tr.state == DragonState.REST) {
             tr.breathIn -= (int) Math.max(1, to - from);
             if (tr.breathIn <= 0) {
                 tr.breathIn = 110 + e.getRandom().nextInt(80);
