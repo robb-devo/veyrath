@@ -1,10 +1,13 @@
 # Chapter status
 
-Last updated: 2026-11-04 · Branch `ch02-combat` · Version `0.2.0-ch02`
+Last updated: 2026-11-11 · Branch `ch02-combat` · Version `0.3.0-ch03-dev`
 
-Authorized scope: **Chapter 00**, **Chapter 01** (The World) and, since 2026-11-03, **Chapter 02**
-(Player Controller & Combat Engine). Chapter 03 and later must not start without the owner's
-explicit approval.
+Authorized scope: **Chapter 00**, **Chapter 01** (The World), **Chapter 02** (Player Controller &
+Combat Engine) and, since 2026-11-04, **Chapter 03** (weapons, audio), **Chapter 04** (bosses) and
+**Chapter 05** (dragon): see [CHAPTER_03_PLAN.md](CHAPTER_03_PLAN.md),
+[CHAPTER_04_PLAN.md](CHAPTER_04_PLAN.md), [CHAPTER_05_PLAN.md](CHAPTER_05_PLAN.md) and
+[../HANDOFF.md](../HANDOFF.md) for their state. Nothing beyond Chapter 05 may start without the
+owner's explicit approval. The sections below describe Chapters 00 to 02.
 
 ## Continuation summary
 
@@ -87,7 +90,7 @@ and preview tool, not yet seen in Minecraft), **Partial**, **Not started** and *
 | Floating islands work | Met | Aetherreach islands and the Crown of Aether with trees; the Veil, a 20-block straight fall of about 335 blocks into a plunge pool; lit undersides (glow lichen, vines, roots) counted in game |
 | Extraordinary natural landmarks work | Met | World tier: Great Rift, Crown of Aether, Cinder Throne, Crownspire, Elder Tree, Prism Caldera, mountain window. Regional and local: waterfalls, arches, hoodoo groves, basalt stacks, crystal faults, cave mouths. Each has a `/veyrath tp` target and is a tour stop |
 | Rivers, lakes and waterfalls work | Met | 0 bank leaks on seeds 1–3, 462 waterfalls on seed 1 (101 of 20+ blocks), falling water counted in game. Lake-outlet falls and hanging valleys not built |
-| Biome transitions are visually convincing | Partial | Owner, 2026-11-04, after a short play: "some biome changes is pretty much 1 line. so its no smooth transition." Fine-tuning item: blend surface materials and vegetation across biome borders |
+| Biome transitions are visually convincing | Reworked, not yet seen in game | Owner, 2026-11-04, after a short play: "some biome changes is pretty much 1 line. so its no smooth transition." Reworked 2026-11-11 (TD-038): province borders are mixed belts about 190 blocks deep and biome edges inside a province are ragged; biome blend 15x15 by default. Checked with engine tests and offline maps ([media/world/border_before_after.jpg](media/world/border_before_after.jpg)) only. Needs a new world and the owner's eyes |
 | Multiple world seeds have been evaluated | Met | Seeds 1–3 in the engine, seeds 1 and 2 toured in game with screenshots (`docs/media/ingame/`) |
 | Shader integration works | Partial | Complementary Unbound with DH runs (newest build, seed 1: 71–220 fps). Far terrain looks pale with it. Photon and Bliss load but render wrong (black sky / overexposure) |
 | Distant Horizons works with our custom terrain | Met | VEYRATH LOD generator feeds DH; islands, forests and ranges render at distance; LOD equals chunks at block detail (test). The earlier seam band was a test artifact (render distance raised after world start) |

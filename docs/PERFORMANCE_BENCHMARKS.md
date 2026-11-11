@@ -1,6 +1,6 @@
 # Performance benchmarks
 
-Last updated: 2026-11-03. Only measured numbers appear here. "Not measured" means not measured.
+Last updated: 2026-11-11. Only measured numbers appear here. "Not measured" means not measured.
 
 ## Engine benchmarks (outside Minecraft)
 
@@ -59,6 +59,25 @@ Realm-build breakdown for seed 1 (an earlier run, 10.1 s in total):
 | Talus and lakes | 527 ms |
 | Hydrology | 820 ms |
 | Finish | 41 ms |
+
+### Soft province borders (2026-11-11, TD-038)
+
+Same machine, commit `23cd327` against `6817b1e`, seed 1.
+
+| Measure | Before | After |
+|---|---|---|
+| `preview bench`, 576 chunks around spawn, 1 thread: p50 | 2.47 ms | 2.46 ms |
+| `preview bench`, 4 threads | 1394 chunks/s | 1387 chunks/s |
+| Biome choice per column, inside a province | 0.06 to 0.09 µs | 0.17 to 0.22 µs |
+| Biome choice per column, in a border belt | 0.06 to 0.10 µs | 0.95 to 1.25 µs |
+| Terrain sample per column (carries the rock province), border belt | 1.9 to 2.7 µs | 2.0 to 2.7 µs |
+
+The biome choice is the only step that got slower. A chunk has 256 columns, so the worst case (a
+chunk wholly inside a border belt) adds about 0.3 ms to a chunk of 2 to 5 ms, and a chunk inside a
+province about 0.03 ms. Whole chunks at four border sites (144 chunks each, three passes, two
+runs) took 3.4 to 4.0 ms after against 4.1 to 5.1 ms before; that difference is not a speed-up,
+the plants standing there changed, and runs differ by about 20 % on this machine. Not measured
+in game.
 
 ### Interpretation
 

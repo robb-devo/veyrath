@@ -31,6 +31,7 @@ Tests use a 256-cell atlas (`TestWorlds`) to stay fast. Production uses 1024.
 ./gradlew :preview:run --args="view --seed 1"      # perspective renders of landmarks
 ./gradlew :preview:run --args="audit --seed 1"     # unstable water and lava, per-archetype ranges
 ./gradlew :preview:run --args="bench --seed 1"     # engine performance
+./gradlew :preview:run --args="border --seed 1"    # top-down maps where provinces meet (--at x,z: in-game coordinates)
 ```
 
 Copy curated results to `docs/media/`, and audit and benchmark numbers to
@@ -138,6 +139,14 @@ are manual.
      water, lava leaks, chunk seams, wrong biome colours.
 6. Fly at least 2 km in a straight line from spawn over mixed terrain. Expected: no chunk
    borders, no seams and no missing chunks.
+   - **Province borders** (TD-038, new world on seed 1). `/veyrath tp border` goes to the nearest
+     place where two provinces meet (from spawn: Sunmantle and Aethercrown, about 700 blocks
+     away). Two more: `/tp @s -256 300 976` (Sunmantle and Cinderwake) and `/tp @s 2960 370 992`
+     (Sunmantle and Vesperfall). Fly up and look down. Expected: the two landscapes mix in patches
+     over a belt about 190 blocks deep, with no straight line. Check that grass and leaf tints
+     fade (Video Settings, Biome Blend 15x15) and that the far terrain (Distant Horizons) shows
+     the same patches. Screenshots without playing:
+     `gradlew :mod-fabric:runClientGameTest -Pveyrath.tests=tour -Pveyrath.tourSeeds=1 -Pveyrath.tourTargets=border`.
 7. **Save and reload.** Save and Quit to Title, then reopen the world. Expected: the same
    terrain, no regeneration seams and no errors in the log.
 8. **Restart test.** Quit the game completely, relaunch, open the world and fly into new

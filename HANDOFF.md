@@ -1,6 +1,7 @@
 # VEYRATH: handoff for the next session
 
-Last updated: 2026-11-04 04:35 local, branch `ch02-combat`. Kept current after every work package.
+Last updated: 2026-11-11 (cloud session, no PC), branch `ch02-combat`. Kept current after every
+work package.
 
 **How to use this file.** Open a new Claude Code chat in `C:\Users\Robbi\IdeaProjects\veyrath`
 (on the laptop) or in a cloud session with the repository, then paste everything in the box below
@@ -30,9 +31,9 @@ Owner's standing rules (verbatim where quoted):
 - "Ask questions only when an actual decision cannot reasonably be made independently."
 - "Do not spend excessive time writing documentation instead of developing the actual product."
 - Chapters are gated: "Do not begin any future Chapter without explicit approval." Chapter 02
-  (Player Controller & Combat Engine) is approved and done (acceptance report presented 2026-11-04). Chapter 03 (weapons, audio) is
-  approved since 2026-11-04. Chapters 04 (bosses), 05 (dragon) need his explicit go-ahead. Each chapter ends with its own acceptance
-  report, then stop and present.
+  (Player Controller & Combat Engine) is approved and done (acceptance report presented 2026-11-04). Chapters 03 (weapons, audio),
+  04 (bosses) and 05 (dragon) are approved since 2026-11-04 and first playable. Nothing beyond Chapter 05 (structures, NPCs,
+  quests, progression) is approved. Each chapter ends with its own acceptance report, then stop and present.
 - 2026-11-04: "we wanna basically abuse minecraft as much as we can, and only use it as an
   engine ... our ambition, is to absolutely not keep any of the original minecraft vibes."
   Be smart with balance, no overengineering of meaningless things, but never rush; be precise.
@@ -47,6 +48,36 @@ Owner's standing rules (verbatim where quoted):
 ```
 
 ---
+
+## Cloud session 2026-11-10 and 11 (the owner has no PC)
+
+The owner has had no PC since about 2026-11-05 and asked the cloud to continue. The cloud cannot
+reach the Fabric, Mojang or Modrinth servers, so it builds and tests only `engine/`, `combat/` and
+`preview/` and runs the Python tools. **Nothing in this section has been compiled into the mod or
+seen in game.**
+
+Done (all pushed):
+
+1. **Soft province borders** (TD-038, the owner's "1 line" note). `engine/region/Ecotone`: rock,
+   ground cover, plants and the biome follow weight plus noise per province, so a border is a
+   mixed belt about 190 blocks deep; biome thresholds inside a province are ragged. Landmarks and
+   terrain heights did not move. Engine tests `EcotoneTest` (6), maps with `preview border`,
+   before and after in `docs/media/world/border_before_after.jpg`. `/veyrath tp border` goes to
+   the nearest border (a new locator target, engine side). Installer: biome blend 15x15 by default.
+
+**First thing on the PC** (in this order):
+
+1. `git pull origin ch02-combat`, then `gradlew :mod-fabric:build`. No file under `mod-fabric/`
+   changed in this section, but the engine did: fix whatever does not compile.
+2. Borders in game: make a **new** world on seed 1 (old worlds show seams at province borders),
+   `/veyrath tp border`, fly up. Or screenshots without playing:
+   `gradlew :mod-fabric:runClientGameTest -Pveyrath.tests=tour -Pveyrath.tourSeeds=1 -Pveyrath.tourTargets=border`.
+   The test client's Biome Blend is Minecraft's default (5x5): set it to 15x15 in Video Settings,
+   or set `mc.options.biomeBlendRadius()` next to the render distance line in `SeedTourGameTest`.
+   Judge: patches instead of a line, tints fade, Distant Horizons shows the same patches, no
+   frame-time spikes while flying along a border.
+3. Run `tools/install/Install-Veyrath.ps1` once with Windows PowerShell 5.1: the biome blend step
+   was only run with PowerShell 7 on Linux.
 
 ## Where things stand (Chapter 02)
 

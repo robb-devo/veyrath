@@ -512,3 +512,26 @@ blow. A boss made of light (the Hollow Sun) has no entity model: it is a `Vfx.Bo
 frame by our effects engine in both passes (additive glow, soft lit), from our atlas sprites.
 **Why:** one hit resolution for every kind of attack; and a star should look like light, not a
 textured cube.
+
+## TD-038 — Province borders are mixed belts (Ecotone)
+
+**Decision:** the province that a column's rock, ground cover, plants and biome belong to is no
+longer the one with the largest atlas weight. `region.Ecotone` adds a fractal noise field of its
+own per province to the weights and takes the winner. Coarse noise (480 to 120 blocks, amplitude
+0.14 against a weight gradient of about 0.0018 per block) moves the border by up to about 100
+blocks. Middle noise (64 to 16 blocks, 0.13) mixes both sides in 15 to 60 block patches through a
+belt about 190 blocks deep, dense at the border and thinning out. Fine noise (8 and 4 blocks, 0.03)
+roughens every patch edge. Rock (`ColumnInfo.rock`) follows the coarse field only; cover, plants
+and the biome (`BiomeSelector.select`) follow all three. Thresholds inside a province (snow and
+tree lines, valley floors, moisture, beaches, patch noise) wobble with `Ecotone.grain`.
+`ColumnInfo.archetype` keeps its old value and now only decides where landmarks may stand, so
+terrain heights, spires, crystal faults, the caldera and arches did not move. The installer sets
+biome blend to 15x15 so the grass, leaf and water tints fade as well.
+**Why:** the owner's Chapter 01 note: "some biome changes is pretty much 1 line". The largest
+weight draws ruled lines, wedges and stripes, because the weights are bilinear on a 128-block
+grid. Real ground cover interfingers, with outliers of each side that thin out with distance.
+**Rejected for now:** a tint that changes per block (a mixin on the biome's grass colour), which
+would fade colours over hundreds of blocks. It would be written blind, and Distant Horizons
+probably keeps one colour per biome.
+**State:** engine tests and offline maps (`preview border`) only; not yet seen in game. Existing
+worlds show seams near province borders where old chunks meet new ones.

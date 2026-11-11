@@ -42,9 +42,18 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   vanilla sound in combat, tells and the arena; weapon swings whoosh.
 - The Duelist can wield the Oathcleaver (`/veyrath arena duelist <style> greatsword`); weapon
   reach for its AI is measured from the blade's swing.
+- `preview border`: top-down maps, one pixel per block, of the places where provinces meet.
+  `/veyrath tp border` goes to the nearest one in game.
 
 ### Changed
 - The server's copy of a fighter waits through its own hit-stop before rejecting an input.
+- **Province borders** (TD-038): where two provinces meet, the land no longer changes along a
+  ruled line. The border meanders, both sides mix in patches through a belt about 190 blocks deep,
+  and biome edges inside a province are ragged. Rock changes in broad lenses. Terrain shape and
+  landmarks are unchanged. Engine tests and offline maps only, not yet seen in game. Existing
+  worlds show seams near province borders: make a new world.
+- Installer: biome blend 15x15 by default, so tints fade at biome edges (a value the player chose
+  is kept). Not yet run on the PC.
 
 ## [Released to the owner] — 0.2.0-ch02
 

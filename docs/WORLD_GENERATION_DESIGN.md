@@ -235,6 +235,29 @@ Geology is regional:
 The snow line is `sea + 560 − 320·(0.5 − temperature)` and the tree line 150 blocks below it.
 High lakes freeze.
 
+### Province borders
+
+The atlas gives every column smooth province weights; between two provinces they cross over about
+a kilometre. Terrain shape blends with those weights. Rock, ground cover, plants and the biome
+need one province per column, and `Ecotone` picks it as the largest of *weight plus a noise field
+of its own per province* (TD-038):
+
+| Field | Wavelengths | Effect |
+|---|---|---|
+| Coarse | 480, 240, 120 blocks | The border meanders by up to about 100 blocks. Rock follows this field only, so geology changes in broad lenses |
+| Middle | 64, 32, 16 blocks | Both sides mix in patches of 15 to 60 blocks through a belt about 190 blocks deep, dense at the border and thinning out |
+| Fine | 8, 4 blocks | Patch edges are ragged down to single blocks |
+
+Inside a province the biome thresholds (snow and tree lines, valley floors, moisture, beaches)
+wobble with the same grain. Landmarks (spires, crystal faults, the caldera, arches) still use the
+hard province, so they did not move.
+
+![Three province borders on seed 1, before and after](media/world/border_before_after.jpg)
+
+![Biome maps of four borders, before and after](media/world/border_biome_maps.jpg)
+
+*Top-down engine maps (`preview border`), 640 blocks across. Not in-game screenshots.*
+
 ## Vertical layout
 
 | y | Content |
