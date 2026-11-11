@@ -71,11 +71,21 @@ Done (all pushed):
    counter-clockwise from outside, because the old mesh was lit from below in game (see TD-039).
    Membrane weights are fitted to `poses.json`: after changing a pose, run
    `python tools/models/build_dragon.py` again. Offline sheets: `docs/media/dragon/art_pass2_*.jpg`.
+3. **Attacks land where they are aimed** (TD-040, the owner's combat note 4). Combat core:
+   fast cuts are checked along their whole path (the front of an `OUT_EXPO` arc used to be
+   skipped: the glaive's sweep never hit, the Oathcleaver's second cut reached 1.1 blocks of its
+   2.1), dashes stop where each move lands (`Reach.stopAt`), and locked attacks lead the target
+   and track through every windup (player only, `Rules.aimAssist`). Client: `LocalCombat` feeds
+   `TargetTrack` (velocity of the locked target, three ticks of interpolation lag) and draws blade
+   trails from `HitDetector.trail`. **`LocalCombat.java` is the one mod file changed, blind.**
+   Tests: `AimAssistTest` (8). Found, not changed (COMBAT_POLISH 6 and 7): the glaive's sweep
+   cannot reach a target its thrusts pushed away; Wren and Thorn's rising cut is off to the left.
 
 **First thing on the PC** (in this order):
 
-1. `git pull origin ch02-combat`, then `gradlew :mod-fabric:build`. No file under `mod-fabric/`
-   changed in this section, but the engine did: fix whatever does not compile.
+1. `git pull origin ch02-combat`, then `gradlew :mod-fabric:build`. Only
+   `client/combat/LocalCombat.java` changed under `mod-fabric/` (TargetTrack, trails), but the
+   engine and the combat core did: fix whatever does not compile.
 2. Borders in game: make a **new** world on seed 1 (old worlds show seams at province borders),
    `/veyrath tp border`, fly up. Or screenshots without playing:
    `gradlew :mod-fabric:runClientGameTest -Pveyrath.tests=tour -Pveyrath.tourSeeds=1 -Pveyrath.tourTargets=border`.
@@ -92,6 +102,10 @@ Done (all pushed):
    are see-through, that the rider sits on the saddle (seat top about y 4.4 at z 1.2 in model
    space; the attachment point is `DragonEntity` 4.05), and the frame time with her in view
    (more triangles than before: 26 390 against 21 030).
+5. Combat (TD-040): `gradlew :mod-fabric:runClientGameTest -Pveyrath.tests=weapons` must still
+   pass and should now log `PASS the greatsword Duelist lands hits`. Then play, locked on (middle
+   mouse), against the Duelist and Varek: attacks should follow a target that steps beside or
+   behind you. If they overshoot a target that stops, lower `TargetTrack.LAG` (3) to 2.
 
 ## Where things stand (Chapter 02)
 
@@ -101,7 +115,7 @@ go-ahead. Version `0.2.0-ch02`, installed in his VEYRATH launcher profile.
 
 Done and verified in game (2026-11-04, laptop `robbs-strix`):
 
-- **Combat core** `combat/` (pure Java, 44 JUnit tests): fighter, input buffer, moves with frame
+- **Combat core** `combat/` (pure Java, 55 JUnit tests): fighter, input buffer, moves with frame
   data, swept bone hit shapes, block, parry, dodge, reactions, resources, reaction grace, unarmed
   moveset, three abilities, ultimate Unbound Fist. Server follower accepts late string follow-ups
   within the move's hit-stop margin (TD-028).
@@ -138,8 +152,9 @@ framework (TD-032), the Oathcleaver greatsword (playable, all moves land in the 
    kenney.nl). Music done (TD-034): 20 CC0 pieces from OpenGameArt (list and links in
    ASSET_LICENSES.md), rebuild with `python tools/audio/build_music.py <folder>`; mood director in
    client/audio/VeyrathMusic, vanilla music cancelled. Next: ambience, stems, buses and ducking.
-2. Oathcleaver: `/veyrath arena duelist adept greatsword` arms the Duelist, but its cuts rarely
-   connect (DuelistBrain/Reach were built for fists): fix that; feel tuning; own sounds.
+2. Oathcleaver: `/veyrath arena duelist adept greatsword` arms the Duelist; its cuts rarely
+   connected because the hit check skipped the front of fast arcs (TD-040, fixed in the core: 38
+   of 39 attacks land in the sim, was 20). Confirm with the `weapons` game test; feel tuning; own sounds.
 3. Weapons: All five are playable: fists (5), Oathcleaver (6), Wren and Thorn (7), Skyreach (8), Vesper Codex (9).
    Next: feel tuning per weapon with the owner, Duelist support for every weapon. Deaths now fade white and dissolve (own effect); experience orbs and item drops are still vanilla.
 4. Own HUD done (TD-035, client/hud): compass band, boss bars, vitals, hotbar, abilities, effects,

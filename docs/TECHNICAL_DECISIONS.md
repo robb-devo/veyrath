@@ -568,3 +568,58 @@ rules come with it:
   flank. Stand, the four walk phases and lie were solved again.
 **State:** offline renders only. Not yet seen in game: the lighting (should now be from above), the
 cut-out tears, the rider's seat on the new saddle, and the frame cost of the new triangle count.
+
+## TD-040 — Attacks land where they are aimed: whole-path sweeps, per-move stops, a locked attack leads its target
+
+**Context:** the owner's note 4 (docs/COMBAT_POLISH.md): locked on, attacks did not follow a target
+that moved beside or behind him. Measured in the headless sim before changing anything:
+- Hit shapes were checked at four poses per tick. The cuts use `OUT_EXPO` eases, so a blade crosses
+  a metre or more between two of those poses and the front of its arc was never checked. Straight
+  ahead, against a standing 0.6-wide target: the glaive's sweep touched nothing at any distance,
+  the Oathcleaver's second cut reached 1.10 blocks (2.10 checked finely), Wren and Thorn's first
+  two cuts 1.05 (1.55), the heavy greatsword cut 2.20 (2.45). This is also why the armed Duelist's
+  Oathcleaver "rarely connects" (Chapter 03 known gap): 39 attacks, 20 hits on a standing target
+  in five sim bouts; 38 hits now.
+- Every attack dash stopped 1.15 blocks short of its target (made for fists). The glaive's thrusts
+  only cut with the head, 2.05 to 4.75 blocks out, so its dash carried the player into the dead
+  zone and the light string whiffed.
+- The client sees other entities a few ticks late (interpolation). Aiming at that late position
+  (measured with the finer sweep below already in), a locked fist string against a target
+  strafing at 1.5 blocks lands 10 of 13 attacks at 10 degrees a tick and 5 of 16 at 15.
+
+**Decision:**
+- `HitDetector` keeps the four regular poses and halves each step while an end of a bone shape
+  moves more than 0.2 blocks (at most 2^8 per step), so consecutive capsules overlap. The capsules
+  depend only on clip and tick, so `ClipLibrary` keeps them per move in character space, worked
+  out on first use (128 ms for every weapon move together on the cloud machine, so a few ms per
+  move the first time it is used); a call then only places them: about 1 µs after warm-up against
+  about 4 µs for the old sampling (same harness, cloud machine, noisy). `HitDetector.trail`
+  returns the regular poses only, for blade trails and spell effects (drawn as before).
+- `Reach.band(move)` measures where a move's first window touches a standing target straight
+  ahead; `Reach.stopAt(move)` keeps the usual 1.15 when that lies inside the band and otherwise
+  moves the stop into it (glaive thrust 2.25, Wren and Thorn's rising cut 0.80).
+- Aim assist (`Rules.aimAssist`, the player only; minds aim for themselves): locked on, an attack
+  aims where the target will be when its next window opens (its velocity times the ticks to that
+  window, at most 8 ticks and 1.5 blocks) and turns toward it through every windup at 24 degrees a
+  tick or the move's own tracking if faster. Dashes stop at `Reach.stopAt`. Moves without tracking
+  (charged releases, spins, plunges) keep their commitment.
+- The client measures the locked target's velocity from its last shown positions and moves it on
+  by three ticks, the interpolation lag (`TargetTrack`, `LocalCombat`). Jumps faster than a block
+  a tick count as teleports, not speed.
+- Wren and Thorn's rising third cut steps in further (0.3 instead of 0.15 blocks a tick for two
+  ticks), stopped at its band, so the string's own push no longer leaves it short.
+
+**Measured after** (headless sim, `AimAssistTest`, 8 tests): every light string lands every cut on
+a standing target (glaive: both thrusts; see below); the locked fist string lands 13 of 13 at 10
+degrees a tick and 12 of 13 at 15 with the client's three-tick lag; the armed Duelists land as
+before or better (fists 45, glaive 47 unchanged; Oathcleaver 20 to 38; twin blades 42 to 64 hits).
+
+**Left for the owner** (content, not changed): the glaive's thrusts push a lone target about
+three blocks back, out of the sweep's reach (2.5 blocks), so the third light hit only lands on a
+group; its thrusts cannot touch anything closer than 2 blocks (fits "spacing, keep-away"; a haft
+strike would change that). Wren and Thorn's rising cut passes about a block to the left of the
+body, so it only lands on a target dead ahead.
+
+**State:** combat core and headless tests only. `LocalCombat` (client) feeds `TargetTrack`; it has
+not been compiled. The three-tick lag is vanilla's interpolation step count, not measured in game.
+

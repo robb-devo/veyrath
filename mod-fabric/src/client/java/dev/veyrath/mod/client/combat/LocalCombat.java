@@ -5,6 +5,7 @@ import dev.veyrath.combat.fighter.Fighter;
 import dev.veyrath.combat.fighter.FighterEvents;
 import dev.veyrath.combat.fighter.Outcome;
 import dev.veyrath.combat.fighter.Rules;
+import dev.veyrath.combat.fighter.TargetTrack;
 import dev.veyrath.combat.hit.Box;
 import dev.veyrath.combat.hit.HitDetector;
 import dev.veyrath.combat.input.Action;
@@ -75,6 +76,8 @@ public final class LocalCombat {
     private static byte lastHeld = -1;
     private static float yaw, prevYaw;
     private static int lockId = -1;
+    /** The locked target as this client has seen it lately: its velocity, and where the server has it now. */
+    private static final TargetTrack TRACK = new TargetTrack();
     private static long ticks;
     /** Strikes this client predicted, by "move|window|target", so the server's echo adds no second impact. */
     private static final Map<String, Long> PREDICTED = new HashMap<>();
@@ -152,6 +155,7 @@ public final class LocalCombat {
         PREDICTED.clear();
         lastHeld = -1;
         lockId = -1;
+        TRACK.reset();
         ANIM.reset();
         ANIM.clock = fighter.clock();
         ANIM.setBase("stance_idle", ANIM.clock, 4);
@@ -188,6 +192,7 @@ public final class LocalCombat {
         fighter = null;
         owner = null;
         lockId = -1;
+        TRACK.reset();
         ANIM.reset();
         if (tellServer && mc.getConnection() != null) send(new CombatNet.StanceC2S(false));
     }
@@ -198,6 +203,7 @@ public final class LocalCombat {
         fighter = null;
         owner = null;
         lockId = -1;
+        TRACK.reset();
         ANIM.reset();
         PREDICTED.clear();
     }
@@ -308,9 +314,18 @@ public final class LocalCombat {
     private static void applyIntent(Minecraft mc, LocalPlayer p) {
         Vec3 feet = feet(p);
         Entity lock = lockTarget();
-        Vec3 lockFeet = lock == null ? null : feet(lock);
+        // Other entities show a few ticks behind the server: the locked attack aims at where the
+        // target is now and where it will be when the blow lands (TargetTrack, Controller aim assist).
+        Vec3 lockFeet = null, lockVelocity = null;
+        if (lock != null) {
+            TRACK.push(lock.getId(), feet(lock));
+            lockFeet = TRACK.position();
+            lockVelocity = TRACK.velocity();
+        } else {
+            TRACK.reset();
+        }
         Vec3 soft = softTarget(mc, p, feet);
-        Controller.Intent in = Controller.compute(fighter, CONTROLS, feet, lockFeet, soft);
+        Controller.Intent in = Controller.compute(fighter, CONTROLS, feet, lockFeet, lockVelocity, soft);
         fighter.yaw = in.yaw();
         yaw = (float) in.yaw();
         p.setYRot(yaw);
@@ -396,7 +411,7 @@ public final class LocalCombat {
             for (int wi : fighter.activeWindows()) {
                 var w = m.hits.get(wi);
                 if (fighter.moveTick() != w.from()) continue;
-                for (HitDetector.Capsule c : HitDetector.sweep(m, w, fighter.moveTick(), CombatContent.CLIPS, feet(p), fighter.yaw, p.getScale())) {
+                for (HitDetector.Capsule c : HitDetector.trail(m, w, fighter.moveTick(), CombatContent.CLIPS, feet(p), fighter.yaw, p.getScale())) {
                     CombatEffects.spell(c.a(), c.b(), c.radius());
                 }
             }
@@ -404,7 +419,8 @@ public final class LocalCombat {
         }
         for (int wi : fighter.activeWindows()) {
             var w = m.hits.get(wi);
-            for (HitDetector.Capsule c : HitDetector.sweep(m, w, fighter.moveTick(), CombatContent.CLIPS, feet(p), fighter.yaw, p.getScale())) {
+            // Drawn at the regular poses: the hit check samples fast cuts far more finely (HitDetector).
+            for (HitDetector.Capsule c : HitDetector.trail(m, w, fighter.moveTick(), CombatContent.CLIPS, feet(p), fighter.yaw, p.getScale())) {
                 if (c.radius() <= 0.6) CombatEffects.bladeTrail(c.a(), c.b(), 0xB0E8F2FF); // blades, not area shapes
             }
         }

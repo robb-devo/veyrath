@@ -63,6 +63,17 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
 - Model tools: `preview_mesh.py` shades like the game (no culling, faces seen from behind lit with
   the normal turned round, `--back` check), `pose_preview.py --sheet` and `--mesh/--tex`,
   `pose_solve.py` targets points carried by a bone (`"toes_L@x,y,z"`) and solves faster.
+- **Locked attacks follow their target** (TD-040, the owner's note 4): an attack aims where a
+  locked target will be when the blow lands and keeps turning toward it through every windup;
+  the client corrects for seeing other entities a few ticks late. Attack dashes stop where each
+  move lands (the glaive's thrusts two blocks out, not at fist range). Headless tests only.
+
+### Fixed
+- Fast cuts are checked along their whole path (TD-040). Before, the front of the arc was skipped:
+  the glaive's sweep never hit a target ahead, the Oathcleaver's second cut reached 1.1 blocks
+  instead of 2.1, Wren and Thorn's first cuts 1.05 instead of 1.55, and the armed Duelist's
+  Oathcleaver rarely connected. Hit capsules are now worked out once per move, so the finer
+  check costs less per tick than the old one.
 
 ## [Released to the owner] — 0.2.0-ch02
 
