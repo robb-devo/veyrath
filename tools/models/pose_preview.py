@@ -1,6 +1,10 @@
 """Offline preview of Vaelith in a named pose from assets/veyrath/dragon/poses.json (not in game).
 
-    python tools/models/pose_preview.py <pose name> <out.png> [yaw pitch]
+    python tools/models/pose_preview.py <pose name> <out.png> [azimuth elevation] [--mesh FILE] [--tex FILE|clay]
+    python tools/models/pose_preview.py --sheet <out.jpg> [--mesh FILE] [--tex FILE|clay]
+
+The camera is preview_mesh's: azimuth 0 looks at her from the front, 90 from her left, 180 from
+behind. `--sheet` draws every main pose side by side on the ground.
 
 Skins the .vmesh exactly as client/dragon/SkinnedMesh does: per bone world = parent world *
 rest local * delta, delta = Rx(pitch) Ry(yaw) Rz(roll) in the bone's own frame (degrees in the
@@ -119,20 +123,48 @@ def skin(mesh, bones_def, pose):
     return out_p, out_n
 
 
-def main():
-    name, out = sys.argv[1], sys.argv[2]
-    yaw = float(sys.argv[3]) if len(sys.argv) > 3 else 35
-    pitch = float(sys.argv[4]) if len(sys.argv) > 4 else -20
-    mesh_path = A / "models/entity/vaelith.vmesh"
+def posed(mesh_path, name, poses=None):
+    """The mesh (as preview_mesh.load gives it) skinned into the named pose."""
     mesh = P.load(mesh_path)
-    bones_def = load_bones(mesh_path)
-    poses = json.loads((A / "dragon/poses.json").read_text(encoding="utf-8"))["poses"]
-    pose = resolve(poses, name)
-    p, n = skin(mesh, bones_def, pose)
+    if poses is None:
+        poses = json.loads((A / "dragon/poses.json").read_text(encoding="utf-8"))["poses"]
+    p, n = skin(mesh, load_bones(mesh_path), resolve(poses, name))
     verts = mesh[1].copy()
     verts["p"] = p.astype(np.float32)
     verts["n"] = n.astype(np.float32)
-    P.render((mesh[0], verts, mesh[2]), str(A / "textures/entity/vaelith.png"), out, yaw, pitch, ground=True)
+    return mesh[0], verts, mesh[2]
+
+
+SHEET = [("stand", 50, 12), ("walk_a", 90, 6), ("walk_pass_ab", 90, 6), ("lie", 50, 16), ("roar", 40, 8), ("crouch", 60, 12),
+         ("glide", 35, 24), ("flap_up", 20, 10), ("flap_down", 20, 10), ("dive", 60, 14), ("hover", 60, 8), ("land", 60, 8)]
+
+
+def main():
+    argv = sys.argv[1:]
+
+    def opt(flag, default):
+        if flag in argv:
+            i = argv.index(flag)
+            value = argv[i + 1]
+            del argv[i:i + 2]
+            return value
+        return default
+
+    mesh_path = Path(opt("--mesh", A / "models/entity/vaelith.vmesh"))
+    tex = opt("--tex", str(A / "textures/entity/vaelith.png"))
+    if argv[0] == "--sheet":
+        images = []
+        for name, az, el in SHEET:
+            flying = name in ("glide", "flap_up", "flap_down", "dive", "hover", "land")
+            images.append(P.render(posed(mesh_path, name), tex, None, az, el, W=800, H=520, ground=not flying,
+                                   span=26.0 if flying else 15.0, center=(0, 3.5, 0) if flying else None, label=name))
+        P.sheet(images, 4, argv[1], caption="Vaelith, poses from poses.json - offline render, not in game")
+        print("sheet ->", argv[1])
+        return
+    name, out = argv[0], argv[1]
+    az = float(argv[2]) if len(argv) > 2 else 50
+    el = float(argv[3]) if len(argv) > 3 else 14
+    P.render(posed(mesh_path, name), tex, out, az, el, ground=True)
     print("posed", name, "->", out)
 
 
