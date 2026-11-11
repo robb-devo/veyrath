@@ -1,37 +1,61 @@
 """Builds Vaelith, VEYRATH's dragon: a skinned triangle mesh, its skeleton and its texture.
 
-    python tools/models/build_dragon.py
+    python tools/models/build_dragon.py [--out DIR] [--size 2048] [--no-texture]
 
-Everything is generated here (no source art): the body, neck and tail are tubes swept along
-splines through the bones with sculpted cross-sections; the head is a swept profile with a
-separate jaw; horns, claws and teeth are curved cones; the dorsal plates are thin blades; the
-wings are bone tubes with double-sided membranes stretched between the fingers and the flank.
-Every vertex carries up to four bone weights.
+Everything is generated here (no source art). The neck, body and tail are one surface swept along
+the spine with sculpted cross-sections (deep chest, tucked waist, shoulder and haunch masses, a
+tail that flattens into a blade). The head is a sculpted skull with brow ridges, eye sockets,
+cheekbones and a separate jaw with teeth and a tongue. Legs and wing arms are muscled limbs,
+fingers are jointed, and the wing membranes are stretched between the fingers, the arm and the
+flank so that they fold flat when the fingers fold. Every vertex carries up to four bone weights.
 
-Output (model space in blocks, +Y up, +Z forward, origin on the ground under the hips):
-  mod-fabric/src/main/resources/assets/veyrath/models/entity/vaelith.vmesh
-  mod-fabric/src/main/resources/assets/veyrath/textures/entity/vaelith.png
+The texture is painted in the same run from the mesh itself: every texel knows its place on the
+body, so scales have one size everywhere, the belly is plated, creases are darkened by baked
+occlusion and the wing's trailing edge is torn (transparent texels; the game's cutout render type
+drops them).
+
+Triangles are wound counter-clockwise seen from outside. Minecraft 26.3 draws this render type
+without culling and lights a face seen from behind with its normal turned round, so the winding
+decides whether she is lit from above or from below.
+
+Output (model space in blocks, +Y up, +Z forward, +X her left, origin on the ground under the hips):
+  <out>/models/entity/vaelith.vmesh
+  <out>/textures/entity/vaelith.png
+where <out> defaults to mod-fabric/src/main/resources/assets/veyrath.
 Format (little endian): "VMSH", int version=1; int bones, per bone: u16 name length + UTF-8 name,
 int parent, float[3] head (rest position), float[4] rotation (rest orientation, x y z w); int
 vertices, per vertex: float[3] position, float[3] normal, float[2] uv, u8[4] bones, float[4]
 weights; int triangles, int[3] indices each.
 """
+import argparse
 import math
 import struct
 from pathlib import Path
 
 import numpy as np
+from scipy.interpolate import PchipInterpolator
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT_MESH = ROOT / "mod-fabric/src/main/resources/assets/veyrath/models/entity/vaelith.vmesh"
-OUT_TEX = ROOT / "mod-fabric/src/main/resources/assets/veyrath/textures/entity/vaelith.png"
+ASSETS = ROOT / "mod-fabric/src/main/resources/assets/veyrath"
 
 
 def v(*a):
     return np.array(a, dtype=np.float64)
 
 
+def unit(a):
+    n = np.linalg.norm(a)
+    return a / n if n > 1e-12 else a
+
+
+def smooth(x):
+    x = np.clip(x, 0.0, 1.0)
+    return x * x * (3 - 2 * x)
+
+
 # ---------------------------------------------------------------- skeleton (rest pose: wings spread)
+# The skeleton is the contract with assets/veyrath/dragon/poses.json and the mod's animator: names,
+# parents and rest positions must not change without re-solving the poses.
 BONES = []  # (name, parent, head)
 INDEX = {}
 
@@ -76,533 +100,760 @@ for side, s in (("L", 1), ("R", -1)):
 
 HEAD = {n: h for (n, _, h) in BONES}
 
-# ---------------------------------------------------------------- mesh builder
-POS, NRM, UV, BI, BW, TRI = [], [], [], [], [], []
+# ---------------------------------------------------------------- mesh store
+POS, UV, WTS, GRP, VPART, AUX = [], [], [], [], [], []  # per vertex; AUX = (along, around, axis x y z)
+TRI, TPART, TMIRROR = [], [], []                         # per triangle
+PART_NAMES = []
+_counter = {"group": 0, "mirror": False}
 
 
-def add_vertex(p, n, uv, weights):
-    """weights: dict bone name -> weight (normalised here, top four kept)."""
-    items = sorted(weights.items(), key=lambda kv: -kv[1])[:4]
-    tot = sum(w for _, w in items) or 1
-    items = [(INDEX[b], w / tot) for b, w in items]
-    while len(items) < 4:
-        items.append((0, 0.0))
-    POS.append(p)
-    nl = np.linalg.norm(n)
-    NRM.append(n / nl if nl > 1e-9 else v(0, 1, 0))
-    UV.append(uv)
-    BI.append([b for b, _ in items])
-    BW.append([w for _, w in items])
+def part(name):
+    if name not in PART_NAMES:
+        PART_NAMES.append(name)
+    return PART_NAMES.index(name)
+
+
+def new_group():
+    _counter["group"] += 1
+    return _counter["group"]
+
+
+def add_vertex(p, uv, weights, pid, grp, a=0.0, b=0.0, axis=(0.0, 0.0, 1.0)):
+    POS.append(np.asarray(p, dtype=np.float64))
+    UV.append(np.asarray(uv, dtype=np.float64))
+    WTS.append(weights)
+    GRP.append(grp)
+    VPART.append(pid)
+    AUX.append((a, b, axis[0], axis[1], axis[2]))
     return len(POS) - 1
 
 
-def tri(a, b, c):
+def tri(a, b, c, pid):
     TRI.append((a, b, c))
+    TPART.append(pid)
+    TMIRROR.append(_counter["mirror"])
 
 
-def seg_param(p, a, b):
-    d = b - a
-    t = np.clip(np.dot(p - a, d) / max(1e-9, np.dot(d, d)), 0, 1)
-    return t, np.linalg.norm(p - (a + d * t))
+def quad_strip(row_a, row_b, pid, outward):
+    """Triangles between two rows of vertex ids, wound counter-clockwise seen from `outward`
+    (a function of a point giving the direction that is outside there)."""
+    a, b, c = POS[row_a[0]], POS[row_a[1]], POS[row_b[1]]
+    flip = np.dot(np.cross(b - a, c - a), outward((a + b + c) / 3)) < 0
+    for k in range(len(row_a) - 1):
+        p, q, r, s = row_a[k], row_a[k + 1], row_b[k + 1], row_b[k]
+        if flip:
+            tri(p, r, q, pid)
+            tri(p, s, r, pid)
+        else:
+            tri(p, q, r, pid)
+            tri(p, r, s, pid)
 
 
-def chain_weights(p, names, falloff=0.9):
-    """Weights from the nearest bone segments of a chain (segment i runs from bone i to bone i+1)."""
-    ws = {}
-    for i in range(len(names) - 1):
-        _, dist = seg_param(p, HEAD[names[i]], HEAD[names[i + 1]])
-        ws[names[i]] = ws.get(names[i], 0) + 1 / (dist + 0.05) ** 4
-    best = sorted(ws.items(), key=lambda kv: -kv[1])[:3]
-    return dict(best)
+# UV atlas: regions in pixels of a 2048 texture (x0, y0, x1, y1). The eye region is fixed: the
+# mod draws every triangle inside it a second time, glowing (DragonRenderer.eyeTriangles).
+def _r(x0, y0, x1, y1):
+    return (x0 / 2048, y0 / 2048, x1 / 2048, y1 / 2048)
 
 
-# UV atlas: regions (u0, v0, u1, v1) in 0..1
 UVR = {
-    "body": (0.0, 0.0, 0.5, 0.5),
-    "tail": (0.5, 0.0, 1.0, 0.25),
-    "neck": (0.5, 0.25, 1.0, 0.5),
-    "head": (0.0, 0.5, 0.25, 0.75),
-    "jaw": (0.25, 0.5, 0.375, 0.625),
-    "horn": (0.375, 0.5, 0.5, 0.625),
-    "leg": (0.0, 0.75, 0.25, 1.0),
-    "arm": (0.25, 0.625, 0.5, 0.75),
-    "plate": (0.25, 0.75, 0.5, 0.875),
-    "claw": (0.25, 0.875, 0.375, 1.0),
-    "eye": (0.375, 0.875, 0.5, 1.0),
-    "membrane": (0.5, 0.5, 1.0, 0.9375),
-    "saddle": (0.5, 0.9375, 0.75, 1.0),
-    "strap": (0.75, 0.9375, 1.0, 1.0),
+    "body": _r(0, 0, 768, 2048),
+    "saddle": _r(768, 0, 1024, 320),
+    "strap": _r(768, 320, 1024, 384),
+    "frill": _r(768, 384, 1024, 640),
+    "eye": _r(768, 1792, 1024, 2048),
+    "membrane": _r(1024, 0, 2048, 880),
+    "head": _r(1024, 880, 1536, 1392),
+    "jaw": _r(1536, 880, 1856, 1200),
+    "mouth": _r(1856, 880, 2048, 1072),
+    "tongue": _r(1856, 1072, 2048, 1200),
+    "leg": _r(1024, 1392, 1424, 2048),
+    "arm": _r(1424, 1392, 1680, 2048),
+    "finger": _r(1680, 1392, 1808, 2048),
+    "horn": _r(1808, 1392, 2048, 1600),
+    "claw": _r(1808, 1600, 1928, 1760),
+    "tooth": _r(1928, 1600, 2048, 1760),
+    "plate": _r(1808, 1760, 2048, 1920),
+    "toe": _r(1808, 1920, 2048, 2048),
 }
 
 
-def uvmap(region, u, vv):
+def uvmap(region, u, vv, margin=3.0):
     u0, v0, u1, v1 = UVR[region]
-    return v(u0 + (u1 - u0) * u, v0 + (v1 - v0) * vv)
+    m = margin / 2048
+    return v(u0 + m + (u1 - u0 - 2 * m) * u, v0 + m + (v1 - v0 - 2 * m) * vv)
 
 
-def catmull(points, n):
-    """Points along a Catmull-Rom spline through the given points (n samples)."""
-    P = [points[0] * 2 - points[1]] + list(points) + [points[-1] * 2 - points[-2]]
-    out = []
-    segs = len(points) - 1
-    for k in range(n):
-        t = k / (n - 1) * segs
-        i = min(int(t), segs - 1)
-        f = t - i
-        p0, p1, p2, p3 = P[i], P[i + 1], P[i + 2], P[i + 3]
-        out.append(0.5 * ((2 * p1) + (-p0 + p2) * f + (2 * p0 - 5 * p1 + 4 * p2 - p3) * f * f + (-p0 + 3 * p1 - 3 * p2 + p3) * f ** 3))
-    return out
+# ---------------------------------------------------------------- skinning weights
+def chain(joints, owners, blend=0.45):
+    """Weights along a chain of bones. `joints` are m+1 points, `owners` the m bones that own the
+    segments between them. Returns f(point) -> {bone: weight}: the owner of the nearest segment,
+    blended smoothly into its neighbour around each joint, so a bend spreads over a stretch of skin."""
+    J = np.array(joints, dtype=np.float64)
+    seg = J[1:] - J[:-1]
+    L = np.linalg.norm(seg, axis=1)
+    cum = np.concatenate([[0.0], np.cumsum(L)])
+    m = len(owners)
 
-
-def frame_along(points):
-    """Tangents and a stable side vector per point (no twist): up stays world-up where it can."""
-    tans, sides, ups = [], [], []
-    for i, p in enumerate(points):
-        a = points[max(0, i - 1)]
-        b = points[min(len(points) - 1, i + 1)]
-        t = b - a
-        t = t / (np.linalg.norm(t) or 1)
-        up = v(0, 1, 0) if abs(t[1]) < 0.95 else v(0, 0, 1)
-        side = np.cross(up, t)
-        side /= np.linalg.norm(side) or 1
-        up2 = np.cross(t, side)
-        tans.append(t)
-        sides.append(side)
-        ups.append(up2)
-    return tans, sides, ups
-
-
-def tube(points, radius, region, weights_of, ring=20, squash=lambda s: (1.0, 1.0), cap_end=True, v_scale=1.0, belly=0.0):
-    """A tube swept through points. radius(s) and squash(s) -> (width, height) factors, s in 0..1."""
-    tans, sides, ups = frame_along(points)
-    n = len(points)
-    rings = []
-    for i, p in enumerate(points):
-        s = i / (n - 1)
-        r = radius(s)
-        wx, hy = squash(s)
-        row = []
-        for k in range(ring + 1):
-            a = 2 * math.pi * k / ring
-            ca, sa = math.cos(a), math.sin(a)
-            # Flatter belly: the lower half pulls in a little.
-            yk = sa * hy * (1 - belly * max(0.0, -sa))
-            off = sides[i] * ca * r * wx + ups[i] * yk * r
-            q = p + off
-            nrm = sides[i] * ca / max(wx, 1e-3) + ups[i] * sa / max(hy, 1e-3)
-            row.append(add_vertex(q, nrm, uvmap(region, k / ring, s * v_scale % 1.0 if v_scale > 1 else s), weights_of(p, s)))
-        rings.append(row)
-    for i in range(n - 1):
-        for k in range(ring):
-            a, b, c, d = rings[i][k], rings[i][k + 1], rings[i + 1][k + 1], rings[i + 1][k]
-            tri(a, d, c)
-            tri(a, c, b)
-    if cap_end:
-        tip = add_vertex(points[-1] + tans[-1] * radius(1.0) * 0.6, tans[-1], uvmap(region, 0.5, 1.0), weights_of(points[-1], 1.0))
-        for k in range(ring):
-            tri(rings[-1][k], tip, rings[-1][k + 1])
-    return rings
-
-
-def cone(base, direction, length, r0, region, bone_name, bend=v(0, 0, 0), sides=8, steps=6):
-    """A curved horn or claw from base along direction, bending by bend (blocks at the tip)."""
-    d = direction / np.linalg.norm(direction)
-    pts = [base + d * length * (i / steps) + bend * (i / steps) ** 2 for i in range(steps + 1)]
-    tube(pts, lambda s: r0 * (1 - s) ** 0.9 + 0.005, region, lambda p, s: {bone_name: 1.0}, ring=sides, cap_end=True)
-
-
-def blade(points, height, thick, region, weights_of, lean=v(0, 0, 0)):
-    """A thin fin standing up from a line of points (dorsal plates, tail fin): double-sided."""
-    n = len(points)
-    tans, sides, ups = frame_along(points)
-    for face in (1, -1):
-        base, top = [], []
-        for i, p in enumerate(points):
-            s = i / (n - 1)
-            h = height(s)
-            off = sides[i] * thick * face
-            base.append(add_vertex(p + off, sides[i] * face, uvmap(region, s, 0), weights_of(p, s)))
-            top.append(add_vertex(p + off * 0.3 + ups[i] * h + lean * h, sides[i] * face, uvmap(region, s, 1), weights_of(p, s)))
-        for i in range(n - 1):
-            if face > 0:
-                tri(base[i], base[i + 1], top[i + 1])
-                tri(base[i], top[i + 1], top[i])
+    def f(p):
+        best_d, s = 1e18, 0.0
+        for i in range(m):
+            t = float(np.clip(np.dot(p - J[i], seg[i]) / max(L[i] ** 2, 1e-12), 0, 1))
+            d = np.linalg.norm(p - (J[i] + seg[i] * t))
+            if d < best_d:
+                best_d, s = d, cum[i] + t * L[i]
+        w = {}
+        passed = 1.0
+        for i in range(m):
+            if i < m - 1:
+                half = max(blend * min(L[i], L[i + 1]), 1e-6)
+                nxt = float(smooth((s - (cum[i + 1] - half)) / (2 * half)))
             else:
-                tri(base[i], top[i + 1], base[i + 1])
-                tri(base[i], top[i], top[i + 1])
+                nxt = 0.0
+            wi = passed - nxt
+            if wi > 1e-4:
+                w[owners[i]] = w.get(owners[i], 0.0) + wi
+            passed = nxt
+        return w
+
+    return f
 
 
-def grid_center(edge_a, edge_b):
-    return (np.mean(edge_a, axis=0) + np.mean(edge_b, axis=0)) / 2
+def mix_weights(wa, wb, t):
+    out = {}
+    for k, x in wa.items():
+        out[k] = out.get(k, 0.0) + x * (1 - t)
+    for k, x in wb.items():
+        out[k] = out.get(k, 0.0) + x * t
+    return {k: x for k, x in out.items() if x > 1e-4}
 
 
-def membrane(edge_a, edge_b, region, weights_of, rows=10, sag=0.25, u0=0.0, u1=1.0):
-    """A double-sided membrane between two edges (lists of points of equal length)."""
-    n = len(edge_a)
-    grid = []
+# ---------------------------------------------------------------- surfaces
+def loft(rings, region, ring_w, pid, v0=0.0, v1=1.0, u0=0.0, u1=1.0, cap0=None, cap1=None, ring_a=None, axis_sign=1.0):
+    """A closed tube through `rings` (n rings of K points each). `ring_w[i]` are the weights of
+    ring i. Caps: None, "fan" (flat) or a point (an apex beyond the ring). Returns the vertex ids
+    (n, K + 1); the last column repeats the first for the texture seam."""
+    rings = np.asarray(rings, dtype=np.float64)
+    n, K, _ = rings.shape
+    cen = rings.mean(axis=1)
+    d = np.concatenate([[0.0], np.cumsum(np.linalg.norm(cen[1:] - cen[:-1], axis=1))])
+    frac = d / max(d[-1], 1e-9)
+    g = new_group()
+    ids = np.zeros((n, K + 1), dtype=int)
     for i in range(n):
-        row = []
-        for j in range(rows + 1):
-            t = j / rows
-            p = edge_a[i] * (1 - t) + edge_b[i] * t
-            p = p + v(0, -1, 0) * sag * math.sin(math.pi * t) * (0.3 + 0.7 * i / max(1, n - 1))
-            # Scalloped trailing edge: the panel's far rows pull in between the fingers.
-            if i == n - 1 or i >= n - 3:
-                inset = 0.35 * math.sin(math.pi * t) * (1 - (n - 1 - i) / 3)
-                p = p + (grid_center(edge_a, edge_b) - p) * inset * 0.25
-            row.append(p)
-        grid.append(row)
-    for face in (1, -1):
-        ids = []
-        for i in range(n):
-            ids_row = []
-            for j in range(rows + 1):
-                p = grid[i][j]
-                a = grid[min(n - 1, i + 1)][j] - grid[max(0, i - 1)][j]
-                b = grid[i][min(rows, j + 1)] - grid[i][max(0, j - 1)]
-                nrm = np.cross(a, b) * face
-                if nrm[1] * face < 0:
-                    nrm = -nrm
-                off = (nrm / (np.linalg.norm(nrm) or 1)) * 0.015
-                uvx = u0 + (u1 - u0) * (i / max(1, n - 1))
-                ids_row.append(add_vertex(p + off, nrm, uvmap(region, uvx, j / rows), weights_of(p, (i, j))))
-            ids.append(ids_row)
-        for i in range(n - 1):
-            for j in range(rows):
-                a, b, c, d = ids[i][j], ids[i + 1][j], ids[i + 1][j + 1], ids[i][j + 1]
-                if face > 0:
-                    tri(a, b, c)
-                    tri(a, c, d)
-                else:
-                    tri(a, c, b)
-                    tri(a, d, c)
-
-
-# ---------------------------------------------------------------- parts
-def build():
-    spine = ["pelvis", "spine1", "spine2", "chest"]
-    neck = ["chest"] + [f"neck{i + 1}" for i in range(5)] + ["head"]
-    tail = ["pelvis"] + [f"tail{i + 1}" for i in range(8)]
-
-    # Torso: from just behind the hips to the base of the neck, deepest at the chest.
-    torso_pts = catmull([HEAD["pelvis"] + v(0, 0, -0.6)] + [HEAD[b] for b in spine] + [HEAD["neck1"]], 40)
-    torso_r = lambda s: 1.15 + 0.42 * math.sin(math.pi * min(1, s * 1.15)) - 0.35 * max(0, s - 0.85) / 0.15
-    tube(torso_pts, torso_r, "body", lambda p, s: chain_weights(p, spine + ["neck1"]), ring=24, squash=lambda s: (1.1, 1.0), cap_end=False, belly=0.25)
-    saddle(torso_pts, torso_r, spine)
-
-    # Neck: long and tapering into the skull.
-    neck_pts = catmull([HEAD[b] for b in neck], 48)
-    tube(neck_pts, lambda s: 0.95 - 0.5 * s, "neck", lambda p, s: chain_weights(p, neck), ring=20,
-         squash=lambda s: (0.95, 1.05), cap_end=False, belly=0.15)
-
-    # Tail: long, tapering, ends in the blade.
-    tail_pts = catmull([HEAD["pelvis"] + v(0, 0.05, -0.3)] + [HEAD[b] for b in tail[1:]], 60)
-    tube(tail_pts, lambda s: 1.0 * (1 - s) ** 1.3 + 0.05, "tail", lambda p, s: chain_weights(p, tail), ring=18,
-         squash=lambda s: (1.0, 1.1), cap_end=True, belly=0.1)
-    # Tail fin: a double blade on the last two segments.
-    fin_pts = [HEAD["tail6"] * (1 - t) + HEAD["tail8"] * t + v(0, 0, -0.8 * t) for t in np.linspace(0, 1, 10)]
-    blade(fin_pts, lambda s: 0.55 * math.sin(math.pi * min(1, s * 1.05)) ** 2 * (0.35 + 0.65 * s) + 0.02, 0.03, "plate", lambda p, s: chain_weights(p, tail[5:]))
-    fin2 = [p + v(0, 0, 0) for p in fin_pts]
-    blade(fin2, lambda s: -0.4 * math.sin(math.pi * min(1, s * 1.05)) ** 2 * (0.35 + 0.65 * s), 0.03, "plate", lambda p, s: chain_weights(p, tail[5:]))
-
-    # Head: a swept profile, skull to snout; jaw separate.
-    skull = HEAD["head"]
-    head_from = len(POS)
-    head_pts = [skull + v(0, 0.05, -0.35), skull + v(0, 0.12, 0.15), skull + v(0, 0.08, 0.75), skull + v(0, -0.02, 1.35), skull + v(0, -0.08, 1.85)]
-    head_pts = catmull(head_pts, 24)
-    tube(head_pts, lambda s: 0.48 - 0.26 * s + 0.06 * math.sin(math.pi * s * 1.2), "head", lambda p, s: {"head": 1.0}, ring=18,
-         squash=lambda s: (1.15 - 0.25 * s, 0.8 - 0.2 * s), cap_end=True)
-    jaw = HEAD["jaw"]
-    jaw_pts = catmull([jaw + v(0, -0.12, -0.3), jaw + v(0, -0.18, 0.3), jaw + v(0, -0.2, 0.95), jaw + v(0, -0.22, 1.5)], 18)
-    tube(jaw_pts, lambda s: 0.3 - 0.15 * s, "jaw", lambda p, s: {"jaw": 1.0}, ring=14, squash=lambda s: (1.1, 0.55), cap_end=True)
-    # Teeth along both jaws.
-    for side in (1, -1):
-        for k in range(7):
-            t = 0.15 + k * 0.11
-            base = skull + v(0.2 * side * (1 - t * 0.6), -0.12 - 0.05 * t, 0.3 + t * 1.4)
-            cone(base, v(0, -1, 0.15), 0.18 - 0.08 * t, 0.045, "claw", "head", sides=5, steps=3)
-            base = jaw + v(0.17 * side * (1 - t * 0.6), -0.08, 0.2 + t * 1.2)
-            cone(base, v(0, 1, 0.1), 0.13 - 0.05 * t, 0.04, "claw", "jaw", sides=5, steps=3)
-    # Horn crown: two great horns swept back, two smaller below, a row of spikes on the cheeks.
-    for side in (1, -1):
-        cone(skull + v(0.28 * side, 0.32, -0.05), v(0.35 * side, 0.45, -1), 1.6, 0.17, "horn", "head", bend=v(0.1 * side, 0.45, -0.05), sides=10, steps=10)
-        cone(skull + v(0.38 * side, 0.08, -0.2), v(0.6 * side, -0.1, -1), 0.9, 0.1, "horn", "head", bend=v(0, 0.15, 0), sides=8, steps=7)
-        for k in range(3):
-            cone(skull + v(0.42 * side, -0.05, 0.3 + 0.28 * k), v(0.9 * side, -0.15, -0.6), 0.28 - 0.05 * k, 0.05, "horn", "head", sides=6, steps=4)
-        # Eyes: small glowing lenses on the brow.
-        eye = skull + v(0.36 * side, 0.2, 0.6)
-        tube([eye + v(-0.04 * side, 0, -0.08), eye + v(0.02 * side, 0, 0.0), eye + v(-0.04 * side, 0, 0.1)], lambda s: 0.08 * math.sin(math.pi * s) + 0.01,
-             "eye", lambda p, s: {"head": 1.0}, ring=8, cap_end=True)
-
-    # Brow ridges over the eyes and nostril bumps on the snout.
-    for side in (1, -1):
-        brow = [skull + v(0.25 * side, 0.3, 0.2), skull + v(0.36 * side, 0.3, 0.6), skull + v(0.3 * side, 0.22, 0.95)]
-        tube(catmull(brow, 10), lambda s: 0.09 * math.sin(math.pi * s) + 0.02, "head", lambda p, s: {"head": 1.0}, ring=8, cap_end=True)
-        nos = skull + v(0.11 * side, 0.02, 1.78)
-        tube([nos + v(0, 0, -0.08), nos, nos + v(0, -0.02, 0.06)], lambda s: 0.05 * math.sin(math.pi * s) + 0.01, "head",
-             lambda p, s: {"head": 1.0}, ring=6, cap_end=True)
-    # The whole head a size larger than first sculpted (it read small on the long neck).
-    for i in range(head_from, len(POS)):
-        POS[i] = skull + (POS[i] - skull) * 1.3
-
-    # Dorsal plates from the skull to the tail fin, tallest over the shoulders.
-    ridge = catmull([HEAD["head"] + v(0, 0.35, -0.3)] + [HEAD[b] + v(0, 0.55, 0) for b in reversed(neck[1:-1])] +
-                    [HEAD[b] + v(0, 1.0, 0) for b in reversed(spine)] + [HEAD[b] + v(0, 0.75 * (1 - i / 8), 0) for i, b in enumerate(tail[1:7])], 120)
-    for k in range(0, 112, 4):
-        seg = ridge[k:k + 4]
-        if len(seg) < 3:
+        ax = unit(cen[min(i + 1, n - 1)] - cen[max(i - 1, 0)]) * axis_sign
+        a = ring_a[i] if ring_a is not None else d[i]
+        for k in range(K + 1):
+            ids[i, k] = add_vertex(rings[i, k % K], uvmap(region, u0 + (u1 - u0) * k / K, v0 + (v1 - v0) * frac[i]), ring_w[i], pid, g,
+                                   a, k / K, ax)
+    for i in range(n - 1):
+        c = cen[i]
+        quad_strip(ids[i], ids[i + 1], pid, lambda q, c=c: q - c)
+    for end, capdef in ((0, cap0), (n - 1, cap1)):
+        if capdef is None:
             continue
-        s = k / 112
-        if 0.2 <= seg[1][2] <= 2.2:
-            continue  # the saddle sits here
-        h = 0.18 + 0.55 * math.exp(-((s - 0.42) / 0.18) ** 2) + 0.12 * math.sin(s * 30) ** 2
-        blade(seg, lambda t, h=h: h * math.sin(math.pi * t) ** 0.8 + 0.02, 0.035, "plate",
-              lambda p, t: chain_weights(p, neck + spine[::-1] + tail[1:]), lean=v(0, 0, -0.35))
-
-    # Hind legs: thick thighs, a backward knee, splayed clawed feet.
-    for side in ("L", "R"):
-        s_ = 1 if side == "L" else -1
-        chain = [f"thigh_{side}", f"shin_{side}", f"foot_{side}", f"toes_{side}"]
-        pts = catmull([HEAD["pelvis"] + v(0.55 * s_, 0.15, 0)] + [HEAD[b] for b in chain], 30)
-        tube(pts, lambda s: 0.8 * (1 - s) ** 0.85 + 0.18, "leg", lambda p, s: chain_weights(p, chain), ring=16, cap_end=True)
-        toes = HEAD[f"toes_{side}"]
-        for k, a in enumerate((-0.5, 0, 0.5)):
-            d = v(math.sin(a) * s_ * 0.6, -0.05, math.cos(a))
-            base = toes + v(0.12 * math.sin(a) * s_, 0.05, 0.1)
-            tube([base, base + d * 0.35, base + d * 0.6 + v(0, -0.06, 0)], lambda s: 0.11 * (1 - s) + 0.04, "leg",
-                 lambda p, s: {f"toes_{side}": 1.0}, ring=8, cap_end=False)
-            cone(base + d * 0.6 + v(0, -0.05, 0), d + v(0, -0.6, 0), 0.32, 0.06, "claw", f"toes_{side}", bend=v(0, -0.12, 0), sides=6, steps=5)
-        cone(HEAD[f"foot_{side}"] + v(0, 0.1, -0.15), v(0, -0.3, -1), 0.3, 0.05, "claw", f"foot_{side}", sides=6, steps=4)
-
-    # Wings: arm and fingers as tapering tubes, membranes stretched between them and to the flank.
-    for side in ("L", "R"):
-        s_ = 1 if side == "L" else -1
-        arm = [f"shoulder_{side}", f"upper_{side}", f"fore_{side}", f"wrist_{side}"]
-        pts = catmull([HEAD[b] for b in arm], 30)
-        tube(pts, lambda s: 0.55 * (1 - s) + 0.13, "arm", lambda p, s: chain_weights(p, arm), ring=12, cap_end=False)
-        cone(HEAD[f"thumb_{side}"], v(0.1 * s_, -0.4, 1), 0.45, 0.08, "claw", f"thumb_{side}", bend=v(0, -0.15, 0), sides=6, steps=5)
-        finger_lines = []
-        for f in range(3):
-            fch = [f"finger{f + 1}a_{side}", f"finger{f + 1}b_{side}", f"finger{f + 1}c_{side}"]
-            fpts = catmull([HEAD[f"wrist_{side}"]] + [HEAD[b] for b in fch[1:]], 22)
-            tube(fpts, lambda s, f=f: (0.1 - 0.02 * f) * (1 - s) + 0.02, "arm", lambda p, s, fch=fch: chain_weights(p, [f"wrist_{side}"] + fch[1:]),
-                 ring=8, cap_end=True)
-            finger_lines.append(fpts)
-        wing_bones = arm + [f"finger{f + 1}{k}_{side}" for f in range(3) for k in "bc"]
-
-        def wweights(p, ij, wing_bones=wing_bones):
-            return chain_weights_any(p, wing_bones, side)
-
-        # Membranes: leading edge (arm + finger 1) to finger 2, finger 2 to finger 3, finger 3 to the flank.
-        n = 22
-        arm_line = catmull([HEAD[b] for b in arm[1:]], 10)
-        lead = arm_line[:-1] + finger_lines[0][::2][:n - 9]
-        lead = resample(lead, n)
-        f2 = resample([HEAD[f"wrist_{side}"]] * 2 + finger_lines[1][1:], n)
-        f3 = resample([HEAD[f"wrist_{side}"]] * 2 + finger_lines[2][1:], n)
-        # Finger panels (between neighbouring fingers): from the wrist outwards.
-        membrane(resample(finger_lines[0], n), resample(finger_lines[1], n), "membrane", wweights, rows=8, sag=0.15, u0=0.55, u1=1.0)
-        membrane(resample(finger_lines[1], n), resample(finger_lines[2], n), "membrane", wweights, rows=8, sag=0.18, u0=0.3, u1=0.55)
-        # Inner panel: finger 3 and the arm down to the flank behind the shoulder.
-        flank = resample([HEAD["spine1"] + v(0.75 * s_, 0.4, -0.2), HEAD["pelvis"] + v(0.7 * s_, 0.3, -1.6)], n)
-        inner_a = resample(list(reversed(arm_line)) + [HEAD[f"shoulder_{side}"] + v(0, -0.1, -0.2)], n)
-        inner_b = resample(list(reversed(finger_lines[2])) + flank[::max(1, n // 6)], n)
-        membrane(inner_a, inner_b, "membrane", wweights, rows=10, sag=0.3, u0=0.0, u1=0.3)
-        del lead, f2, f3
+        other = cen[1] if end == 0 else cen[n - 2]
+        out_dir = cen[end] - other
+        apex = cen[end] if isinstance(capdef, str) else np.asarray(capdef, dtype=np.float64)
+        ax = unit(out_dir) * axis_sign
+        c_id = add_vertex(apex, uvmap(region, (u0 + u1) / 2, v0 + (v1 - v0) * frac[end]), ring_w[end], pid, g,
+                          ring_a[end] if ring_a is not None else d[end], 0.5, ax)
+        a, b = rings[end, 0], rings[end, 1]
+        flip = np.dot(np.cross(b - a, apex - a), out_dir) < 0
+        if np.linalg.norm(apex - cen[end]) > 1e-6:
+            # An apex: outside is away from the axis, judged at the first face.
+            flip = np.dot(np.cross(b - a, apex - a), (a + b) / 2 - cen[end]) < 0
+        for k in range(K):
+            if flip:
+                tri(ids[end, k + 1], ids[end, k], c_id, pid)
+            else:
+                tri(ids[end, k], ids[end, k + 1], c_id, pid)
+    return ids
 
 
-def saddle(torso_pts, torso_r, spine):
-    """Leather seat over spine1 (where the rider sits): a shell lying on the back between z 0.4 and
-    2.0, its front (pommel) and back (cantle) raised, and two girth straps round the body."""
-    tans, sides, ups = frame_along(torso_pts)
-    n = len(torso_pts)
-    zs = [p[2] for p in torso_pts]
-    idx = [i for i in range(n) if 0.4 <= zs[i] <= 2.0]
-    if len(idx) < 3:
-        return
-    span = math.radians(68)
-    cols = 12
-    for face, lift in ((1, 0.11), (-1, 0.05)):
-        rows = []
-        for r_i, i in enumerate(idx):
-            s = i / (n - 1)
-            r = torso_r(s) * 1.0 + lift
-            t = r_i / (len(idx) - 1)
-            # Pommel and cantle: the ends rise.
-            rise = 0.22 * max(0.0, 1 - t / 0.18) + 0.16 * max(0.0, (t - 0.82) / 0.18)
-            row = []
-            for c in range(cols + 1):
-                a = math.pi / 2 - span + 2 * span * c / cols
-                ca, sa = math.cos(a), math.sin(a)
-                q = torso_pts[i] + sides[i] * ca * r * 1.1 + ups[i] * sa * (r + rise * sa)
-                nrm = (sides[i] * ca + ups[i] * sa) * face
-                row.append(add_vertex(q, nrm, uvmap("saddle", c / cols, t), chain_weights(torso_pts[i], spine)))
-            rows.append(row)
-        for r_i in range(len(rows) - 1):
-            for c in range(cols):
-                a, b, cc, d = rows[r_i][c], rows[r_i][c + 1], rows[r_i + 1][c + 1], rows[r_i + 1][c]
-                if face > 0:
-                    tri(a, d, cc)
-                    tri(a, cc, b)
-                else:
-                    tri(a, cc, d)
-                    tri(a, b, cc)
-    # Girth straps: thin bands right round the body just in front of and behind the seat.
-    for zt in (0.55, 1.85):
-        i = min(range(n), key=lambda k: abs(zs[k] - zt))
-        s = i / (n - 1)
-        r = torso_r(s) + 0.04
-        ring_ids = []
-        for half in (-0.06, 0.06):
-            row = []
-            for c in range(25):
-                a = 2 * math.pi * c / 24
-                ca, sa = math.cos(a), math.sin(a)
-                yk = sa * (1 - 0.25 * max(0.0, -sa))
-                q = torso_pts[i] + tans[i] * half + sides[i] * ca * r * 1.1 + ups[i] * yk * r
-                row.append(add_vertex(q, sides[i] * ca + ups[i] * sa, uvmap("strap", c / 24, 0.5 + half * 4), chain_weights(torso_pts[i], spine)))
-            ring_ids.append(row)
-        for c in range(24):
-            a, b, cc, d = ring_ids[0][c], ring_ids[0][c + 1], ring_ids[1][c + 1], ring_ids[1][c]
-            tri(a, d, cc)
-            tri(a, cc, b)
-
-
-def chain_weights_any(p, names, side):
-    """Weights from the nearest of a set of bones (each bone's segment to its parent), for membranes."""
-    ws = {}
-    for nme in names:
-        b = INDEX[nme]
-        par = BONES[b][1]
-        a = HEAD[BONES[par][0]] if par >= 0 else HEAD[nme]
-        _, dist = seg_param(p, a, HEAD[nme])
-        ws[nme] = 1 / (dist + 0.08) ** 3
-    # The flank side of the inner panel follows the body.
-    _, dflank = seg_param(p, HEAD["pelvis"], HEAD["chest"])
-    ws["spine1"] = 1 / (dflank + 0.08) ** 3
-    best = sorted(ws.items(), key=lambda kv: -kv[1])[:4]
-    return dict(best)
-
-
-def resample(points, n):
-    pts = [np.asarray(p, dtype=np.float64) for p in points]
-    d = [0.0]
-    for i in range(1, len(pts)):
-        d.append(d[-1] + np.linalg.norm(pts[i] - pts[i - 1]))
-    total = d[-1] or 1
+def sweep_frames(points, ref):
+    """Tangent and two cross axes per point of a path: the first cross axis stays as close to
+    `ref` as it can (no twist), the second completes the frame."""
+    pts = np.asarray(points, dtype=np.float64)
     out = []
-    for k in range(n):
-        t = total * k / (n - 1)
-        i = max(0, min(len(pts) - 2, np.searchsorted(d, t) - 1))
-        seg = d[i + 1] - d[i] or 1
-        f = (t - d[i]) / seg
-        out.append(pts[i] * (1 - f) + pts[i + 1] * f)
+    for i in range(len(pts)):
+        t = unit(pts[min(i + 1, len(pts) - 1)] - pts[max(i - 1, 0)])
+        a = ref - t * np.dot(ref, t)
+        a = unit(a) if np.linalg.norm(a) > 1e-6 else unit(np.cross(t, v(0, 0, 1)))
+        b = unit(np.cross(t, a))
+        out.append((t, a, b))
     return out
 
 
-# ---------------------------------------------------------------- texture
-def paint(size=2048):
-    from PIL import Image
-    img = np.zeros((size, size, 3))
-    yy, xx = np.mgrid[0:size, 0:size] / size
-    rng = np.random.default_rng(5)
-    slate = np.array([0.30, 0.33, 0.38])
-    slate_dark = np.array([0.14, 0.15, 0.19])
-    bone = np.array([0.78, 0.74, 0.64])
-    blue = np.array([0.25, 0.33, 0.52])
-
-    def region(name):
-        u0, v0, u1, v1 = UVR[name]
-        m = (xx >= u0) & (xx < u1) & (yy >= v0) & (yy < v1)
-        lu = (xx - u0) / (u1 - u0)
-        lv = (yy - v0) / (v1 - v0)
-        return m, lu, lv
-
-    def scales(lu, lv, nu, nv):
-        """Jittered scale cells (Voronoi): a dark seam between scales, a lit upper rim on each,
-        and each scale a slightly different shade. Returns (seam, rim, variation)."""
-        gu, gv = lu * nu, lv * nv
-        iu, iv = np.floor(gu), np.floor(gv)
-        best = np.full(gu.shape, 9.0)
-        second = np.full(gu.shape, 9.0)
-        cell = np.zeros(gu.shape)
-        rim_dv = np.zeros(gu.shape)
-        for du in (-1, 0, 1):
-            for dv in (-1, 0, 1):
-                cu, cv = iu + du, iv + dv
-                h = np.sin(cu * 127.1 + cv * 311.7) * 43758.5453
-                jx = (h - np.floor(h)) * 0.7 + 0.15
-                h2 = np.sin(cu * 269.5 + cv * 183.3) * 43758.5453
-                jy = (h2 - np.floor(h2)) * 0.7 + 0.15
-                px, py = cu + jx, cv + jy
-                d = np.sqrt((gu - px) ** 2 * 1.3 + (gv - py) ** 2)
-                closer = d < best
-                second = np.where(closer, best, np.minimum(second, d))
-                cell = np.where(closer, h - np.floor(h), cell)
-                rim_dv = np.where(closer, gv - py, rim_dv)
-                best = np.where(closer, d, best)
-        seam = np.clip(1 - (second - best) / 0.12, 0, 1)
-        rim = np.clip(-rim_dv * 1.6, 0, 1) * (1 - seam)
-        return seam, rim, cell
-
-    for name in ("body", "neck", "tail", "leg", "arm", "head", "jaw"):
-        m, lu, lv = region(name)
-        # Around the tube: u = 0 is the side, 0.25 the top, 0.75 the belly.
-        belly = np.clip(-np.sin(lu * 2 * np.pi), 0, 1) ** 1.5
-        top = np.clip(np.sin(lu * 2 * np.pi), 0, 1)
-        nu = {"body": 72, "neck": 52, "tail": 56, "leg": 36, "arm": 28, "head": 40, "jaw": 30}[name]
-        nv = {"body": 60, "neck": 78, "tail": 110, "leg": 44, "arm": 44, "head": 32, "jaw": 24}[name]
-        seam, rim, var = scales(lu, lv, nu, nv)
-        back = slate_dark * 0.9 + (slate - slate_dark) * 0.4
-        flank = slate * (1 - top[..., None] * 0.35) + back * top[..., None] * 0.35
-        base = flank * (1 - belly[..., None]) + bone[None, None, :] * belly[..., None]
-        base = base * (0.88 + 0.24 * var[..., None]) * (1 - 0.5 * seam[..., None]) + rim[..., None] * 0.09
-        # A cold blue sheen along the back.
-        base += np.array([0.02, 0.04, 0.09]) * top[..., None] * (1 - seam[..., None])
-        # Belly: broad horizontal plates (scutes) where it faces down.
-        bv = (lv * nv * 0.35) % 1
-        scute = np.clip((belly - 0.35) / 0.3, 0, 1)
-        plate_col = bone * (0.82 + 0.25 * (1 - bv)[..., None]) * (1 - 0.55 * (bv < 0.06)[..., None])
-        base = base * (1 - scute[..., None]) + plate_col * scute[..., None]
-        base += rng.normal(0, 0.02, base.shape)
-        img[m] = np.clip(base[m], 0, 1)
-    m, lu, lv = region("horn")
-    img[m] = np.clip((bone * (0.6 + 0.4 * lv[..., None]) * (0.9 + 0.1 * np.sin(lu * 60)[..., None]))[m], 0, 1)
-    m, lu, lv = region("claw")
-    img[m] = np.clip((np.array([0.12, 0.11, 0.10]) + 0.5 * lv[..., None] * bone)[m], 0, 1)
-    m, lu, lv = region("plate")
-    img[m] = np.clip((slate_dark * (0.8 + 0.6 * lv[..., None]) + blue * 0.15 * lv[..., None] ** 3)[m], 0, 1)
-    m, lu, lv = region("eye")
-    img[m] = np.array([0.55, 0.85, 1.0])
-    m, lu, lv = region("saddle")
-    leather = np.array([0.34, 0.19, 0.10]) * (0.85 + 0.2 * np.sin(lu * 40) * np.sin(lv * 25))[..., None]
-    edge = (np.minimum(np.minimum(lu, 1 - lu), np.minimum(lv, 1 - lv)) < 0.06)
-    stitch = edge & ((np.floor(lu * 80) + np.floor(lv * 20)) % 2 == 0)
-    leather = np.where(edge[..., None], leather * 0.7, leather)
-    leather = np.where(stitch[..., None], np.array([0.78, 0.68, 0.48]), leather)
-    tool = np.abs(np.sin(lu * 18) * np.sin(lv * 6)) > 0.92
-    leather = np.where(tool[..., None], leather * 0.75, leather)
-    img[m] = np.clip(leather[m], 0, 1)
-    m, lu, lv = region("strap")
-    strap = np.array([0.16, 0.10, 0.07]) * (0.9 + 0.2 * lv[..., None])
-    buckle = (np.abs(((lu * 6) % 1) - 0.5) < 0.08)
-    strap = np.where(buckle[..., None], np.array([0.78, 0.62, 0.32]), strap)
-    img[m] = np.clip(strap[m], 0, 1)
-    m, lu, lv = region("membrane")
-    # Membrane: dusk blue, veins radiating from the wrist (u along the span, v towards the trailing edge).
-    veins = np.exp(-((np.sin(lu * 70 + np.sin(lv * 6) * 1.5)) ** 2) / 0.01) * 0.6
-    fine = np.exp(-((np.sin(lu * 210 + np.sin(lv * 17 + lu * 9) * 2.5)) ** 2) / 0.02) * 0.25 * lv
-    mem = blue * (0.55 + 0.35 * lv[..., None]) + np.array([0.12, 0.06, 0.08]) * (1 - lv[..., None]) ** 2
-    mem = mem * (1 - 0.4 * veins[..., None] - 0.25 * fine[..., None])
-    mem = mem * (1 - 0.35 * np.clip((lv - 0.85) / 0.15, 0, 1)[..., None])
-    mem += rng.normal(0, 0.015, mem.shape)
-    img[m] = np.clip(mem[m], 0, 1)
-    out = (img * 255 + 0.5).astype(np.uint8)
-    OUT_TEX.parent.mkdir(parents=True, exist_ok=True)
-    Image.fromarray(out, "RGB").save(OUT_TEX, optimize=True)
+def limb(ctrl, n, K, ref, region, weights_of, pid, cap0=None, cap1="fan", v0=0.0, v1=1.0, u0=0.0, u1=1.0, ripple=None):
+    """A limb through control stations (point, radius along `ref`-ish axis, radius across).
+    Stations are joined by monotone curves, so nothing overshoots at a joint."""
+    P = np.array([c[0] for c in ctrl], dtype=np.float64)
+    ra = np.array([c[1] for c in ctrl], dtype=np.float64)
+    rb = np.array([c[2] for c in ctrl], dtype=np.float64)
+    chord = np.concatenate([[0.0], np.cumsum(np.linalg.norm(P[1:] - P[:-1], axis=1))])
+    fp, fa, fb = PchipInterpolator(chord, P, axis=0), PchipInterpolator(chord, ra), PchipInterpolator(chord, rb)
+    ts = np.linspace(0, chord[-1], n)
+    pts = fp(ts)
+    frames = sweep_frames(pts, ref)
+    rings, ws = [], []
+    for i, t in enumerate(ts):
+        _, a, b = frames[i]
+        mul = ripple(t / chord[-1]) if ripple else 1.0
+        ring = [pts[i] + a * fa(t) * mul * math.cos(2 * math.pi * k / K) + b * fb(t) * mul * math.sin(2 * math.pi * k / K) for k in range(K)]
+        rings.append(ring)
+        ws.append(weights_of(pts[i]))
+    return loft(rings, region, ws, pid, v0=v0, v1=v1, u0=u0, u1=u1, cap0=cap0, cap1=cap1), pts
 
 
-# ---------------------------------------------------------------- export
+def horn(base, direction, length, r0, region, weights, pid, bend=v(0, 0, 0), K=7, steps=7, ridges=0, u0=0.0, u1=1.0, power=0.85):
+    """A curved, tapering horn, claw or tooth from `base` along `direction`, bending by `bend`
+    (blocks at the tip). `ridges` rings swell the lower two thirds. Closed at both ends."""
+    d = unit(np.asarray(direction, dtype=np.float64))
+    pts = [base + d * length * (i / steps) + bend * (i / steps) ** 2 for i in range(steps + 1)]
+    frames = sweep_frames(pts[:-1], v(0, 1, 0) if abs(d[1]) < 0.9 else v(1, 0, 0))
+    rings = []
+    for i in range(steps):
+        s = i / steps
+        r = r0 * (1 - s) ** power
+        if ridges and s < 0.72:
+            r *= 1 + 0.085 * math.sin(2 * math.pi * ridges * s) * (1 - s / 0.72)
+        _, a, b = frames[i]
+        rings.append([pts[i] + a * r * math.cos(2 * math.pi * k / K) + b * r * math.sin(2 * math.pi * k / K) for k in range(K)])
+    loft(rings, region, [weights] * steps, pid, cap0="fan", cap1=pts[-1], u0=u0, u1=u1, v0=0.0, v1=1.0 - 1.0 / steps)
+
+
+# ---------------------------------------------------------------- the body: tail, torso and neck in one sweep
+# Stations from the tail tip to inside the skull: z, y of the section's centre, half width, height
+# above and below the centre, and how square the upper and lower halves are (2 = an ellipse).
+BODY = [
+    (-10.45, 1.26, 0.020, 0.03, 0.03, 2.0, 2.0),
+    (-10.10, 1.29, 0.035, 0.36, 0.33, 1.4, 1.4),
+    (-9.50, 1.34, 0.060, 0.62, 0.56, 1.4, 1.4),   # the tail blade at its tallest
+    (-8.90, 1.45, 0.095, 0.44, 0.38, 1.5, 1.5),
+    (-8.30, 1.57, 0.150, 0.215, 0.185, 1.9, 2.0),
+    (-7.30, 1.80, 0.25, 0.30, 0.25, 2.0, 2.0),
+    (-6.20, 2.10, 0.34, 0.40, 0.33, 2.0, 2.0),
+    (-5.00, 2.40, 0.45, 0.52, 0.43, 2.0, 2.0),
+    (-3.80, 2.65, 0.58, 0.65, 0.54, 2.0, 2.0),
+    (-2.50, 2.85, 0.74, 0.80, 0.66, 2.0, 2.0),
+    (-1.20, 3.02, 0.98, 0.98, 0.84, 2.1, 2.0),
+    (0.00, 3.20, 1.34, 1.15, 1.10, 2.2, 2.0),     # hips
+    (1.25, 3.30, 1.36, 0.95, 0.90, 2.3, 2.0),     # the waist, where the saddle sits
+    (2.60, 3.34, 1.50, 1.24, 1.36, 2.2, 1.9),
+    (3.60, 3.42, 1.50, 1.40, 1.56, 2.2, 1.8),     # the chest and its keel
+    (4.45, 3.72, 1.20, 1.10, 1.22, 2.1, 1.9),
+    (5.10, 4.02, 0.84, 0.88, 0.86, 2.0, 2.0),
+    (5.80, 4.45, 0.64, 0.72, 0.68, 2.0, 2.0),
+    (6.50, 5.15, 0.54, 0.61, 0.57, 2.0, 2.0),
+    (7.15, 5.80, 0.48, 0.54, 0.51, 2.0, 2.0),
+    (7.80, 6.30, 0.44, 0.49, 0.47, 2.0, 2.0),
+    (8.35, 6.60, 0.42, 0.46, 0.43, 2.0, 2.0),
+    (8.62, 6.72, 0.36, 0.38, 0.34, 2.0, 2.0),
+]
+
+
+class Body:
+    def __init__(self):
+        st = np.array(BODY, dtype=np.float64)
+        chord = np.concatenate([[0.0], np.cumsum(np.hypot(st[1:, 0] - st[:-1, 0], st[1:, 1] - st[:-1, 1]))])
+        self.length = chord[-1]
+        self.f = PchipInterpolator(chord, st, axis=0)
+        self.df = self.f.derivative()
+        ts = np.linspace(0, self.length, 2000)
+        self._z = self.f(ts)[:, 0]
+        self._t = ts
+        joints = [v(0, 1.26, -10.45)] + [v(*p) for p in reversed(TAIL)] + [HEAD["pelvis"], HEAD["spine1"], HEAD["spine2"], HEAD["chest"]] + \
+                 [v(*p) for p in NECK] + [HEAD["head"], HEAD["head"] + v(0, 0.14, 0.3)]
+        owners = [f"tail{i}" for i in range(8, 0, -1)] + ["pelvis", "pelvis", "spine1", "spine2", "chest"] + \
+                 [f"neck{i}" for i in range(1, 6)] + ["head"]
+        self.weights = chain(joints, owners, blend=0.5)
+
+    def t_of_z(self, z):
+        return float(np.interp(z, self._z, self._t))
+
+    def frame(self, t):
+        z, y = self.f(t)[:2]
+        dz, dy = self.df(t)[:2]
+        tan = unit(v(0, dy, dz))
+        up = v(0, tan[2], -tan[1])
+        return v(0, y, z), tan, up
+
+    def bulge(self, t, theta, w, hu):
+        """Muscle and bone under the skin: outward displacement at angle theta (0 = her left,
+        90 degrees = the spine) of the section at t."""
+        z = float(self.f(t)[0])
+        c, s = math.cos(theta), math.sin(theta)
+        out = 0.0
+        for side in (1, -1):
+            # shoulders, where the wing arms root; haunches over the hips
+            d_sh = math.atan2(s, c * side) - math.radians(34)
+            out += 0.20 * math.exp(-((z - 3.75) / 0.75) ** 2 - (d_sh / math.radians(30)) ** 2)
+            d_ha = math.atan2(s, c * side) - math.radians(6)
+            out += 0.15 * math.exp(-((z + 0.05) / 0.7) ** 2 - (d_ha / math.radians(34)) ** 2)
+        # the backbone, fading out on the tail blade and inside the skull
+        ridge = 0.055 * min(1.0, hu / 0.5) * float(smooth((z + 8.6) / 1.0)) * float(smooth((8.5 - z) / 0.6))
+        out += ridge * math.exp(-((theta - math.pi / 2) / math.radians(10)) ** 2)
+        return out
+
+    def point(self, t, theta, lift=0.0):
+        _, _, w, hu, hd, nu, nd = self.f(t)
+        cen, tan, up = self.frame(t)
+        c, s = math.cos(theta), math.sin(theta)
+        n, h = (nu, hu) if s >= 0 else (nd, hd)
+        x = w * math.copysign(abs(c) ** (2 / n), c)
+        y = h * math.copysign(abs(s) ** (2 / n), s)
+        r = math.hypot(x, y) or 1.0
+        k = 1 + (self.bulge(t, theta, w, hu) + lift) / r
+        return cen + v(1, 0, 0) * x * k + up * y * k
+
+
+def build_body(body):
+    pid = part("body")
+    n, K = 152, 26
+    ts = np.linspace(0, body.length, n)
+    rings, ws, along = [], [], []
+    for t in ts:
+        rings.append([body.point(t, -math.pi / 2 + 2 * math.pi * k / K) for k in range(K)])
+        ws.append(body.weights(body.frame(t)[0]))
+        along.append(body.length - t)
+    # v runs from the head (0) to the tail tip (1); the seam is the belly's middle line.
+    loft(rings, "body", ws, pid, v0=1.0, v1=0.0, cap0=v(0, 1.25, -10.52), cap1="fan", ring_a=along, axis_sign=-1.0)
+
+
+def build_saddle(body):
+    """Leather seat on the waist: a shell on her back between z 0.42 and 2.02, raised at the back
+    (cantle) and the front (pommel), with skirts down the flanks. Its edge is a wall that goes
+    down into the hide, so the shell is closed. Two girth straps hold it, right round the body."""
+    pid, t0, t1 = part("saddle"), body.t_of_z(0.42), body.t_of_z(2.02)
+    rows, cols = 14, 14
+
+    def place(r, c, sunk=False):
+        q, e = r / rows, c / cols
+        span = math.radians(46 + 24 * math.sin(math.pi * q) ** 0.7)
+        th = math.pi / 2 - span + 2 * span * e
+        rise = 0.20 * float(smooth(1 - q / 0.22)) + 0.24 * float(smooth((q - 0.78) / 0.22))
+        lift = -0.03 if sunk else 0.085 + rise * math.sin(math.pi * e) ** 1.5
+        return body.point(t0 + (t1 - t0) * q, th, lift)
+
+    g = new_group()
+    grid = []
+    for r in range(rows + 1):
+        w = body.weights(body.frame(t0 + (t1 - t0) * r / rows)[0])
+        grid.append([add_vertex(place(r, c), uvmap("saddle", c / cols, r / rows), w, pid, g, r / rows, c / cols) for c in range(cols + 1)])
+    mid = body.frame((t0 + t1) / 2)[0]
+    for r in range(rows):
+        quad_strip(grid[r], grid[r + 1], pid, lambda p: p - mid)
+    # The edge: once round the rim, from the seat down into the hide.
+    rim = [(0, c) for c in range(cols)] + [(r, cols) for r in range(rows)] + [(rows, c) for c in range(cols, 0, -1)] + \
+          [(r, 0) for r in range(rows, 0, -1)]
+    rim.append(rim[0])
+    g = new_group()
+    top, bottom = [], []
+    seat = place(rows / 2, cols / 2)
+    for k, (r, c) in enumerate(rim):
+        w = body.weights(body.frame(t0 + (t1 - t0) * r / rows)[0])
+        u = k / (len(rim) - 1)
+        top.append(add_vertex(place(r, c), uvmap("strap", u, 0.05), w, part("strap"), g, u, 0.0))
+        bottom.append(add_vertex(place(r, c, sunk=True), uvmap("strap", u, 0.45), w, part("strap"), g, u, 1.0))
+    quad_strip(top, bottom, part("strap"), lambda p: p - seat)
+    pid = part("strap")
+    for zt in (0.66, 1.80):
+        t = body.t_of_z(zt)
+        cen, tan, _ = body.frame(t)
+        w = body.weights(cen)
+        g = new_group()
+        rows_ = []
+        for half in (-0.07, 0.07):
+            row = []
+            for c in range(27):
+                th = -math.pi / 2 + 2 * math.pi * c / 26
+                row.append(add_vertex(body.point(t, th, 0.035) + tan * half, uvmap("strap", c / 26, 0.75 + half * 3), w, pid, g, 0, c / 26))
+            rows_.append(row)
+        quad_strip(rows_[0], rows_[1], pid, lambda p, cen=cen: p - cen)
+
+
+def build_spines(body):
+    """Dorsal spines from the nape to the tail blade, tallest over the shoulders and none where
+    the saddle sits. Each is a backswept blade with a thick root sunk into the backbone."""
+    pid = part("plate")
+    z = 8.02
+    while z > -7.9:
+        if z > 4.9:
+            h = 0.20 + 0.20 * (8.02 - z) / 3.1
+        elif z > 2.35:
+            h = 0.42 + 0.26 * math.exp(-((z - 3.55) / 0.9) ** 2)
+        elif z > 0.15:
+            h = 0.0
+        elif z > -1.6:
+            h = 0.40
+        else:
+            h = 0.38 * (1 - (-1.6 - z) / 7.2) + 0.07
+        if h > 0:
+            t = body.t_of_z(z)
+            cen, tan, up = body.frame(t)
+            root = body.point(t, math.pi / 2)
+            w = body.weights(cen)
+            lb, th = 0.26 + 0.55 * h, 0.07 + 0.09 * h
+            rings = []
+            for lv, q in enumerate((-0.18, 0.0, 0.3, 0.62, 0.86)):
+                c = root + up * h * q - tan * h * 0.55 * max(q, 0) ** 1.6
+                ln = lb * (1 - max(q, 0)) ** 0.75 * (1.0 if q >= 0 else 1.05)
+                tk = th * (1 - max(q, 0)) ** 0.9
+                ring = []
+                for k in range(6):
+                    a = 2 * math.pi * k / 6
+                    ring.append(c + tan * (ln / 2) * math.cos(a) + v(1, 0, 0) * tk * math.sin(a))
+                rings.append(ring)
+            tip = root + up * h - tan * h * 0.55
+            loft(rings, "plate", [w] * len(rings), pid, cap1=tip, v0=0.0, v1=0.86)
+        z -= 0.34 + 0.75 * max(h, 0.25)
+
+
+# ---------------------------------------------------------------- hind legs
+def build_leg(side, body):
+    s = 1 if side == "L" else -1
+    pid = part("leg")
+    Hp, Kn, A, B = HEAD[f"thigh_{side}"], HEAD[f"shin_{side}"], HEAD[f"foot_{side}"], HEAD[f"toes_{side}"]
+    ctrl = [  # point, radius fore and aft, radius across
+        (Hp + v(-0.14 * s, 0.50, -0.12), 0.72, 0.44),
+        (Hp + v(0.03 * s, 0.05, -0.03), 0.90, 0.58),
+        (Hp + (Kn - Hp) * 0.38 + v(0.10 * s, 0, -0.07), 0.88, 0.60),
+        (Hp + (Kn - Hp) * 0.72 + v(0.05 * s, 0, 0), 0.67, 0.50),
+        (Kn + v(0, 0.02, 0.03), 0.47, 0.39),
+        (Kn + (A - Kn) * 0.28 + v(0, 0, -0.05), 0.47, 0.40),
+        (Kn + (A - Kn) * 0.66, 0.31, 0.27),
+        (A, 0.235, 0.21),
+        (A + (B - A) * 0.5, 0.20, 0.19),
+        (B + v(0, 0.03, 0.0), 0.25, 0.27),
+        (B + v(0, 0.0, 0.2), 0.17, 0.25),
+    ]
+    ctrl = [(p, rb, ra) for (p, ra, rb) in ctrl]  # limb(): first radius goes with the reference axis (across)
+    w_of = chain([ctrl[0][0], Hp, Kn, A, B, B + v(0, 0, 0.6)], ["pelvis", f"thigh_{side}", f"shin_{side}", f"foot_{side}", f"toes_{side}"])
+    _counter["mirror"] = side == "R"
+    limb(ctrl, 46, 14, v(1, 0, 0), "leg", w_of, pid, cap1="fan")
+    # Toes: three forward, one back; each a jointed toe with a hooked talon.
+    tw = {f"toes_{side}": 1.0}
+    tp, cp = part("toe"), part("claw")
+    toes = [(-32, 0.74, 0.0), (0, 0.84, 0.25), (32, 0.74, 0.5)]
+    for ang, ln, uoff in toes:
+        a = math.radians(ang)
+        d = v(math.sin(a) * s, 0, math.cos(a))
+        base = B + v(0.10 * math.sin(a) * s, 0.0, 0.06)
+        ctrl_t = [(base + v(0, 0.02, 0), 0.125, 0.14), (base + d * 0.32 * ln + v(0, 0.09, 0), 0.105, 0.12),
+                  (base + d * 0.62 * ln + v(0, 0.02, 0), 0.09, 0.10), (base + d * 0.84 * ln + v(0, -0.02, 0), 0.07, 0.075)]
+        limb(ctrl_t, 8, 7, v(0, 1, 0), "toe", lambda p: tw, tp, cap0="fan", cap1=None, u0=uoff, u1=uoff + 0.25)
+        horn(base + d * 0.80 * ln + v(0, -0.02, 0), d + v(0, -0.12, 0), 0.40, 0.072, "claw", tw, cp, bend=v(0, -0.07, 0), K=6, steps=5)
+    d = unit(v(-0.3 * s, 0, -1))
+    base = B + v(0, 0.02, -0.14)
+    ctrl_t = [(base, 0.10, 0.11), (base + d * 0.22 + v(0, 0.04, 0), 0.085, 0.095), (base + d * 0.40, 0.07, 0.075)]
+    limb(ctrl_t, 5, 7, v(0, 1, 0), "toe", lambda p: tw, tp, cap0="fan", cap1=None, u0=0.75, u1=1.0)
+    horn(base + d * 0.37, d + v(0, -0.15, 0), 0.30, 0.066, "claw", tw, cp, bend=v(0, -0.05, 0), K=6, steps=4)
+    # The spur on the heel.
+    horn(A + v(0, 0.04, -0.17), v(0, -0.2, -1), 0.36, 0.075, "claw", {f"foot_{side}": 1.0}, cp, bend=v(0, -0.06, 0), K=6, steps=4)
+    _counter["mirror"] = False
+
+
+# ---------------------------------------------------------------- wings
+MEM_X0, MEM_X1, MEM_Z0, MEM_Z1 = 0.9, 11.9, -5.4, 4.4  # the spread wing seen from above, for the membrane's texture
+
+
+def edge_sampler(points, weights):
+    """A line through points with weights at each: f(u) -> (position, weights) at the fraction u
+    of its length."""
+    P = np.array(points, dtype=np.float64)
+    cum = np.concatenate([[0.0], np.cumsum(np.linalg.norm(P[1:] - P[:-1], axis=1))])
+
+    def f(u):
+        d = float(np.clip(u, 0, 1)) * cum[-1]
+        i = int(min(len(P) - 2, max(0, np.searchsorted(cum, d) - 1)))
+        t = (d - cum[i]) / max(cum[i + 1] - cum[i], 1e-9)
+        return P[i] * (1 - t) + P[i + 1] * t, mix_weights(weights[i], weights[i + 1], t)
+
+    return f
+
+
+def membrane(edge_a, edge_b, nu, nt, scallop, sag, name, side):
+    """A wing panel between two edges that start at the same point (the wrist) and fan out. Every
+    point is a blend of the two edges at the same fraction of their length, and so are its weights:
+    whatever the bones do, the skin stays stretched straight between them. Two layers, one facing
+    up and one down."""
+    pid = part(name)
+    grid, wts = [], []
+    for i in range(nu):
+        u = i / (nu - 1)
+        row, wrow = [], []
+        for j in range(nt):
+            t = j / (nt - 1)
+            uu = u * (1 - scallop * math.sin(math.pi * t) ** 0.9)
+            pa, wa = edge_a(uu)
+            pb, wb = edge_b(uu)
+            p = pa * (1 - t) + pb * t - v(0, 1, 0) * sag * math.sin(math.pi * t) * (0.15 + 0.85 * u) * min(1.0, np.linalg.norm(pb - pa) / 1.5)
+            row.append(p)
+            wrow.append(mix_weights(wa, wb, t))
+        grid.append(row)
+        wts.append(wrow)
+    G = np.array(grid)
+    nrm = np.zeros_like(G)
+    for i in range(nu):
+        for j in range(nt):
+            a = G[min(nu - 1, i + 1), j] - G[max(0, i - 1), j]
+            b = G[i, min(nt - 1, j + 1)] - G[i, max(0, j - 1)]
+            m = np.cross(a, b)
+            if np.linalg.norm(m) < 1e-9:
+                m = v(0, 1, 0)
+            m = unit(m)
+            nrm[i, j] = m if m[1] >= 0 else -m
+    for face in (1, -1):
+        g = new_group()
+        ids = []
+        for i in range(nu):
+            row = []
+            for j in range(nt):
+                p = G[i, j] + nrm[i, j] * (0.012 * face if i < nu - 1 else 0.0)  # the layers meet at the trailing edge
+                uvx = (abs(p[0]) - MEM_X0) / (MEM_X1 - MEM_X0)
+                uvy = (MEM_Z1 - p[2]) / (MEM_Z1 - MEM_Z0)
+                ax = unit(G[min(nu - 1, i + 1), j] - G[max(0, i - 1), j])
+                row.append(add_vertex(p, uvmap("membrane", uvx, uvy, margin=0), wts[i][j], pid, g, i / (nu - 1), j / (nt - 1), ax))
+            ids.append(row)
+        for i in range(nu - 1):
+            quad_strip(ids[i], ids[i + 1], pid, lambda q, face=face: v(0, face, 0))
+
+
+def build_wing(side, body):
+    s = 1 if side == "L" else -1
+    _counter["mirror"] = side == "R"
+    pid = part("arm")
+    S, U, E, W = HEAD[f"shoulder_{side}"], HEAD[f"upper_{side}"], HEAD[f"fore_{side}"], HEAD[f"wrist_{side}"]
+    d_f = unit(W - E)
+    ctrl = [  # point, radius up and down, radius along the wing's chord
+        (S + v(-0.25 * s, -0.1, 0), 0.56, 0.60),
+        (S, 0.66, 0.72),
+        (U, 0.56, 0.62),
+        (U + (E - U) * 0.35, 0.42, 0.50),
+        (U + (E - U) * 0.75, 0.30, 0.36),
+        (E, 0.33, 0.37),
+        (E + (W - E) * 0.30, 0.27, 0.31),
+        (E + (W - E) * 0.75, 0.21, 0.23),
+        (W, 0.27, 0.30),
+        (W + d_f * 0.22, 0.16, 0.17),
+    ]
+    arm_w = chain([ctrl[0][0], S, U, E, W, W + d_f * 0.5], ["chest", f"shoulder_{side}", f"upper_{side}", f"fore_{side}", f"wrist_{side}"])
+    limb(ctrl, 40, 12, v(0, 1, 0), "arm", arm_w, pid, cap1="fan")
+    # The thumb: a hooked claw on the wrist, the one she walks on.
+    horn(HEAD[f"thumb_{side}"] + v(0, -0.02, -0.1), v(0.12 * s, -0.3, 1), 0.72, 0.115, "claw", {f"thumb_{side}": 1.0}, part("claw"),
+         bend=v(0, -0.26, 0), K=6, steps=6)
+    # Fingers: two long joints each, a knuckle between them.
+    fp = part("finger")
+    lines, wfs = [], []
+    for f in range(3):
+        A, B, C = HEAD[f"finger{f + 1}a_{side}"], HEAD[f"finger{f + 1}b_{side}"], HEAD[f"finger{f + 1}c_{side}"]
+        names = [f"finger{f + 1}{k}_{side}" for k in "abc"]
+        wf = chain([A - unit(B - A) * 0.3, B, C, C + unit(C - B) * 0.3], names, blend=0.3)
+        r = 0.115 - 0.012 * f
+        ctrl_f = [(A - unit(B - A) * 0.02, r, r), (A + (B - A) * 0.5, r * 0.8, r * 0.8), (B, r * 0.82, r * 0.82),
+                  (B + (C - B) * 0.5, r * 0.5, r * 0.5), (C, 0.028, 0.028)]
+        limb(ctrl_f, 22, 6, v(0, 1, 0), "finger", wf, fp, cap1=C + unit(C - B) * 0.14, u0=f / 3, u1=(f + 1) / 3)
+        lines.append([A, B, C])
+        wfs.append([wf(A), wf(B), wf(C)])
+    # Membranes. Between the fingers ...
+    e = [edge_sampler(lines[f], wfs[f]) for f in range(3)]
+    membrane(e[0], e[1], 18, 7, 0.10, 0.16, "memA", side)
+    membrane(e[1], e[2], 18, 7, 0.11, 0.18, "memB", side)
+    # ... and from the third finger along the back of the arm to the flank and the hip.
+    A3 = lines[2][0]
+    q1, q2, q3 = W + v(-0.05 * s, -0.02, -0.24), E + v(0, -0.03, -0.31), U + v(0.12 * s, -0.06, -0.46)
+    pts = [A3, q1, (q1 + q2) / 2, q2, (q2 + q3) / 2, q3]
+    wts = [{f"wrist_{side}": 1.0}, {f"wrist_{side}": 0.5, f"fore_{side}": 0.5}, {f"fore_{side}": 1.0}, {f"fore_{side}": 0.5, f"upper_{side}": 0.5},
+           {f"upper_{side}": 1.0}, {f"upper_{side}": 0.55, f"shoulder_{side}": 0.45}]
+    theta = math.radians(26) if s > 0 else math.radians(154)
+    for z in (3.35, 2.55, 1.75, 0.95, 0.15, -0.65, -1.5):
+        t = body.t_of_z(z)
+        pts.append(body.point(t, theta, -0.02))
+        wts.append(body.weights(body.frame(t)[0]))
+    membrane(e[2], edge_sampler(pts, wts), 26, 12, 0.13, 0.30, "memC", side)
+    _counter["mirror"] = False
+
+
+# ---------------------------------------------------------------- head
+HEAD_PITCH = math.radians(5)  # the snout dips a little
+
+
+def head_point(x, y, z):
+    c, s = math.cos(HEAD_PITCH), math.sin(HEAD_PITCH)
+    return HEAD["head"] + v(x, y * c - z * s, z * c + y * s)
+
+
+def head_dir(x, y, z):
+    c, s = math.cos(HEAD_PITCH), math.sin(HEAD_PITCH)
+    return v(x, y * c - z * s, z * c + y * s)
+
+
+# Skull stations from the nape to the snout tip: z, half width, height of the widest line, height
+# above it, depth below it (down to the lip).
+SKULL = [(-0.52, 0.26, 0.08, 0.20, 0.20), (-0.30, 0.50, 0.10, 0.36, 0.30), (0.05, 0.62, 0.08, 0.43, 0.31), (0.45, 0.61, 0.07, 0.42, 0.29),
+         (0.85, 0.53, 0.05, 0.36, 0.27), (1.30, 0.41, 0.01, 0.275, 0.23), (1.85, 0.345, -0.02, 0.225, 0.20), (2.35, 0.31, -0.04, 0.20, 0.18),
+         (2.72, 0.24, -0.06, 0.155, 0.155), (2.92, 0.13, -0.085, 0.085, 0.10)]
+# Jaw stations: z, half width, height of the rim, depth below it.
+JAW = [(-0.10, 0.34, -0.26, 0.14), (0.15, 0.55, -0.245, 0.30), (0.50, 0.55, -0.245, 0.33), (0.95, 0.46, -0.245, 0.29), (1.50, 0.36, -0.245, 0.235),
+       (2.05, 0.30, -0.245, 0.20), (2.45, 0.235, -0.245, 0.17), (2.66, 0.12, -0.25, 0.09)]
+
+
+def skull_feature(z, phi):
+    """Bone under the skin of the head: outward displacement at z, angle phi (0 = her left, 90
+    degrees = the crown)."""
+    def g(zc, sz, pc, sp, amp):
+        out = 0.0
+        for p in (pc, 180 - pc):
+            d = (math.degrees(phi) - p + 180) % 360 - 180
+            out += amp * math.exp(-((z - zc) / sz) ** 2 - (d / sp) ** 2)
+        return out
+    out = g(0.72, 0.36, 52, 15, 0.085)          # brow ridges
+    out += g(0.88, 0.17, 20, 11, -0.06)         # eye sockets
+    out += g(0.35, 0.42, -8, 13, 0.05)          # cheekbones
+    out += g(2.50, 0.11, 48, 13, 0.045)         # nostrils
+    mid = math.exp(-(((math.degrees(phi) - 90 + 180) % 360 - 180) / 13) ** 2)
+    out += 0.03 * mid * float(smooth((z - 1.2) / 0.3)) * float(smooth((2.7 - z) / 0.3))   # the ridge of the nose
+    out += 0.04 * mid * float(smooth((z + 0.4) / 0.2)) * float(smooth((0.6 - z) / 0.3))   # the crest of the skull
+    return out
+
+
+def build_head():
+    hp, jp, hw, jw = part("head"), part("jaw"), {"head": 1.0}, {"jaw": 1.0}
+    st = np.array(SKULL)
+    f = PchipInterpolator(st[:, 0], st[:, 1:], axis=0)
+    n, K = 38, 22
+    rings = []
+    for z in np.linspace(st[0, 0], st[-1, 0], n):
+        W, y0, hu, hd = f(z)
+        ring = []
+        for k in range(K):
+            phi = -math.pi / 2 + 2 * math.pi * k / K
+            c, s = math.cos(phi), math.sin(phi)
+            ex, hh = (2.25, hu) if s >= 0 else (3.2, hd)
+            x = W * math.copysign(abs(c) ** (2 / ex), c)
+            y = hh * math.copysign(abs(s) ** (2 / ex), s)
+            r = math.hypot(x, y) or 1.0
+            k_ = 1 + skull_feature(z, phi) / r
+            ring.append(head_point(x * k_, y0 + y * k_, z))
+        rings.append(ring)
+    loft(rings, "head", [hw] * n, hp, cap0="fan", cap1=head_point(0, -0.13, 3.0))
+    # The jaw: a trough with a flat floor, hinged under the cheek.
+    st = np.array(JAW)
+    f = PchipInterpolator(st[:, 0], st[:, 1:], axis=0)
+    n = 26
+    rings = []
+    for z in np.linspace(st[0, 0], st[-1, 0], n):
+        W, yt, D = f(z)
+        ring = []
+        for k in range(13):
+            th = -math.pi * k / 12
+            ring.append(head_point(W * math.cos(th), yt - D * abs(math.sin(th)) ** (2 / 2.4), z))
+        for k in range(1, 6):
+            x = -W + 2 * W * k / 6
+            ring.append(head_point(x, yt - 0.035 * (1 - (x / W) ** 2), z))
+        rings.append(ring)
+    loft(rings, "jaw", [jw] * n, jp, cap0="fan", cap1=head_point(0, -0.29, 2.74))
+    # The tongue on the floor of the mouth.
+    rings = []
+    for q in np.linspace(0, 1, 9):
+        z = 0.55 + 1.75 * q
+        w_ = 0.20 * (1 - q) ** 0.6 + 0.03
+        y = -0.245 + 0.045 + 0.03 * math.sin(q * math.pi)
+        rings.append([head_point(w_ * math.cos(2 * math.pi * k / 8), y + 0.04 * math.sin(2 * math.pi * k / 8), z) for k in range(8)])
+    loft(rings, "tongue", [jw] * 9, part("tongue"), cap0="fan", cap1=head_point(0, -0.2, 2.38))
+    # Teeth. The upper row hangs outside the lower lip; the lower row closes inside the upper jaw.
+    tp = part("tooth")
+    fs = PchipInterpolator(np.array(SKULL)[:, 0], np.array(SKULL)[:, 1:], axis=0)
+    fj = PchipInterpolator(np.array(JAW)[:, 0], np.array(JAW)[:, 1:], axis=0)
+    upper = [0.12, 0.14, 0.15, 0.17, 0.19, 0.21, 0.29, 0.20, 0.15]
+    for side in (1, -1):
+        _counter["mirror"] = side < 0
+        for k, ln in enumerate(upper):
+            z = 0.95 + k * 0.212
+            W, y0, hu, hd = fs(z)
+            horn(head_point(side * (W * 0.955 - 0.01), y0 - hd + 0.03, z), head_dir(0.10 * side, -1, 0.10), ln, 0.03 + 0.11 * ln, "tooth", hw, tp,
+                 bend=head_dir(-0.02 * side, 0, -0.03), K=5, steps=3)
+        horn(head_point(side * 0.085, -0.16, 2.84), head_dir(0, -1, 0.1), 0.11, 0.04, "tooth", hw, tp, K=5, steps=3)
+        for k in range(8):
+            z = 1.05 + k * 0.2
+            W, yt, D = fj(z)
+            ln = 0.10 + 0.05 * math.sin(k * 1.3) ** 2 + (0.07 if k == 6 else 0)
+            horn(head_point(side * (W * 0.86), yt - 0.02, z), head_dir(0.04 * side, 1, 0.05), ln, 0.028 + 0.1 * ln, "tooth", jw, tp, K=5, steps=3)
+    # Horns: the crown swept back, a smaller pair below it, spikes along the cheek and the chin.
+    hn = part("horn")
+    for side in (1, -1):
+        _counter["mirror"] = side < 0
+        horn(head_point(0.30 * side, 0.36, -0.10), head_dir(0.30 * side, 0.46, -1.0), 2.35, 0.20, "horn", hw, hn,
+             bend=head_dir(0.12 * side, 0.55, -0.05), K=9, steps=12, ridges=9, u1=0.5)
+        horn(head_point(0.50 * side, 0.12, -0.16), head_dir(0.62 * side, 0.03, -1.0), 1.25, 0.12, "horn", hw, hn,
+             bend=head_dir(0.04 * side, 0.24, 0), K=8, steps=8, ridges=5, u0=0.5, u1=0.75)
+        for k, (zz, yy, ln) in enumerate(((0.02, -0.07, 0.56), (0.27, -0.11, 0.44), (0.5, -0.15, 0.32))):
+            W = float(fs(zz)[0])
+            horn(head_point((W - 0.04) * side, yy, zz), head_dir(0.85 * side, -0.22, -0.75), ln, 0.075 - 0.008 * k, "horn", hw, hn,
+                 bend=head_dir(0, 0.02, -0.06), K=6, steps=4, u0=0.75, u1=1.0)
+        for zz, ln in ((0.95, 0.30), (1.45, 0.22)):
+            W, yt, D = fj(zz)
+            horn(head_point(0.42 * W * side, yt - D * 0.93, zz), head_dir(0.2 * side, -0.8, -0.6), ln, 0.05, "horn", jw, hn, K=6, steps=4,
+                 u0=0.75, u1=1.0)
+    _counter["mirror"] = False
+    horn(head_point(0, 0.13, 2.44), head_dir(0, 0.85, -0.5), 0.30, 0.08, "horn", hw, hn, bend=head_dir(0, 0, -0.06), K=7, steps=5, u0=0.75, u1=1.0)
+    # Eyes: lenses under the brow. Painted from the eye region, which the game draws again glowing.
+    ep = part("eye")
+    for side in (1, -1):
+        _counter["mirror"] = side < 0
+        cen = head_point(0.452 * side, 0.165, 0.875)
+        out = unit(head_dir(0.88 * side, 0.2, 0.26))
+        fwd = unit(head_dir(0, 0, 1) - out * np.dot(head_dir(0, 0, 1), out))
+        upv = unit(np.cross(out, fwd)) * side
+        if upv[1] < 0:
+            upv = -upv
+        g = new_group()
+        rows = []
+        for i in range(5):
+            al = math.pi / 2 * (1 - i / 4)  # rim -> apex
+            row = []
+            for k in range(11):
+                be = 2 * math.pi * k / 10
+                p = cen + out * (0.05 * math.cos(al) - 0.012) + (fwd * 0.118 * math.cos(be) + upv * 0.082 * math.sin(be)) * math.sin(al)
+                uv_ = uvmap("eye", 0.5 + 0.4 * math.cos(be) * math.sin(al), 0.5 - 0.4 * math.sin(be) * math.sin(al), margin=8)
+                row.append(add_vertex(p, uv_, hw, ep, g))
+            rows.append(row)
+        for i in range(4):
+            quad_strip(rows[i], rows[i + 1], ep, lambda q, out=out: out)
+    _counter["mirror"] = False
+
+
+# ---------------------------------------------------------------- normals, checks, export
+def compute_normals():
+    """Smooth normals per surface: every vertex gets the area-weighted mean of the faces around
+    it, and vertices of one surface that share a place (the texture seam) share a normal."""
+    P = np.array(POS)
+    T = np.array(TRI)
+    fn = np.cross(P[T[:, 1]] - P[T[:, 0]], P[T[:, 2]] - P[T[:, 0]])
+    key = np.concatenate([np.array(GRP)[:, None], np.round(P * 20000).astype(np.int64)], axis=1)
+    _, inv = np.unique(key, axis=0, return_inverse=True)
+    inv = inv.reshape(-1)
+    acc = np.zeros((inv.max() + 1, 3))
+    for k in range(3):
+        np.add.at(acc, inv[T[:, k]], fn)
+    n = acc[inv]
+    ln = np.linalg.norm(n, axis=1, keepdims=True)
+    n = np.where(ln > 1e-12, n / np.maximum(ln, 1e-12), np.array([0.0, 1.0, 0.0]))
+    return n
+
+
+def packed_weights():
+    bi = np.zeros((len(POS), 4), dtype=np.uint8)
+    bw = np.zeros((len(POS), 4), dtype=np.float32)
+    for i, w in enumerate(WTS):
+        items = sorted(w.items(), key=lambda kv: -kv[1])[:4]
+        tot = sum(x for _, x in items) or 1.0
+        for k, (b, x) in enumerate(items):
+            bi[i, k] = INDEX[b]
+            bw[i, k] = x / tot
+    return bi, bw
+
+
 def rest_rotation(b):
     """Rest orientation of a bone: its local +Z along the bone (to its first child), +Y up-ish."""
     name, parent, head = BONES[b]
@@ -641,9 +892,10 @@ def quat_from_matrix(m):
     return (x, y, z, w)
 
 
-def export():
-    OUT_MESH.parent.mkdir(parents=True, exist_ok=True)
-    with open(OUT_MESH, "wb") as f:
+def export(path, normals):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    bi, bw = packed_weights()
+    with open(path, "wb") as f:
         f.write(b"VMSH")
         f.write(struct.pack("<i", 1))
         f.write(struct.pack("<i", len(BONES)))
@@ -654,18 +906,59 @@ def export():
             f.write(struct.pack("<3f", *head))
             f.write(struct.pack("<4f", *rest_rotation(i)))
         f.write(struct.pack("<i", len(POS)))
-        for p, n, uv, bi, bw in zip(POS, NRM, UV, BI, BW):
+        for p, n, uv, b, w in zip(POS, normals, UV, bi, bw):
             f.write(struct.pack("<3f3f2f", *p, *n, *uv))
-            f.write(struct.pack("<4B", *bi))
-            f.write(struct.pack("<4f", *bw))
+            f.write(struct.pack("<4B", *b))
+            f.write(struct.pack("<4f", *w))
         f.write(struct.pack("<i", len(TRI)))
         for t in TRI:
             f.write(struct.pack("<3i", *t))
-    print(f"vaelith: {len(BONES)} bones, {len(POS)} vertices, {len(TRI)} triangles")
+    print(f"vaelith: {len(BONES)} bones, {len(POS)} vertices, {len(TRI)} triangles -> {path}")
+
+
+def check(normals):
+    """Refuses a mesh the game would draw wrong: bad numbers, weights that do not add up, a
+    triangle with no area, or a triangle inside the glowing eye region that is not an eye."""
+    P, T = np.array(POS), np.array(TRI)
+    assert np.isfinite(P).all() and np.isfinite(normals).all(), "non-finite vertex"
+    bi, bw = packed_weights()
+    assert np.allclose(bw.sum(axis=1), 1.0, atol=1e-4), "weights do not sum to 1"
+    area = np.linalg.norm(np.cross(P[T[:, 1]] - P[T[:, 0]], P[T[:, 2]] - P[T[:, 0]]), axis=1)
+    thin = int((area < 1e-9).sum())
+    uv = np.array(UV)
+    u0, v0, u1, v1 = UVR["eye"]
+    inside = (uv[:, 0] >= u0) & (uv[:, 0] < u1) & (uv[:, 1] >= v0) & (uv[:, 1] <= v1)
+    eye = part("eye")
+    glowing = inside[T].all(axis=1)
+    is_eye = np.array(TPART) == eye
+    assert (glowing == is_eye).all(), "eye region and eye triangles differ"
+    assert len(BONES) == 56 and len(P) < 65536
+    print(f"check: {thin} degenerate triangles, eye triangles {int(is_eye.sum())}, surface {area.sum() / 2:.0f} blocks^2")
+
+
+def build():
+    body = Body()
+    build_body(body)
+    build_saddle(body)
+    build_spines(body)
+    for side in ("L", "R"):
+        build_leg(side, body)
+        build_wing(side, body)
+    build_head()
+    return body
 
 
 if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", default=str(ASSETS))
+    ap.add_argument("--size", type=int, default=2048)
+    ap.add_argument("--no-texture", action="store_true")
+    args = ap.parse_args()
+    out = Path(args.out)
     build()
-    export()
-    paint()
-    print("painted", OUT_TEX.name)
+    normals = compute_normals()
+    check(normals)
+    export(out / "models/entity/vaelith.vmesh", normals)
+    if not args.no_texture:
+        import paint_dragon
+        paint_dragon.paint(out / "textures/entity/vaelith.png", args.size, normals)

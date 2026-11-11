@@ -14,3 +14,6 @@ Thumbs.db
 # Local outputs (preview renders, benchmark dumps) — curated results go to docs/media
 /output/
 /preview-out/
+# Python
+__pycache__/
+*.pyc
