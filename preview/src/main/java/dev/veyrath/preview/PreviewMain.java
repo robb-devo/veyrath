@@ -23,6 +23,7 @@ import java.util.Map;
  *   audit  [--seed S] [--per N]                 world-quality audit (unstable water/lava, ranges)
  *   voxel  [--seed S] [--biome B] [--size N]    block-level render of composed chunks (trees, water)
  *   light  [--seed S] [--at crown|crown0.6|x,z] [--half N]  approximate light under floating islands
+ *   border [--seed S] [--size N] [--max N] [--tag T] [--at x,z]  top-down maps where provinces meet
  * </pre>
  */
 public final class PreviewMain {
@@ -52,6 +53,8 @@ public final class PreviewMain {
             case "light" -> LightProbe.run(spec, opt(args, "--at", "crown"), Integer.parseInt(opt(args, "--half", "3")));
             case "caves" -> CaveProfile.run(spec);
             case "poses" -> PoseSheet.render(out.resolve("combat"));
+            case "border" -> BorderMap.render(spec, out, Integer.parseInt(opt(args, "--size", "640")),
+                    Integer.parseInt(opt(args, "--max", "12")), opt(args, "--tag", ""), opt(args, "--at", null));
             default -> System.out.println("unknown command " + cmd);
         }
     }

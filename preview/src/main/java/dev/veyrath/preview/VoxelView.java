@@ -29,7 +29,7 @@ final class VoxelView {
 
     private static final double SUN_X = -0.45, SUN_Y = 0.72, SUN_Z = -0.53;
 
-    private static int[] palette() {
+    static int[] palette() {
         int[] c = new int[Material.values().length];
         java.util.Arrays.fill(c, 0xFF00FF);
         Object[] t = {
@@ -250,7 +250,7 @@ final class VoxelView {
         System.out.printf(Locale.ROOT, "%s: centre %.0f %.0f, area %d blocks, y%d..y%d%n", file, ax, az, size, y0, y0 + ny - 1);
     }
 
-    private static int colour(Material m, int[] pal, int grass, int foliage, int water) {
+    static int colour(Material m, int[] pal, int grass, int foliage, int water) {
         if (m == Material.WATER) return water;
         if (m == Material.WATERFALL) return shade(water, 1.25); // white water
         if (m == Material.GRASS || m == Material.GRASS_TUFT || m == Material.FERN || m == Material.TALL_GRASS || m == Material.TALL_GRASS_TOP
@@ -294,7 +294,7 @@ final class VoxelView {
         return mix(0xcfe0f0, 0x6f9ee0, t);
     }
 
-    private static int shade(int rgb, double f) {
+    static int shade(int rgb, double f) {
         int r = (int) Math.min(255, ((rgb >> 16) & 255) * f), g = (int) Math.min(255, ((rgb >> 8) & 255) * f), b = (int) Math.min(255, (rgb & 255) * f);
         return (r << 16) | (g << 8) | b;
     }
