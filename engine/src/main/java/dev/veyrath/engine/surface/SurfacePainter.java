@@ -97,8 +97,9 @@ public final class SurfacePainter {
         if (underwater) {
             double depth = c.water - c.ground;
             if (c.waterKind == ColumnInfo.WaterKind.RIVER) return n > 0.1 ? Material.GRAVEL : Material.SAND;
-            if (c.archetype == Archetype.GLOAMREED_FEN) return Material.MUD;
-            if (c.archetype == Archetype.CINDERWAKE_DOMINION) return Material.BASALT;
+            Archetype bed = c.rock != null ? c.rock : c.archetype;
+            if (bed == Archetype.GLOAMREED_FEN) return Material.MUD;
+            if (bed == Archetype.CINDERWAKE_DOMINION) return Material.BASALT;
             if (depth > 18) return n > 0 ? Material.GRAVEL : Material.CLAY;
             return n > -0.3 ? Material.SAND : Material.CLAY;
         }
@@ -144,11 +145,13 @@ public final class SurfacePainter {
         if (c.rockFace != null && y > c.ground - 60) return c.rockFace; // a basalt stack
         if (y < -64) return mix > 0.55 ? Material.TUFF : Material.DEEPSLATE;
         if (y < 0 && mix * 32 + y < -16) return Material.DEEPSLATE;
-        if (c.archetype == Archetype.VESPERFALL_RIFTLANDS) return strata(c, y);
+        // The rock province, not the landmark one: its border is soft (Ecotone).
+        Archetype rock = c.rock != null ? c.rock : c.archetype;
+        if (rock == Archetype.VESPERFALL_RIFTLANDS) return strata(c, y);
         // Rock types follow gently warped beds as well as the 2D mix, so a cliff shows lenses
         // and layers instead of vertical stripes.
         double m = mix + bed(y, mix);
-        return switch (c.archetype) {
+        return switch (rock) {
             case CINDERWAKE_DOMINION -> m > 0.3 ? Material.BLACKSTONE : m < -0.55 ? Material.OBSIDIAN
                     : m < -0.25 ? Material.STRATA_RED : Material.BASALT; // red scoria beds in the basalt
             case PRISMMERE_WILDS -> m > 0.45 ? Material.CRYSTAL_STONE : (m < -0.45 ? Material.AMETHYST : Material.CALCITE);

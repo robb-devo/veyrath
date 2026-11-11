@@ -61,6 +61,7 @@ public final class TerrainSampler {
     private final Fractal ridged, erosive, rough, grain, cragGrain, strataStep, mesa, riftJag, massif;
     private final dev.veyrath.engine.math.GullyNoise gully1, gully2, gully3, riftChute;
     private final DomainWarp detailWarp;
+    private final dev.veyrath.engine.region.Ecotone ecotone;
     private final RiverNetwork riftNet;
     private final double sea;
     /** 1 on atlas cells within one cell of a lake cell, else 0 (bilinear: smooth lake proximity). */
@@ -96,6 +97,7 @@ public final class TerrainSampler {
         massif = new Fractal(Hash.derive(s, "massif"), 2200, 2, 2.0, 0.5);
         riftChute = new dev.veyrath.engine.math.GullyNoise(Hash.derive(s, "rift-chute"), 90, 26);
         detailWarp = new DomainWarp(Hash.derive(s, "detail-warp"), 500, 2, 90);
+        ecotone = new dev.veyrath.engine.region.Ecotone(spec.seed());
         gully1 = new dev.veyrath.engine.math.GullyNoise(Hash.derive(s, "gully1"), 150, 84);
         gully2 = new dev.veyrath.engine.math.GullyNoise(Hash.derive(s, "gully2"), 64, 34);
         gully3 = new dev.veyrath.engine.math.GullyNoise(Hash.derive(s, "gully3"), 28, 14);
@@ -184,6 +186,7 @@ public final class TerrainSampler {
         out.base = base;
         int ci = atlas.cellIndex(x, z);
         out.archetype = dominant(w, x, z);
+        out.rock = ecotone.rock(w, x, z);
         out.temperature = atlas.sampleLinear(atlas.temperature, x, z);
         out.moisture = atlas.sampleLinear(atlas.moisture, x, z);
         out.coastDistance = atlas.sampleLinear(atlas.coastDistance, x, z);

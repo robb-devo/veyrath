@@ -5,6 +5,7 @@ import dev.veyrath.engine.math.Fractal;
 import dev.veyrath.engine.math.Hash;
 import dev.veyrath.engine.math.MathUtil;
 import dev.veyrath.engine.region.Archetype;
+import dev.veyrath.engine.region.Ecotone;
 import dev.veyrath.engine.terrain.ColumnInfo;
 
 /**
@@ -16,10 +17,12 @@ import dev.veyrath.engine.terrain.ColumnInfo;
  */
 public final class BiomeSelector {
     private final Fractal patches;
+    private final Ecotone ecotone;
     private final double sea;
 
     public BiomeSelector(WorldSpec spec) {
         this.patches = new Fractal(Hash.derive(spec.seed(), "biome-patches"), 900, 3, 2.0, 0.5);
+        this.ecotone = new Ecotone(spec.seed());
         this.sea = spec.seaLevel();
     }
 
@@ -38,24 +41,35 @@ public final class BiomeSelector {
         return snowLine(c) - 150;
     }
 
+    /**
+     * The biome of a column.
+     *
+     * <p>No biome edge is a ruled line. Between provinces the winner is decided by
+     * {@link Ecotone#cover}, whose border meanders and breaks into outliers. Inside a province
+     * every threshold (patch noise, moisture, the valley floor, the tree and snow lines, the
+     * beach) wobbles with {@link Ecotone#grain}, so the curve it would draw becomes a ragged
+     * edge a few blocks to a few tens of blocks deep.
+     */
     public VBiome select(ColumnInfo c, double slope) {
         if (c.waterKind == ColumnInfo.WaterKind.SEA && c.wet()) {
             return c.water - c.ground > 28 ? VBiome.VEIL_SEA : VBiome.VEIL_SHALLOWS;
         }
+        Archetype province = ecotone.cover(c.weights, c.x, c.z);
+        double g = ecotone.grain(c.x, c.z);
         double e = c.ground - sea;
-        if (c.coastDistance < 110 && e < 7 && slope < 0.5
-                && c.archetype != dev.veyrath.engine.region.Archetype.CINDERWAKE_DOMINION
-                && c.archetype != dev.veyrath.engine.region.Archetype.GLOAMREED_FEN) {
+        if (c.coastDistance < 110 + 35 * g && e < 7 + 2.5 * g && slope < 0.5
+                && province != Archetype.CINDERWAKE_DOMINION && province != Archetype.GLOAMREED_FEN) {
             return VBiome.GLASSWATER_COAST;
         }
-        double n = 0.5 + 0.5 * patches.fbm(c.x, c.z);
-        return switch (c.archetype) {
+        double n = 0.5 + 0.5 * patches.fbm(c.x, c.z) + 0.07 * g;
+        return switch (province) {
             case AETHERCROWN_HIGHLANDS -> {
-                if (c.ground > snowLine(c) + (n - 0.5) * 60) yield VBiome.CROWNSPIRE_PEAKS;
+                if (c.ground > snowLine(c) + (n - 0.5) * 60 + 18 * g) yield VBiome.CROWNSPIRE_PEAKS;
                 if (slope > 1.05) yield VBiome.AETHERCROWN_CRAGS;
-                boolean valley = c.riverDistance < c.riverHalfWidth + 140 || c.nearLake;
-                if (valley && c.ground < treeLine(c)) yield VBiome.HIGHMERE_VALES;
-                if (c.ground > treeLine(c)) yield VBiome.AETHERCROWN_CRAGS;
+                boolean valley = c.riverDistance < c.riverHalfWidth + 140 + 55 * g || c.nearLake;
+                double treeLine = treeLine(c) + 22 * g;
+                if (valley && c.ground < treeLine) yield VBiome.HIGHMERE_VALES;
+                if (c.ground > treeLine) yield VBiome.AETHERCROWN_CRAGS;
                 yield VBiome.STORMPINE_SLOPES;
             }
             case VESPERFALL_RIFTLANDS -> {
@@ -64,7 +78,7 @@ public final class BiomeSelector {
                 yield VBiome.VESPER_MESAS;
             }
             case ELDERBOUGH_EXPANSE -> {
-                if (c.moisture > 0.72 && e < 45) yield VBiome.MOSSDEEP_HOLLOWS;
+                if (c.moisture + 0.035 * g > 0.72 && e < 45 + 8 * g) yield VBiome.MOSSDEEP_HOLLOWS;
                 if (n > 0.78) yield VBiome.SUNGLADE;
                 yield VBiome.ELDERWOOD;
             }
@@ -74,7 +88,7 @@ public final class BiomeSelector {
                 yield n > 0.58 ? VBiome.SHARDFIELDS : VBiome.AMETHYST_BLOOM;
             }
             case CINDERWAKE_DOMINION -> {
-                if (c.volcano > 0.25) yield VBiome.CINDER_PEAKS;
+                if (c.volcano > 0.25 + 0.06 * g) yield VBiome.CINDER_PEAKS;
                 if (n > 0.7) yield VBiome.CHARWOOD;
                 if (n < 0.26) yield VBiome.EMBERVEIN_FLATS;
                 yield VBiome.ASHEN_WASTES;

@@ -17,7 +17,17 @@ public final class ColumnInfo {
     public double base;
     /** Approximate surface slope (rise over run). */
     public double slope;
+    /**
+     * The province that decides where landmark features may stand (spires, crystal faults, the
+     * caldera). Not what the ground looks like: see {@link #rock} and
+     * {@link dev.veyrath.engine.biome.BiomeSelector#select}.
+     */
     public Archetype archetype;
+    /**
+     * The province whose rock lies under this column. Near a border it follows the soft border
+     * of {@link dev.veyrath.engine.region.Ecotone#rock}, so geology changes in broad lenses.
+     */
+    public Archetype rock;
     public final double[] weights = new double[Archetype.values().length];
     public double temperature, moisture;
     /** Distance to the nearest river centreline and that river's half width (MAX when none). */
