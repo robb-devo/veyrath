@@ -7,8 +7,11 @@ import dev.veyrath.engine.atlas.RealmAtlas;
 import dev.veyrath.engine.biome.VBiome;
 import dev.veyrath.engine.chunk.ChunkBuffer;
 import dev.veyrath.engine.chunk.ChunkComposer;
+import dev.veyrath.engine.debug.Locator;
 import dev.veyrath.engine.region.Archetype;
 import dev.veyrath.engine.surface.Material;
+import dev.veyrath.engine.terrain.ColumnInfo;
+import dev.veyrath.engine.terrain.TerrainSampler;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -52,36 +55,12 @@ final class BorderMap {
         }
     }
 
-    /**
-     * One site per pair of neighbouring archetypes: the land border cell nearest the spawn that
-     * is well away from the coast and from lakes.
-     */
+    /** One site per pair of neighbouring archetypes, nearest the spawn first (see {@link Locator#borders}). */
     static List<Site> sites(RealmAtlas a, int max) {
-        int n = a.n, arch = Archetype.values().length;
-        double[] best = new double[arch * arch];
-        int[] cell = new int[arch * arch];
-        java.util.Arrays.fill(best, Double.MAX_VALUE);
-        java.util.Arrays.fill(cell, -1);
-        for (int j = 1; j < n - 1; j++) {
-            for (int i = 1; i < n - 1; i++) {
-                int c = j * n + i;
-                if (a.continent[c] <= 0 || a.coastDistance[c] < 500 || !Float.isNaN(a.water[c])) continue;
-                for (int k = 0; k < 2; k++) {
-                    int o = k == 0 ? c + 1 : c + n;
-                    if (a.continent[o] <= 0 || !Float.isNaN(a.water[o]) || a.archetype[o] == a.archetype[c]) continue;
-                    int p = Math.min(a.archetype[c], a.archetype[o]) * arch + Math.max(a.archetype[c], a.archetype[o]);
-                    double d = Math.hypot(a.cellCenterX(i) - a.spawnX, a.cellCenterZ(j) - a.spawnZ);
-                    if (d < best[p]) {
-                        best[p] = d;
-                        cell[p] = c;
-                    }
-                }
-            }
-        }
         List<Site> out = new ArrayList<>();
-        for (int p = 0; p < cell.length && out.size() < max; p++) {
-            if (cell[p] < 0) continue;
-            out.add(new Site(Archetype.byId(p / arch), Archetype.byId(p % arch), a.cellCenterX(cell[p] % n), a.cellCenterZ(cell[p] / n)));
+        for (Locator.Border b : Locator.borders(a, a.spawnX, a.spawnZ)) {
+            if (out.size() >= max) break;
+            out.add(new Site(b.a(), b.b(), b.x(), b.z()));
         }
         return out;
     }
@@ -126,8 +105,10 @@ final class BorderMap {
         }
         ImageIO.write(surface, "png", out.resolve(base + "_surface.png").toFile());
         ImageIO.write(biomes, "png", out.resolve(base + "_biomes.png").toFile());
-        System.out.printf(Locale.ROOT, "%s: %s | %s, centre engine %.0f %.0f (in game %.0f %.0f), %d blocks%n", base,
+        ColumnInfo centre = new ColumnInfo();
+        realm.terrain().sample(s.x(), s.z(), centre, new TerrainSampler.Scratch());
+        System.out.printf(Locale.ROOT, "%s: %s | %s, centre engine %.0f %.0f (in game %.0f %.0f, ground y%.0f), %d blocks%n", base,
                 s.a() == null ? "-" : s.a().displayName, s.b() == null ? "-" : s.b().displayName, s.x(), s.z(),
-                s.x() - world.originX(), s.z() - world.originZ(), w);
+                s.x() - world.originX(), s.z() - world.originZ(), centre.ground, w);
     }
 }

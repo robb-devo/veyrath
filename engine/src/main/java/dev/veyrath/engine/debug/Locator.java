@@ -14,6 +14,8 @@ import dev.veyrath.engine.terrain.RockSpires;
 import dev.veyrath.engine.terrain.TerrainSampler;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
@@ -27,13 +29,51 @@ public final class Locator {
     /** A located place: standing position plus a short human-readable description. */
     public record Place(String target, double x, double y, double z, String description) {}
 
+    /** A place where provinces of two archetypes meet on dry land, and its distance from the asker. */
+    public record Border(Archetype a, Archetype b, double x, double z, double distance) {}
+
     private Locator() {}
 
     /** Target names accepted by {@link #find}. */
     public static List<String> targets() {
-        List<String> t = new ArrayList<>(List.of("spawn", "rift", "rift_rim", "crown", "throne", "summit", "waterfall", "elder_tree", "arch", "caldera", "window", "fault", "crown_falls", "spires", "basalt"));
+        List<String> t = new ArrayList<>(List.of("spawn", "rift", "rift_rim", "crown", "throne", "summit", "waterfall", "elder_tree", "arch", "caldera", "window", "fault", "crown_falls", "spires", "basalt", "border"));
         for (Archetype a : Archetype.values()) t.add(archetypeTarget(a));
         return t;
+    }
+
+    /**
+     * One border per pair of neighbouring archetypes, nearest first: for each pair, the point
+     * between two atlas cells of those archetypes that is nearest (fromX, fromZ), on land, well
+     * away from the coast and not in a lake.
+     */
+    public static List<Border> borders(RealmAtlas a, double fromX, double fromZ) {
+        int n = a.n, arch = Archetype.values().length;
+        double[] best = new double[arch * arch], bx = new double[arch * arch], bz = new double[arch * arch];
+        Arrays.fill(best, Double.MAX_VALUE);
+        for (int j = 1; j < n - 1; j++) {
+            for (int i = 1; i < n - 1; i++) {
+                int c = j * n + i;
+                if (a.continent[c] <= 0 || a.coastDistance[c] < 500 || !Float.isNaN(a.water[c])) continue;
+                for (int k = 0; k < 2; k++) {
+                    int o = k == 0 ? c + 1 : c + n;
+                    if (a.continent[o] <= 0 || a.coastDistance[o] < 500 || !Float.isNaN(a.water[o]) || a.archetype[o] == a.archetype[c]) continue;
+                    int p = Math.min(a.archetype[c], a.archetype[o]) * arch + Math.max(a.archetype[c], a.archetype[o]);
+                    double x = a.cellCenterX(i) + (k == 0 ? a.cell * 0.5 : 0), z = a.cellCenterZ(j) + (k == 1 ? a.cell * 0.5 : 0);
+                    double d = Math.hypot(x - fromX, z - fromZ);
+                    if (d < best[p]) {
+                        best[p] = d;
+                        bx[p] = x;
+                        bz[p] = z;
+                    }
+                }
+            }
+        }
+        List<Border> out = new ArrayList<>();
+        for (int p = 0; p < best.length; p++) {
+            if (best[p] < Double.MAX_VALUE) out.add(new Border(Archetype.byId(p / arch), Archetype.byId(p % arch), bx[p], bz[p], best[p]));
+        }
+        out.sort(Comparator.comparingDouble(Border::distance));
+        return out;
     }
 
     public static String archetypeTarget(Archetype a) {
@@ -60,6 +100,13 @@ public final class Locator {
                     return stand(terrain, c, s, t, world.spawnEngineX(), world.spawnEngineZ(), "world spawn site");
                 }
                 return stand(terrain, c, s, t, atlas.spawnX, atlas.spawnZ, "realm spawn site (atlas cell)");
+            }
+            case "border" -> {
+                // The nearest place where two provinces meet: the middle of their mixed belt.
+                List<Border> all = borders(atlas, fromX, fromZ);
+                if (all.isEmpty()) return null;
+                Border b = all.get(0);
+                return stand(terrain, c, s, t, b.x(), b.z(), "where " + b.a().displayName + " and " + b.b().displayName + " meet");
             }
             case "arch" -> {
                 // The nearest giant stone arch (70+ blocks), seen square-on from 1.3 spans away.

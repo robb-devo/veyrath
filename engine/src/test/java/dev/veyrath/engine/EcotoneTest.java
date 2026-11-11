@@ -2,15 +2,19 @@ package dev.veyrath.engine;
 
 import dev.veyrath.engine.atlas.RealmAtlas;
 import dev.veyrath.engine.biome.VBiome;
+import dev.veyrath.engine.debug.Locator;
 import dev.veyrath.engine.region.Archetype;
 import dev.veyrath.engine.region.Ecotone;
 import dev.veyrath.engine.terrain.ColumnInfo;
 import dev.veyrath.engine.terrain.TerrainSampler;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -180,5 +184,37 @@ class EcotoneTest {
         // Before the soft borders: 1 of 12 windows ragged, mean edge 2.5 x the window side.
         assertTrue(ragged >= windows / 2, ragged + " of " + windows + " border windows are ragged");
         assertTrue(ratioSum / windows >= 5, "mean edge length " + ratioSum / windows + " x window side");
+    }
+
+    /** {@code /veyrath tp border} lands on dry land where two provinces both hold real weight. */
+    @Test
+    void theLocatorFindsTheNearestBorder() {
+        assertTrue(Locator.targets().contains("border"));
+        for (long seed = 1; seed <= 3; seed++) {
+            VeyrathWorld world = TestWorlds.world(seed);
+            VeyrathWorld.Realm realm = world.realm(0, 0);
+            double fromX = world.spawnEngineX(), fromZ = world.spawnEngineZ();
+            Locator.Place p = Locator.find(world, "border", fromX, fromZ);
+            assertNotNull(p, "seed " + seed + " has a land border");
+            ColumnInfo c = new ColumnInfo();
+            realm.terrain().sample(p.x(), p.z(), c, new TerrainSampler.Scratch());
+            double best = 0, second = 0;
+            for (double w : c.weights) {
+                if (w > best) {
+                    second = best;
+                    best = w;
+                } else if (w > second) {
+                    second = w;
+                }
+            }
+            System.out.printf("ecotone: seed %d border at %.0f %.0f, %.0f blocks from spawn: %s; weights %.2f and %.2f%n",
+                    seed, p.x(), p.z(), Math.hypot(p.x() - fromX, p.z() - fromZ), p.description(), best, second);
+            assertFalse(c.waterKind == ColumnInfo.WaterKind.SEA && c.wet(), "border site is not in the sea");
+            assertTrue(second >= 0.25, "second province weight at the border site: " + second);
+            List<Locator.Border> all = Locator.borders(realm.atlas(), fromX, fromZ);
+            for (int i = 1; i < all.size(); i++) assertTrue(all.get(i - 1).distance() <= all.get(i).distance(), "nearest first");
+            assertEquals(all.get(0).x(), p.x(), 1.0);
+            assertEquals(all.get(0).z(), p.z(), 1.0);
+        }
     }
 }
