@@ -54,6 +54,15 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   worlds show seams near province borders: make a new world.
 - Installer: biome blend 15x15 by default, so tints fade at biome edges (a value the player chose
   is kept). Not yet run on the PC.
+- **Vaelith, art pass 2** (TD-039): a new sculpt on the same skeleton (one continuous body, a
+  sculpted skull and jaw with teeth and tongue, muscled legs with jointed toes and talons, jointed
+  wing fingers, a closed saddle), wound so the game lights her from above (she was lit from
+  below), a texture painted from the mesh itself (scales, belly plates, veined membranes with torn
+  edges, baked shadows), wings that fold flat along her flank and toes flat on the ground. 15 002
+  vertices and 26 390 triangles (was 12 405 and 21 030). Offline renders only, not yet seen in game.
+- Model tools: `preview_mesh.py` shades like the game (no culling, faces seen from behind lit with
+  the normal turned round, `--back` check), `pose_preview.py --sheet` and `--mesh/--tex`,
+  `pose_solve.py` targets points carried by a bone (`"toes_L@x,y,z"`) and solves faster.
 
 ## [Released to the owner] — 0.2.0-ch02
 

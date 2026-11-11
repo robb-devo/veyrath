@@ -535,3 +535,36 @@ would fade colours over hundreds of blocks. It would be written blind, and Dista
 probably keeps one colour per biome.
 **State:** engine tests and offline maps (`preview border`) only; not yet seen in game. Existing
 worlds show seams near province borders where old chunks meet new ones.
+
+## TD-039 — Vaelith is wound for the game's lighting and painted from her own mesh
+
+**Decision:** art pass 2 rebuilds the dragon in `tools/models/build_dragon.py` with the same 56-bone
+skeleton (names, parents and rest heads unchanged, so `poses.json` and the animator bind as before):
+tail, torso and neck are one surface swept along the spine with sculpted sections (deep chest,
+shoulder and haunch masses, a backbone ridge, the tail blade in the same surface, the back lowered
+under the saddle); a sculpted skull and jaw with brow ridges, sockets, cheekbones, nostrils, teeth,
+tongue, horns and eye lenses; muscled legs with jointed toes and talons; jointed wing fingers. Four
+rules come with it:
+- **Winding.** Every triangle is counter-clockwise seen from outside; membranes are two layers, each
+  facing out. In-game screenshots of the old mesh showed a dark back, a pale belly and one wing
+  darker than the other. That fits Minecraft 26.3 drawing `entityCutout` without culling and
+  lighting a face seen from behind with its normal turned round, under its two fixed lights from
+  above: the old mesh was wound clockwise, so she was lit from below. `preview_mesh.py` now shades
+  that way and reproduces the old in-game look from the old mesh (`--back` paints faces seen from
+  behind magenta; the new mesh shows none on closed parts).
+- **Texture painted from the mesh.** `tools/models/paint_dragon.py` draws every triangle into texture
+  space, so each texel knows its place on her body: 3D cellular scales of one size however the
+  texture is stretched, overlapping towards the tail, belly plates, mottling, tail bands, brow
+  plates, a slit-pupil eye, and occlusion baked from a voxel copy of the mesh. Membranes get veins,
+  holes and torn trailing edges cut out by alpha (the cutout render type drops alpha below 0.1).
+  No source images.
+- **Membrane weights fitted to the poses.** Blending the edge bones across a panel works while the
+  wing is spread, but when the fingers fold the blended transforms disagree and the skin flies off.
+  `fit_membranes` gives every membrane point the mix of at most four wing or trunk bones that keeps
+  it closest, over every pose in `poses.json`, to a sheet stretched between its posed edges (mean
+  distance 0.43 to 0.21 blocks over 14 poses). A changed pose needs a rebuilt mesh.
+- **Poses aim points, not just joints.** `pose_solve.py` takes targets for a point carried by a bone
+  (`"toes_L@x,y,z"`), so toes lie flat; the folded wing runs up the forearm and back along the
+  flank. Stand, the four walk phases and lie were solved again.
+**State:** offline renders only. Not yet seen in game: the lighting (should now be from above), the
+cut-out tears, the rider's seat on the new saddle, and the frame cost of the new triangle count.

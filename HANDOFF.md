@@ -64,6 +64,13 @@ Done (all pushed):
    terrain heights did not move. Engine tests `EcotoneTest` (6), maps with `preview border`,
    before and after in `docs/media/world/border_before_after.jpg`. `/veyrath tp border` goes to
    the nearest border (a new locator target, engine side). Installer: biome blend 15x15 by default.
+2. **Vaelith art pass 2** (TD-039). Only assets and Python tools changed: `vaelith.vmesh`
+   (15 002 vertices, 26 390 triangles, same 56 bones), `vaelith.png` (2048, painted from the mesh
+   by `tools/models/paint_dragon.py`) and `dragon/poses.json` (stand, the four walk phases and lie
+   solved again: folded wing along the flank, toes flat). Every triangle is now wound
+   counter-clockwise from outside, because the old mesh was lit from below in game (see TD-039).
+   Membrane weights are fitted to `poses.json`: after changing a pose, run
+   `python tools/models/build_dragon.py` again. Offline sheets: `docs/media/dragon/art_pass2_*.jpg`.
 
 **First thing on the PC** (in this order):
 
@@ -78,6 +85,13 @@ Done (all pushed):
    frame-time spikes while flying along a border.
 3. Run `tools/install/Install-Veyrath.ps1` once with Windows PowerShell 5.1: the biome blend step
    was only run with PowerShell 7 on Linux.
+4. Vaelith in game (`gradlew :mod-fabric:runClientGameTest -Pveyrath.tests=dragon` photographs her,
+   or blow the Storm Horn): her back must be lit and her belly darker. If she looks lit from
+   below, dark all over, or you see her inside, the winding guess was wrong: tell the next chat
+   (one place, `quad_strip` and the caps in `build_dragon.py`). Check that the torn membrane edges
+   are see-through, that the rider sits on the saddle (seat top about y 4.4 at z 1.2 in model
+   space; the attachment point is `DragonEntity` 4.05), and the frame time with her in view
+   (more triangles than before: 26 390 against 21 030).
 
 ## Where things stand (Chapter 02)
 
