@@ -62,9 +62,10 @@ public final class TwinBlades {
     static final PoseSpec R_CUT = GUARD.with(RIGHT_ARM, r(-88, 70, 0)).with(BODY, r(12, 26, 0)).with(ROOT, r(0, 22, 0).offset(0, -2.5, 1.5));
     static final PoseSpec L_WIND = GUARD.with(LEFT_ARM, r(-90, 50, 0)).with(BODY, r(10, 24, 0)).with(ROOT, r(0, 14, 0).offset(0, -2, 0));
     static final PoseSpec L_CUT = GUARD.with(LEFT_ARM, r(-88, -70, 0)).with(BODY, r(12, -26, 0)).with(ROOT, r(0, -22, 0).offset(0, -2.5, 1.5));
-    /** Right blade low behind, ready to rise. */
-    static final PoseSpec R_LOW = GUARD.with(RIGHT_ARM, r(-10, 30, 0)).with(BODY, r(20, 10, 0)).with(ROOT, r(0, 8, 0).offset(0, -3, 0));
-    static final PoseSpec R_HIGH = GUARD.with(RIGHT_ARM, r(-165, 10, 0)).with(BODY, r(-6, 0, 0)).with(ROOT, r(0, 0, 0).offset(0, -1, 1));
+    /** Right blade low in front of the right hip, pointing ahead, ready to rise. */
+    static final PoseSpec R_LOW = GUARD.with(RIGHT_ARM, r(-20, -10, 0)).with(BODY, r(20, 10, 0)).with(ROOT, r(0, 8, 0).offset(0, -3, 0));
+    /** The right blade risen up the front of the body to overhead (the rising cut stays in front, so it lands ahead). */
+    static final PoseSpec R_HIGH = GUARD.with(RIGHT_ARM, r(-165, 0, 0)).with(BODY, r(-6, 0, 0)).with(ROOT, r(0, 0, 0).offset(0, -1, 1));
     /** Both blades raised crossed above the head, then driven down in an X. */
     static final PoseSpec X_WIND = GUARD.with(RIGHT_ARM, r(-160, -30, 0)).with(LEFT_ARM, r(-160, 30, 0)).with(BODY, r(-8, 0, 0)).with(ROOT, r(0, 0, 0).offset(0, -1, -0.5));
     static final PoseSpec X_CUT = GUARD.with(RIGHT_ARM, r(-40, 40, 0)).with(LEFT_ARM, r(-40, -40, 0)).with(BODY, r(26, 0, 0)).with(ROOT, r(0, 0, 0).offset(0, -3.5, 2.5));
@@ -144,9 +145,7 @@ public final class TwinBlades {
                 .hit(2, 4, HitSpec.of(2.6).reaction(Reaction.LAUNCH).stun(16, 6).push(0.05).lift(0.5).hitstop(3).shake(0.2).guard(10).poise(14)
                         .gauge(3).fx("impact_launch", "blade_cut").build(), r)
                 .branch(Action.LIGHT, "tb_cut_4", 4, 10).branchOnHit(Action.JUMP, "air_jump", 4, 10)
-                // The rising cut reaches about a block: it steps in further than the first two, and
-                // stops where it lands (Reach.stopAt), so the string's own push does not leave it short.
-                .dodgeFrom(4).onHitCancel(1).abilityFrom(4).freeFrom(9).motion(new Motion(10).dash(0, 2, 0.3, 0.06)).tracking(14, 2).blend(1).build());
+                .dodgeFrom(4).onHitCancel(1).abilityFrom(4).freeFrom(9).motion(new Motion(10).dash(0, 2, 0.15, 0.04)).tracking(14, 2).blend(1).build());
         s.add(Move.builder("tb_cut_4", Kind.ATTACK, 16)
                 .hit(5, 7, HitSpec.of(5).reaction(Reaction.KNOCKBACK).stun(16, 9).push(0.8).lift(0.25).hitstop(5).shake(0.4).guard(24).poise(30)
                         .gauge(5).fx("blade_cleave", "blade_cut").build(), r, l)

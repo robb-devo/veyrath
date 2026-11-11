@@ -78,8 +78,11 @@ Done (all pushed):
    and track through every windup (player only, `Rules.aimAssist`). Client: `LocalCombat` feeds
    `TargetTrack` (velocity of the locked target, three ticks of interpolation lag) and draws blade
    trails from `HitDetector.trail`. **`LocalCombat.java` is the one mod file changed, blind.**
-   Tests: `AimAssistTest` (8). Found, not changed (COMBAT_POLISH 6 and 7): the glaive's sweep
-   cannot reach a target its thrusts pushed away; Wren and Thorn's rising cut is off to the left.
+   Tests: `AimAssistTest` (8). Wren and Thorn's rising cut rose beside the right hip and missed a
+   target ahead; it now rises in front of the body (COMBAT_POLISH 7, offline render
+   `docs/media/weapons/wren_thorn_rising_cut_offline.jpg`). Found, not changed (COMBAT_POLISH 6):
+   the glaive's sweep cannot reach a target its thrusts pushed away. `preview poses` now also
+   draws the four weapons' moves, with the held blades in every frame.
 
 **First thing on the PC** (in this order):
 
@@ -105,7 +108,8 @@ Done (all pushed):
 5. Combat (TD-040): `gradlew :mod-fabric:runClientGameTest -Pveyrath.tests=weapons` must still
    pass and should now log `PASS the greatsword Duelist lands hits`. Then play, locked on (middle
    mouse), against the Duelist and Varek: attacks should follow a target that steps beside or
-   behind you. If they overshoot a target that stops, lower `TargetTrack.LAG` (3) to 2.
+   behind you. If they overshoot a target that stops, lower `TargetTrack.LAG` (3) to 2. With
+   Wren and Thorn (key 7), watch the third light cut: the blade should rise in front of the body.
 
 ## Where things stand (Chapter 02)
 

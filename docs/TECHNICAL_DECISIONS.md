@@ -597,7 +597,7 @@ that moved beside or behind him. Measured in the headless sim before changing an
   returns the regular poses only, for blade trails and spell effects (drawn as before).
 - `Reach.band(move)` measures where a move's first window touches a standing target straight
   ahead; `Reach.stopAt(move)` keeps the usual 1.15 when that lies inside the band and otherwise
-  moves the stop into it (glaive thrust 2.25, Wren and Thorn's rising cut 0.80).
+  moves the stop into it (glaive thrust 2.25, the grimoire's meteor 3.15).
 - Aim assist (`Rules.aimAssist`, the player only; minds aim for themselves): locked on, an attack
   aims where the target will be when its next window opens (its velocity times the ticks to that
   window, at most 8 ticks and 1.5 blocks) and turns toward it through every windup at 24 degrees a
@@ -606,20 +606,25 @@ that moved beside or behind him. Measured in the headless sim before changing an
 - The client measures the locked target's velocity from its last shown positions and moves it on
   by three ticks, the interpolation lag (`TargetTrack`, `LocalCombat`). Jumps faster than a block
   a tick count as teleports, not speed.
-- Wren and Thorn's rising third cut steps in further (0.3 instead of 0.15 blocks a tick for two
-  ticks), stopped at its band, so the string's own push no longer leaves it short.
+- Wren and Thorn's rising third cut rose beside the right hip: it reached 1.05 blocks straight
+  ahead (1.85 at 25 degrees to the right, nothing at 25 to the left), so the string's own push
+  left it short. The blade now starts low in front of the hip, pointing ahead, and rises up the
+  front of the body (`TwinBlades.R_LOW`, `R_HIGH`): 1.85 blocks ahead, step unchanged. Offline
+  render: `docs/media/weapons/wren_thorn_rising_cut_offline.jpg`.
 
 **Measured after** (headless sim, `AimAssistTest`, 8 tests): every light string lands every cut on
 a standing target (glaive: both thrusts; see below); the locked fist string lands 13 of 13 at 10
 degrees a tick and 12 of 13 at 15 with the client's three-tick lag; the armed Duelists land as
-before or better (fists 45, glaive 47 unchanged; Oathcleaver 20 to 38; twin blades 42 to 64 hits).
+before or better (fists 45, glaive 47 unchanged; Oathcleaver 20 to 38; twin blades 42 to 83 hits);
+locked on to a target circling a block away, every Wren and Thorn cut lands (the rising cut 3 of 3,
+0 of 3 when aimed at the late view).
 
 **Left for the owner** (content, not changed): the glaive's thrusts push a lone target about
 three blocks back, out of the sweep's reach (2.5 blocks), so the third light hit only lands on a
 group; its thrusts cannot touch anything closer than 2 blocks (fits "spacing, keep-away"; a haft
-strike would change that). Wren and Thorn's rising cut passes about a block to the left of the
-body, so it only lands on a target dead ahead.
+strike would change that).
 
 **State:** combat core and headless tests only. `LocalCombat` (client) feeds `TargetTrack`; it has
 not been compiled. The three-tick lag is vanilla's interpolation step count, not measured in game.
+The rising cut's new pose has been seen in an offline render only.
 

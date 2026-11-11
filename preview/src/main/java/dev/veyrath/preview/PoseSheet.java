@@ -3,6 +3,8 @@ package dev.veyrath.preview;
 import dev.veyrath.combat.anim.Clip;
 import dev.veyrath.combat.content.UnarmedClips;
 import dev.veyrath.combat.content.UnarmedMoves;
+import dev.veyrath.combat.content.Weapons;
+import dev.veyrath.combat.content.Weapons.Weapon;
 import dev.veyrath.combat.hit.ClipLibrary;
 import dev.veyrath.combat.math.Vec3;
 import dev.veyrath.combat.move.HitShape;
@@ -20,6 +22,7 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.RenderingHints;
+import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
@@ -27,14 +30,17 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
 
 /**
  * Contact sheets of the combat clips, drawn from the same rig and clips the game uses: one row
  * per move, frames across, the vanilla body parts as shaded boxes and the hit shapes in red on
- * active ticks (with the sweep from the previous tick). Engine render, not a game screenshot;
- * root motion from physics (dashes, jumps) is not shown, only the pose.
+ * active ticks (with the sweep from the previous tick); on the weapon sheets the held blades in
+ * steel in every frame. Engine render, not a game screenshot; root motion from physics (dashes,
+ * jumps) is not shown, only the pose.
  */
 public final class PoseSheet {
     private PoseSheet() {}
@@ -43,7 +49,10 @@ public final class PoseSheet {
     static final double PX_PER_BLOCK = 74;
     static final double AZIMUTH = 38, ELEVATION = 14;
 
-    record Group(String file, String title, List<String> rows) {}
+    /** One sheet: unarmed moves, or with {@code weapon} that weapon's moves and blades. */
+    record Group(String file, String title, List<String> rows, Weapon weapon) {
+        Group(String file, String title, List<String> rows) { this(file, title, rows, null); }
+    }
 
     static final List<Group> GROUPS = List.of(
             new Group("poses_ground", "Ground string, branches and heavies",
@@ -56,14 +65,26 @@ public final class PoseSheet {
                     List.of("gale_step", "skybreaker", "quake_palm", "unbound_fist")),
             new Group("poses_reactions", "Hit reactions, knockdown and get-up",
                     List.of("react_flinch", "react_stagger", "react_knockback", "react_launch", "react_spike",
-                            "react_guard_break", "react_parried", "knockdown", "getup")));
+                            "react_guard_break", "react_parried", "knockdown", "getup")),
+            new Group("poses_greatsword", "Oathcleaver (greatsword)",
+                    List.of("gs_slash_1", "gs_slash_2", "gs_slash_3", "gs_heavy", "gs_heavy_charged", "gs_air_cleave", "gs_plunge",
+                            "gs_riposte", "gs_rending_arc"), Weapons.GREATSWORD),
+            new Group("poses_twin_blades", "Wren and Thorn (twin blades)",
+                    List.of("tb_cut_1", "tb_cut_2", "tb_cut_3", "tb_cut_4", "tb_heavy", "tb_cyclone", "tb_air_spin", "tb_dive", "tb_riposte"),
+                    Weapons.TWIN_BLADES),
+            new Group("poses_glaive", "Skyreach (glaive)",
+                    List.of("gl_thrust_1", "gl_thrust_2", "gl_sweep", "gl_heavy", "gl_air_sweep", "gl_impale_dive", "gl_riposte",
+                            "gl_vault_thrust", "gl_crescent_sweep"), Weapons.GLAIVE),
+            new Group("poses_grimoire", "Vesper Codex (grimoire)",
+                    List.of("gr_bolt_1", "gr_bolt_2", "gr_bolt_3", "gr_nova", "gr_meteor", "gr_air_bolt", "gr_riposte", "gr_lance",
+                            "gr_star_mine"), Weapons.GRIMOIRE));
 
     public static void render(Path out) throws IOException {
         Files.createDirectories(out);
-        MoveSet set = UnarmedMoves.moveSet();
-        ClipLibrary clips = UnarmedClips.library();
+        MoveSet unarmed = UnarmedMoves.moveSet();
+        ClipLibrary unarmedClips = UnarmedClips.library();
         for (Group g : GROUPS) {
-            BufferedImage img = sheet(g, set, clips);
+            BufferedImage img = g.weapon == null ? sheet(g, unarmed, unarmedClips) : sheet(g, g.weapon.moves(), Weapons.CLIPS);
             Path p = out.resolve(g.file + ".png");
             ImageIO.write(img, "png", p.toFile());
             System.out.println("wrote " + p);
@@ -83,8 +104,10 @@ public final class PoseSheet {
         gr.drawString("VEYRATH combat clips: " + g.title, 14, 26);
         gr.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 13));
         gr.setColor(new Color(0xa9a59b));
-        gr.drawString("Engine render from combat/ (not in game). Red: hit shapes on active ticks, faint red: the sweep since the"
-                + " previous tick. Pose only; dash and jump motion is applied by physics.", 14, 44);
+        gr.drawString("Engine render from combat/ (not in game). " + (g.weapon == null ? "" : "Steel: the held blades. ")
+                + "Red: hit shapes on active ticks, faint red: the sweep since the previous tick. Pose only; dash and jump motion"
+                + " is applied by physics.", 14, 44);
+        List<HitShape> held = held(g.weapon);
         for (int r = 0; r < g.rows.size(); r++) {
             String id = g.rows.get(r);
             Move m = set.get(id);
@@ -96,7 +119,7 @@ public final class PoseSheet {
             if (clip == null) continue;
             double[] times = frameTimes(m, clip);
             for (int c = 0; c < times.length; c++) {
-                drawFrame(gr, LABEL_W + c * CELL_W, y0, clip, m, times[c]);
+                drawFrame(gr, LABEL_W + c * CELL_W, y0, clip, m, times[c], held);
             }
         }
         gr.dispose();
@@ -165,7 +188,35 @@ public final class PoseSheet {
 
     // ---------------------------------------------------------------------------------- drawing
 
-    record Face(Polygon poly, double depth, Color color) {}
+    record Face(Shape poly, double depth, Color color) {}
+
+    static final Color STEEL = new Color(0xc9d1dc);
+    /** Drawn width of a held blade (blocks): the blade itself, not its hit radius. */
+    static final double BLADE_WIDTH = 0.07;
+    /** The hand end of a vanilla arm in its bone space (pixels down from the shoulder). */
+    static final double HAND_Y = 10;
+
+    /**
+     * A weapon's blades: per arm, the bone-held shape its moves use most (the plain blade, not a
+     * special reach). Short shapes (fists) are left out. None for unarmed.
+     */
+    static List<HitShape> held(Weapon w) {
+        if (w == null) return List.of();
+        Map<HitShape, Integer> uses = new HashMap<>();
+        for (Move m : w.moves().all()) {
+            for (HitWindow hw : m.hits) {
+                for (HitShape sh : hw.shapes()) {
+                    boolean arm = sh.bone() == Bone.RIGHT_ARM || sh.bone() == Bone.LEFT_ARM;
+                    if (arm && sh.a().sub(sh.b()).length() >= 6) uses.merge(sh, 1, Integer::sum);
+                }
+            }
+        }
+        List<HitShape> out = new ArrayList<>();
+        for (Bone b : List.of(Bone.RIGHT_ARM, Bone.LEFT_ARM)) {
+            uses.entrySet().stream().filter(e -> e.getKey().bone() == b).max(Map.Entry.comparingByValue()).ifPresent(e -> out.add(e.getKey()));
+        }
+        return out;
+    }
 
     static final double AZ = Math.toRadians(AZIMUTH), EL = Math.toRadians(ELEVATION);
     /** Direction from the character to the camera, in character space (+X right, +Y up, +Z forward). */
@@ -176,7 +227,7 @@ public final class PoseSheet {
     static final Vec3 SCREEN_UP = cross(VIEW, SCREEN_RIGHT).normalize();
     static final Vec3 LIGHT = new Vec3(0.45, 0.8, 0.55).normalize();
 
-    static void drawFrame(Graphics2D gr, int x0, int y0, Clip clip, Move m, double t) {
+    static void drawFrame(Graphics2D gr, int x0, int y0, Clip clip, Move m, double t, List<HitShape> held) {
         Pose pose = clip.sample(t, new Pose());
         Rig.Solved s = Rig.solve(pose);
         java.awt.Shape oldClip = gr.getClip();
@@ -199,13 +250,14 @@ public final class PoseSheet {
             if (b == Bone.ROOT) continue;
             addBox(faces, s, b, partColor(b), cx, cy);
         }
+        for (HitShape sh : held) addBlade(faces, s, sh, cx, cy);
         faces.sort((p, q) -> Double.compare(q.depth, p.depth));
         gr.setStroke(new BasicStroke(1f));
         for (Face f : faces) {
             gr.setColor(f.color);
-            gr.fillPolygon(f.poly);
+            gr.fill(f.poly);
             gr.setColor(new Color(0, 0, 0, 90));
-            gr.drawPolygon(f.poly);
+            gr.draw(f.poly);
         }
 
         if (active) drawHits(gr, m, clip, tick, cx, cy);
@@ -308,6 +360,24 @@ public final class PoseSheet {
                 poly.addPoint((int) Math.round(p[0]), (int) Math.round(p[1]));
             }
             faces.add(new Face(poly, dot(fc, VIEW), scale(base, shade)));
+        }
+    }
+
+    /**
+     * A held blade as a thin strip from the hand to the far end of its hit shape (so a glaive,
+     * which only cuts with its head, shows its shaft too), cut in pieces so each sorts in front of
+     * or behind the body on its own.
+     */
+    static void addBlade(List<Face> faces, Rig.Solved s, HitShape sh, double cx, double cy) {
+        Vec3 hand = new Vec3(sh.a().x(), HAND_Y, sh.a().z());
+        Vec3 a = s.toCharacter(sh.bone(), hand), b = s.toCharacter(sh.bone(), sh.b());
+        BasicStroke strip = new BasicStroke((float) (BLADE_WIDTH * PX_PER_BLOCK), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
+        int pieces = 4;
+        for (int i = 0; i < pieces; i++) {
+            Vec3 p = a.add(b.sub(a).scale(i / (double) pieces)), q = a.add(b.sub(a).scale((i + 1) / (double) pieces));
+            double[] pp = project(p, cx, cy), pq = project(q, cx, cy);
+            Shape piece = strip.createStrokedShape(new Line2D.Double(pp[0], pp[1], pq[0] + 1e-3, pq[1]));
+            faces.add(new Face(piece, dot(p.add(q).scale(0.5), VIEW), STEEL));
         }
     }
 

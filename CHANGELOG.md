@@ -67,6 +67,8 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   locked target will be when the blow lands and keeps turning toward it through every windup;
   the client corrects for seeing other entities a few ticks late. Attack dashes stop where each
   move lands (the glaive's thrusts two blocks out, not at fist range). Headless tests only.
+- Pose sheets (`preview poses`) also draw the four weapons' moves, with the held blades in every
+  frame.
 
 ### Fixed
 - Fast cuts are checked along their whole path (TD-040). Before, the front of the arc was skipped:
@@ -74,6 +76,8 @@ All notable changes to VEYRATH. Format based on Keep a Changelog. Versions follo
   instead of 2.1, Wren and Thorn's first cuts 1.05 instead of 1.55, and the armed Duelist's
   Oathcleaver rarely connected. Hit capsules are now worked out once per move, so the finer
   check costs less per tick than the old one.
+- Wren and Thorn's rising third cut rises in front of the body instead of beside the right hip, so
+  it lands on a target ahead (1.85 blocks, was 1.05). Seen in an offline render only.
 
 ## [Released to the owner] — 0.2.0-ch02
 

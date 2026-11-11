@@ -13,6 +13,7 @@ import dev.veyrath.combat.input.Controls;
 import dev.veyrath.combat.math.Vec3;
 import dev.veyrath.combat.move.Branch;
 import dev.veyrath.combat.move.HitShape;
+import dev.veyrath.combat.move.HitSpec;
 import dev.veyrath.combat.move.HitWindow;
 import dev.veyrath.combat.move.Move;
 import dev.veyrath.combat.move.MoveSet;
@@ -157,8 +158,10 @@ class AimAssistTest {
         double stop = Reach.stopAt(thrust);
         assertTrue(stop >= Reach.band(thrust)[0] && stop <= Reach.band(thrust)[1], "stop " + stop);
         assertEquals(Reach.STOP_AT, Reach.stopAt(Weapons.UNARMED.moves().require("jab")), 1e-9, "fists keep their distance");
-        // Wren and Thorn's third cut is short (about a block): its dash closes in for it.
-        assertTrue(Reach.stopAt(Weapons.TWIN_BLADES.moves().require("tb_cut_3")) < Reach.STOP_AT);
+        // A cut that reaches less far than the fists' stop (here a ball a block ahead): its dash closes in for it.
+        Move shortCut = Move.builder("short_cut", Move.Kind.ATTACK, 6).hit(2, 3, HitSpec.of(1).build(), HitShape.sphere(0, 1, 0.5, 0.3)).build();
+        double shortStop = Reach.stopAt(shortCut);
+        assertTrue(shortStop < Reach.STOP_AT && shortStop >= Reach.band(shortCut)[0], "short stop " + shortStop);
 
         SimWorld w = new SimWorld(Weapons.CLIPS);
         MoveSet set = Weapons.GLAIVE.moves();
@@ -248,12 +251,10 @@ class AimAssistTest {
         assertTrue(tracked[1] >= 0.9 * tracked[0], msg);
         assertTrue(tracked[1] - late[1] >= 3, msg);
         // The blades, each at a distance its light cuts reach (the circling target keeps it however
-        // the attacker steps). Known gap, left for the owner (COMBAT_POLISH.md): Wren and Thorn's
-        // rising third cut passes a block to the left of the body, so it only lands dead ahead.
+        // the attacker steps), every cut of the string on its own.
         Map<Weapons.Weapon, Double> radius = Map.of(Weapons.TWIN_BLADES, 1.0, Weapons.GREATSWORD, 1.3);
         for (var e : radius.entrySet()) {
             for (var m : strafe(e.getKey(), e.getValue(), 10, true).entrySet()) {
-                if (m.getKey().equals("tb_cut_3")) continue;
                 int[] c = m.getValue();
                 assertTrue(c[1] >= 0.85 * c[0], e.getKey().id() + " " + m.getKey() + ": " + c[1] + "/" + c[0]);
             }
