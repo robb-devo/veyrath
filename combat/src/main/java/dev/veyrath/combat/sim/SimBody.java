@@ -21,6 +21,8 @@ public final class SimBody {
     /** Training dummy: health refills, never moves on its own. */
     public boolean immortal;
     public Vec3 lockTarget;
+    /** Velocity of the locked target as this body's side knows it (blocks per tick), or null. */
+    public Vec3 lockVelocity;
     /** AI that fills this body's controls and presses each tick (null: scripted or passive). */
     public Mind mind;
     /** Multiplier on the damage this body's hits deal (a sparring Duelist hits softer). */

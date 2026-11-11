@@ -59,6 +59,17 @@ public final class Move {
     /** True while the move has not reached its first active frame (a counter-hit opening). */
     public boolean inStartup(int t) { int f = firstActive(); return f >= 0 && t < f; }
 
+    /** The first tick at or after {@code t} at which a hit window is active, or -1 if none remains. */
+    public int nextActive(int t) {
+        int best = -1;
+        for (HitWindow w : hits) {
+            if (w.to() < t) continue;
+            int at = Math.max(w.from(), t);
+            if (best < 0 || at < best) best = at;
+        }
+        return best;
+    }
+
     public Branch branch(Action a, int t, boolean connected) {
         for (Branch br : branches) {
             if (br.input() == a && t >= br.from() && t <= br.until() && (!br.onHit() || connected)) return br;

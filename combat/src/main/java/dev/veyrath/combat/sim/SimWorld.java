@@ -79,7 +79,7 @@ public final class SimWorld {
         Controls c = b.passive ? NO_CONTROLS : b.controls;
         Vec3 hitVel = b.fighter.takeVelocity();
         if (hitVel != null) b.vel = hitVel;
-        Controller.Intent in = Controller.compute(b.fighter, c, b.pos, b.lockTarget, soft);
+        Controller.Intent in = Controller.compute(b.fighter, c, b.pos, b.lockTarget, b.lockVelocity, soft);
         b.fighter.yaw = in.yaw();
         double vx = b.vel.x(), vy = b.vel.y(), vz = b.vel.z();
         if (in.forcesHorizontal()) { vx = in.vx(); vz = in.vz(); }

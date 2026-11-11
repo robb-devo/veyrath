@@ -1,5 +1,6 @@
 package dev.veyrath.combat.fighter;
 
+import dev.veyrath.combat.ai.Reach;
 import dev.veyrath.combat.input.Controls;
 import dev.veyrath.combat.math.Angles;
 import dev.veyrath.combat.math.Vec3;
@@ -29,8 +30,15 @@ public final class Controller {
     /**
      * Attack lunges and dashes stop this far (feet to feet, along the facing) in front of their
      * target instead of carrying the attacker past it, so a gap closer started up close still lands.
+     * With aim assist each move stops where its own first window lands ({@link Reach#stopAt}).
      */
-    public static final double STOP_AT = 1.15;
+    public static final double STOP_AT = Reach.STOP_AT;
+    /**
+     * Aim assist (Rules.aimAssist), locked on: degrees per tick an attack turns toward its target
+     * during every windup (at least; a move's own tracking may be faster), the most ticks it leads
+     * a moving target, and the farthest the lead may move the aim point (blocks).
+     */
+    public static final double LOCK_TRACK = 24, LEAD_MAX_TICKS = 8, LEAD_MAX = 1.5;
 
     /**
      * Body intent. NaN components leave the physics alone. {@code inputScale} scales the player's
@@ -46,6 +54,15 @@ public final class Controller {
      * @param softTarget  feet position of the best nearby enemy for soft lock, or null
      */
     public static Intent compute(Fighter f, Controls c, Vec3 feet, Vec3 lockTarget, Vec3 softTarget) {
+        return compute(f, c, feet, lockTarget, null, softTarget);
+    }
+
+    /**
+     * @param lockTarget   feet position of the locked target, or null
+     * @param lockVelocity the locked target's velocity (blocks per tick), or null if unknown
+     * @param softTarget   feet position of the best nearby enemy for soft lock, or null
+     */
+    public static Intent compute(Fighter f, Controls c, Vec3 feet, Vec3 lockTarget, Vec3 lockVelocity, Vec3 softTarget) {
         double yaw = f.yaw;
         double vx = Double.NaN, vz = Double.NaN, vy = Double.NaN;
         double inputScale = 1;
@@ -67,13 +84,20 @@ public final class Controller {
                 int t = f.moveTick();
                 Motion mo = m.motion;
                 boolean attack = m.isAttack() || m.kind == Kind.CHARGE;
+                boolean assist = f.rules.aimAssist && lockTarget != null;
+                int next = m.nextActive(t);
+                boolean windup = next > t;
+                // Locked on with aim assist: aim where the target will be as the next window opens.
+                Vec3 lock = assist && attack ? lead(lockTarget, lockVelocity, next < 0 ? 0 : next - t) : lockTarget;
                 if (attack && t == 0) {
-                    yaw = attackYaw(f, c, feet, input, lockTarget, softTarget);
-                } else if (attack && m.tracking > 0 && t <= m.trackUntil) {
+                    yaw = attackYaw(f, c, feet, input, lock, softTarget);
+                } else if (attack && m.tracking > 0 && (t <= m.trackUntil || assist && windup)) {
                     // A locked target is always followed; a soft target only while it stays in
                     // front, so an attack that started past it does not swing round after it.
-                    Vec3 tgt = lockTarget != null ? lockTarget : (softTarget != null && inReach(feet, softTarget, yaw) ? softTarget : null);
-                    if (tgt != null) yaw = Angles.approach(yaw, yawTo(feet, tgt), m.tracking);
+                    // Aim assist keeps a locked attack turning through each windup, at least at LOCK_TRACK.
+                    double rate = assist && windup ? Math.max(m.tracking, LOCK_TRACK) : m.tracking;
+                    Vec3 tgt = lock != null ? lock : (softTarget != null && inReach(feet, softTarget, yaw) ? softTarget : null);
+                    if (tgt != null) yaw = Angles.approach(yaw, yawTo(feet, tgt), rate);
                 } else if ((m.kind == Kind.DODGE || m.kind == Kind.AIR_DASH) && t == 0) {
                     Vec3 d = f.dodgeDirection();
                     if (lockTarget != null) yaw = yawTo(feet, lockTarget);
@@ -83,10 +107,11 @@ public final class Controller {
                 double fwd = mo.forward(t);
                 Vec3 dir = mo.isAlongInput() ? f.dodgeDirection() : Angles.forward(yaw);
                 if (attack && fwd > 0 && !mo.isAlongInput()) {
-                    Vec3 tgt = lockTarget != null ? lockTarget : (softTarget != null && inReach(feet, softTarget, yaw) ? softTarget : null);
+                    Vec3 tgt = lock != null ? lock : (softTarget != null && inReach(feet, softTarget, yaw) ? softTarget : null);
                     if (tgt != null && Math.abs(tgt.y() - feet.y()) < 2.5) {
                         double ahead = tgt.sub(feet).horizontal().dot(dir);
-                        if (ahead > -0.5) fwd = Math.min(fwd, Math.max(0, ahead - STOP_AT));
+                        double stop = f.rules.aimAssist ? Reach.stopAt(m) : STOP_AT;
+                        if (ahead > -0.5) fwd = Math.min(fwd, Math.max(0, ahead - stop));
                     }
                 }
                 if (!Double.isNaN(fwd)) {
@@ -121,6 +146,18 @@ public final class Controller {
             if (Math.abs(Angles.wrapDegrees(toSoft - intended)) <= SOFT_CONE) return toSoft;
         }
         return intended;
+    }
+
+    /**
+     * Where a target moving at {@code velocity} (horizontally) will be in {@code ticks}, at most
+     * {@link #LEAD_MAX_TICKS} ahead and {@link #LEAD_MAX} blocks from where it is.
+     */
+    static Vec3 lead(Vec3 target, Vec3 velocity, int ticks) {
+        if (velocity == null || ticks <= 0) return target;
+        Vec3 d = velocity.horizontal().scale(Math.min(ticks, LEAD_MAX_TICKS));
+        double len = d.length();
+        if (len > LEAD_MAX) d = d.scale(LEAD_MAX / len);
+        return target.add(d);
     }
 
     /** True if {@code tgt} is within soft-lock range and in front of the facing. */

@@ -144,7 +144,9 @@ public final class TwinBlades {
                 .hit(2, 4, HitSpec.of(2.6).reaction(Reaction.LAUNCH).stun(16, 6).push(0.05).lift(0.5).hitstop(3).shake(0.2).guard(10).poise(14)
                         .gauge(3).fx("impact_launch", "blade_cut").build(), r)
                 .branch(Action.LIGHT, "tb_cut_4", 4, 10).branchOnHit(Action.JUMP, "air_jump", 4, 10)
-                .dodgeFrom(4).onHitCancel(1).abilityFrom(4).freeFrom(9).motion(new Motion(10).dash(0, 2, 0.15, 0.04)).tracking(14, 2).blend(1).build());
+                // The rising cut reaches about a block: it steps in further than the first two, and
+                // stops where it lands (Reach.stopAt), so the string's own push does not leave it short.
+                .dodgeFrom(4).onHitCancel(1).abilityFrom(4).freeFrom(9).motion(new Motion(10).dash(0, 2, 0.3, 0.06)).tracking(14, 2).blend(1).build());
         s.add(Move.builder("tb_cut_4", Kind.ATTACK, 16)
                 .hit(5, 7, HitSpec.of(5).reaction(Reaction.KNOCKBACK).stun(16, 9).push(0.8).lift(0.25).hitstop(5).shake(0.4).guard(24).poise(30)
                         .gauge(5).fx("blade_cleave", "blade_cut").build(), r, l)

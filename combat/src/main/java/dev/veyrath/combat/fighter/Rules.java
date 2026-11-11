@@ -31,10 +31,17 @@ public final class Rules {
      * but do not interrupt again, so a crowd of weak mobs cannot stun-lock the fighter. 0 = off.
      */
     public int reactionGrace = 0;
+    /**
+     * Aim assist of a player's attacks (Controller): locked on, an attack aims where the target
+     * will be when its next hit window opens and keeps turning toward it through every windup;
+     * dashes stop where each move's first window lands. Off for minds, whose aim is their own.
+     */
+    public boolean aimAssist = false;
 
     public static Rules player() {
         Rules r = new Rules();
         r.reactionGrace = 12;
+        r.aimAssist = true;
         return r;
     }
 
