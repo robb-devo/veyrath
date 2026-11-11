@@ -191,6 +191,18 @@ function Write-LauncherProfiles($Data, [string]$Path) {
     [System.IO.File]::WriteAllText($Path, $json, (New-Object System.Text.UTF8Encoding($false)))
 }
 
+# Minecraft's default biome blend is 5 x 5 blocks. VEYRATH's provinces meet in mixed belts whose
+# patches should fade into each other, so the profile uses the maximum, 15 x 15. Only an untouched
+# default is raised; a value the player chose is left alone. Returns $true when the file changed.
+# options.txt is UTF-8 without a byte order mark and is written back the same way.
+function Set-BiomeBlend([string]$Path) {
+    $text = [System.IO.File]::ReadAllText($Path)
+    $new = [regex]::Replace($text, '(?m)^biomeBlendRadius:2(\r?)$', 'biomeBlendRadius:7$1')
+    if ($new -ceq $text) { return $false }
+    [System.IO.File]::WriteAllText($Path, $new, (New-Object System.Text.UTF8Encoding($false)))
+    return $true
+}
+
 function Get-DefaultMemoryGB {
     try {
         $bytes = (Get-CimInstance -ClassName Win32_ComputerSystem).TotalPhysicalMemory
@@ -393,17 +405,22 @@ if ($previous) {
 }
 
 # ---------------------------------------------------------------------------------------------
-Write-Step 'Writing default settings (only files that do not exist yet)'
+Write-Step 'Writing default settings (existing files keep the player''s choices)'
 $irisConfig = Join-Path $GameDir 'config\iris.properties'
 if ($activeShader -and -not (Test-Path -LiteralPath $irisConfig) -and $PSCmdlet.ShouldProcess($irisConfig, 'Select shader pack')) {
     Set-Content -Path $irisConfig -Encoding ASCII -Value @("enableShaders=true", "shaderPack=$activeShader")
     Write-Note "Iris: $activeShader selected"
 }
 $options = Join-Path $GameDir 'options.txt'
-if (-not (Test-Path -LiteralPath $options) -and $PSCmdlet.ShouldProcess($options, 'Write starting video options')) {
-    # Distant Horizons draws the far terrain; vanilla chunks only need to cover the near field.
-    Set-Content -Path $options -Encoding ASCII -Value @('renderDistance:12', 'simulationDistance:8')
-    Write-Note 'options.txt: render distance 12, simulation distance 8'
+if (-not (Test-Path -LiteralPath $options)) {
+    if ($PSCmdlet.ShouldProcess($options, 'Write starting video options')) {
+        # Distant Horizons draws the far terrain; vanilla chunks only need to cover the near field.
+        # Biome blend 15 x 15: see Set-BiomeBlend.
+        Set-Content -Path $options -Encoding ASCII -Value @('renderDistance:12', 'simulationDistance:8', 'biomeBlendRadius:7')
+        Write-Note 'options.txt: render distance 12, simulation distance 8, biome blend 15 x 15'
+    }
+} elseif ($PSCmdlet.ShouldProcess($options, 'Raise an untouched biome blend to 15 x 15')) {
+    if (Set-BiomeBlend $options) { Write-Note 'options.txt: biome blend raised from the default 5 x 5 to 15 x 15' }
 }
 
 # ---------------------------------------------------------------------------------------------
